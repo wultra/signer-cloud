@@ -4,8 +4,14 @@
 CloudSigner Server provides a RESTful API that allows to control specific parts of the signing process. 
 
 <!-- begin remove -->
-- `POST` [/api/onboarding/client/evaluation](#anchor) - Client Evaluation
-- `POST` [/api/onboarding/client/approval](#anchor) - Onboading Approval
+- `POST` [/api/cloudsigner/signers](#create-new-signer) - Create New Signer
+- `PUT` [/api/cloudsigner/signers/{signerId}](#change-signer-status) - Change Signer Status
+- `GET` [/api/cloudsigner/signers/{signerId}](#signer-details) - Signer Details
+- `POST` [/api/cloudsigner/documents](#upload-document) - Upload Document
+- `PUT` [/api/cloudsigner/documents/{documentId}](#reject-document) - Reject Document
+- `DELETE` [/api/cloudsigner/documents/{documentId}](#delete-document) - Delete Document
+- `POST` [/api/cloudsigner/documents/{documentId}/signature](#sign-document) - Sign Document
+- `GET` [/api/cloudsigner/documents/{documentId}/file](#download-document) - Download Document
 <!-- end -->
 
 ## Error Handling
