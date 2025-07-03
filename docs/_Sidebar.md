@@ -5,9 +5,9 @@
 - [Architecture](./Architecture.md)
 - [Common Tasks](./Common-Tasks.md)
 
-
 **Technical Details**
-
+- [Integration](./Integration.md)
+- [Configuration](./Configuration.md)
 
 **REST APIs**
 - [CloudSigner API](./CloudSigner-API.md)
