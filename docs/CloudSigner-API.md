@@ -218,11 +218,18 @@ Content-Length: {size}
 Content-Type: multipart/form-data; boundary=abcde12345
 
 --abcde12345
+Content-Disposition: form-data; name="signerId"
+Content-Type: text/plain
+
+{signerId}
+--abcde12345
 Content-Disposition: form-data; name="externalId"
+Content-Type: text/plain
 
 {externalId}
 --abcde12345
 Content-Disposition: form-data; name="name"
+Content-Type: text/plain
 
 {name}
 --abcde12345
@@ -237,7 +244,8 @@ Content-Type: application/pdf
 
 | Attribute     | Type      | Description                                                |
 |:--------------|:----------|:-----------------------------------------------------------|
-| `size`        | `Integer` | Document size in bytes.                                    |
+| `size`        | `Number`  | Document size in bytes.                                    |
+| `signerId`    | `String`  | Activation ID (Registration ID) from PowerAuth.            |
 | `externalId`  | `String`  | Custom unique ID identifying document in client’s systems. |
 | `name`        | `String`  | Document name.                                             |
 | `fileName`    | `String`  | File name (including suffix), e.g. “attachment.pdf”.       |
@@ -248,20 +256,21 @@ Content-Type: application/pdf
 
 ```json
 {
-  "documentId": "456def",
-  "externalId": "123abc",
-  "name": "Document name",
-  "fileName": "real_document_name.pdf",
-  "size": 343425734,
-  "hash": "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+  "documentId": "String",
+  "signerId": "String",
+  "externalId": "String",
+  "name": "String",
+  "fileName": "String",
+  "size": Number,
+  "hash": "String",
 }
 ```
 
 ##### Response  Params
 
-| Attribute | Type     | Description                                                                                        |
-|:----------|:---------|:---------------------------------------------------------------------------------------------------|
-| `hash`    | `String` | SHA-256 summary of uploaded document. Hash has to be signed by user and used in following request. |
+| Attribute | Type     | Description                                                                                            |
+|:----------|:---------|:-------------------------------------------------------------------------------------------------------|
+| `hash`    | `String` | SHA-256 summary of uploaded document. Hash has to be signed by user and used in Sign Document request. |
 
 Maximum file size limitations depends on server configuration (web/apps server, database, network) with max size around 50MB.
 
@@ -399,7 +408,7 @@ Complete the signature with approved document hash.
 
 Download document.
 
-As you can see from the Accept-Ranges: bytes response header, we support optional Range request header to download content partially. In this case Content-Range header will be returned in the response (otherwise it will be omitted).
+As you can see from the Accept-Ranges: bytes response header, we support optional Range request header to download content partially. In this case `Content-Range` header will be returned in the response (otherwise it will be omitted).
 
 <!-- begin remove -->
 <table>
