@@ -39,7 +39,6 @@ class SignatureTest {
         final File pkcs12File = new ClassPathResource("keystore.p12").getFile();
         final String password = "password";
 
-        // Create the token for signing
         try (final Pkcs12SignatureToken signingToken = new Pkcs12SignatureToken(pkcs12File, new KeyStore.PasswordProtection(password.toCharArray()))) {
             final List<DSSPrivateKeyEntry> keys = signingToken.getKeys();
             if (keys.isEmpty()) {
@@ -69,7 +68,7 @@ class SignatureTest {
             final PAdESSignatureParameters parameters = new PAdESSignatureParameters();
             parameters.setSigningCertificate(privateKey.getCertificate());
             parameters.setCertificateChain(privateKey.getCertificateChain());
-            parameters.setDigestAlgorithm(DigestAlgorithm.SHA3_384);
+            parameters.setDigestAlgorithm(DigestAlgorithm.SHA384); // SHA3_384 unsupported by Adobe???
             parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
             parameters.setImageParameters(imageParameters);
 
