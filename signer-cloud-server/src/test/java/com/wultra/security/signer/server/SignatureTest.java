@@ -7,8 +7,12 @@ import eu.europa.esig.dss.pades.SignatureFieldParameters;
 import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
+import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
+import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.Pkcs12SignatureToken;
 import org.junit.jupiter.api.Test;
@@ -70,10 +74,12 @@ class SignatureTest {
             parameters.setCertificateChain(privateKey.getCertificateChain());
             parameters.setDigestAlgorithm(DigestAlgorithm.SHA384); // SHA3_384 unsupported by Adobe???
             parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+            // parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_T); to make TSA working
             parameters.setImageParameters(imageParameters);
 
             final CertificateVerifier certificateVerifier = new CommonCertificateVerifier();
             final PAdESService padesService = new PAdESService(certificateVerifier);
+            // padesService.setTspSource(createTsa());
 
             final ToBeSigned dataToBeSigned = padesService.getDataToSign(toSignDocument, parameters);
 
@@ -85,5 +91,21 @@ class SignatureTest {
 
             signedDocument.save("signed-document.pdf");
         }
+    }
+
+    @Test
+    void testTsa() {
+        final TSPSource tspSource = createTsa();
+        final DigestAlgorithm digestAlgorithm = DigestAlgorithm.SHA384;
+        final byte[] digestValue = DSSUtils.digest(digestAlgorithm, "Test data".getBytes());
+        final TimestampBinary timestampToken = tspSource.getTimeStampResponse(digestAlgorithm, digestValue);
+        System.out.println(DSSUtils.toHex(timestampToken.getBytes()));
+    }
+
+    private static TSPSource createTsa() {
+        final String tspServer = "http://dss.nowina.lu/pki-factory/tsa/good-tsa";
+        final OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
+        onlineTSPSource.setDataLoader(new TimestampDataLoader());
+        return onlineTSPSource;
     }
 }
