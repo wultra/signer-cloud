@@ -1,12 +1,11 @@
 package com.wultra.security.signer.server;
 
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.SignatureLevel;
-import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.model.FileDocument;
-import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.enumerations.*;
+import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.SignatureFieldParameters;
+import eu.europa.esig.dss.pades.SignatureImageParameters;
+import eu.europa.esig.dss.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
@@ -15,6 +14,7 @@ import eu.europa.esig.dss.token.Pkcs12SignatureToken;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
+import java.awt.*;
 import java.io.File;
 import java.security.KeyStore;
 import java.util.List;
@@ -47,11 +47,31 @@ class SignatureTest {
             }
             final DSSPrivateKeyEntry privateKey = keys.get(0);
 
+            final SignatureFieldParameters fieldParameters = new SignatureFieldParameters();
+            fieldParameters.setOriginX(200);
+            fieldParameters.setOriginY(400);
+
+            final SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
+            textParameters.setText("Signed");
+            textParameters.setTextColor(Color.BLUE);
+            textParameters.setBackgroundColor(Color.YELLOW);
+            textParameters.setPadding(20);
+            textParameters.setTextWrapping(TextWrapping.FONT_BASED);
+            textParameters.setSignerTextPosition(SignerTextPosition.LEFT);
+            textParameters.setSignerTextHorizontalAlignment(SignerTextHorizontalAlignment.RIGHT);
+            textParameters.setSignerTextVerticalAlignment(SignerTextVerticalAlignment.TOP);
+
+            final SignatureImageParameters imageParameters = new SignatureImageParameters();
+            imageParameters.setImage(new InMemoryDocument(getClass().getResourceAsStream("/signature-pen.png")));
+            imageParameters.setFieldParameters(fieldParameters);
+            imageParameters.setTextParameters(textParameters);
+
             final PAdESSignatureParameters parameters = new PAdESSignatureParameters();
             parameters.setSigningCertificate(privateKey.getCertificate());
             parameters.setCertificateChain(privateKey.getCertificateChain());
             parameters.setDigestAlgorithm(DigestAlgorithm.SHA3_384);
             parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+            parameters.setImageParameters(imageParameters);
 
             final CertificateVerifier certificateVerifier = new CommonCertificateVerifier();
             final PAdESService padesService = new PAdESService(certificateVerifier);
