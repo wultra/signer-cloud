@@ -19,6 +19,7 @@ import java.io.File;
 import java.security.KeyStore;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -58,6 +59,9 @@ class SignatureTest {
             final ToBeSigned dataToBeSigned = padesService.getDataToSign(toSignDocument, parameters);
 
             final SignatureValue signatureValue = signingToken.sign(dataToBeSigned, parameters.getDigestAlgorithm(), privateKey);
+
+            assertTrue(padesService.isValidSignatureValue(dataToBeSigned, signatureValue, privateKey.getCertificate()));
+
             final DSSDocument signedDocument = padesService.signDocument(toSignDocument, parameters, signatureValue);
 
             signedDocument.save("signed-document.pdf");
