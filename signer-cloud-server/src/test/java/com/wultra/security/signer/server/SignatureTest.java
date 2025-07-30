@@ -20,7 +20,11 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.awt.*;
 import java.io.File;
+import java.io.FileInputStream;
+import java.security.Key;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.Signature;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -83,7 +87,21 @@ class SignatureTest {
 
             final ToBeSigned dataToBeSigned = padesService.getDataToSign(toSignDocument, parameters);
 
-            final SignatureValue signatureValue = signingToken.sign(dataToBeSigned, parameters.getDigestAlgorithm(), privateKey);
+            // final SignatureValue signatureValue = signingToken.sign(dataToBeSigned, parameters.getDigestAlgorithm(), privateKey);
+            // Use the private key from the PKCS#12 file to sign the data and simulate PowerAuth SDK
+            final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+            try (FileInputStream fis = new FileInputStream(pkcs12File)) {
+                keyStore.load(fis, password.toCharArray());
+            }
+
+            final Key key = keyStore.getKey("myAlias", password.toCharArray());
+            final PrivateKey privateKey1 = (PrivateKey) key;
+            final Signature signature = Signature.getInstance("SHA384withRSA");
+            signature.initSign(privateKey1);
+            signature.update(dataToBeSigned.getBytes());
+            byte[] signatureBytes = signature.sign();
+
+            final SignatureValue signatureValue = new SignatureValue(parameters.getSignatureAlgorithm(), signatureBytes);
 
             assertTrue(padesService.isValidSignatureValue(dataToBeSigned, signatureValue, privateKey.getCertificate()));
 
