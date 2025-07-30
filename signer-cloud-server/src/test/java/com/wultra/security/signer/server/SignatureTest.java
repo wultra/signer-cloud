@@ -40,7 +40,9 @@ class SignatureTest {
         final File pdfFile = new ClassPathResource("input.pdf").getFile();
         final DSSDocument toSignDocument = new FileDocument(pdfFile);
 
-        final File pkcs12File = new ClassPathResource("keystore.p12").getFile();
+        // keytool -genkeypair -alias myAlias -keyalg RSA -keysize 2048 -keystore keystore-rsa.p12 -storetype PKCS12 -validity 365
+        // keytool -genkeypair -alias myAlias -keyalg EC -groupname secp384r1 -keystore keystore-ecdsa.p12 -storetype PKCS12 -validity 365
+        final File pkcs12File = new ClassPathResource("keystore-ecdsa.p12").getFile();
         final String password = "password";
 
         try (final Pkcs12SignatureToken signingToken = new Pkcs12SignatureToken(pkcs12File, new KeyStore.PasswordProtection(password.toCharArray()))) {
