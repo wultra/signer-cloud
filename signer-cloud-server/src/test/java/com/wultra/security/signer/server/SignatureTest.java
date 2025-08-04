@@ -74,7 +74,9 @@ class SignatureTest {
             final PAdESSignatureParameters parameters = new PAdESSignatureParameters();
             parameters.setSigningCertificate(privateKey.getCertificate());
             parameters.setCertificateChain(privateKey.getCertificateChain());
-            parameters.setDigestAlgorithm(DigestAlgorithm.SHA384); // SHA3_384 unsupported by Adobe???
+            // according to ETSI TS 119 312 V1.5.1 (2024-12), shall support SHA-256, SHA-384, SHA-512; should support SHA3
+            // SHA3_384 is not supported by Adobe Acrobat Reader
+            parameters.setDigestAlgorithm(DigestAlgorithm.SHA384);
             parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
             // parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_T); to make TSA working
             parameters.setImageParameters(imageParameters);
