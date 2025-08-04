@@ -15,6 +15,7 @@ import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.Pkcs12SignatureToken;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
@@ -22,6 +23,7 @@ import java.awt.*;
 import java.io.File;
 import java.security.KeyStore;
 import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -31,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * It demonstrates how to create a signature token, retrieve the private key,
  * and sign a document with PAdES parameters.
  */
+@Slf4j
 class SignatureTest {
 
     @Test
@@ -64,7 +67,9 @@ class SignatureTest {
 
             final DSSDocument signedDocument = padesService.signDocument(toSignDocument, parameters, signatureValue);
 
-            signedDocument.save("signed-document.pdf");
+            final String targetFilePath = "target/signed-document-" + UUID.randomUUID() + ".pdf";
+            signedDocument.save(targetFilePath);
+            logger.info("Signed document saved to: {}", targetFilePath);
         }
     }
 
