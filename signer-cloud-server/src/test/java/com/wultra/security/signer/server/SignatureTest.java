@@ -27,8 +27,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Temporary Proof of Concept.
- * <br>
  * This class contains a test for signing a PDF document using a PKCS#12 keystore.
  * It demonstrates how to create a signature token, retrieve the private key,
  * and sign a document with PAdES parameters.
@@ -52,38 +50,11 @@ class SignatureTest {
             }
             final DSSPrivateKeyEntry privateKey = keys.get(0);
 
-            final SignatureFieldParameters fieldParameters = new SignatureFieldParameters();
-            fieldParameters.setOriginX(200);
-            fieldParameters.setOriginY(400);
-
-            final SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
-            textParameters.setText("Signed");
-            textParameters.setTextColor(Color.BLUE);
-            textParameters.setBackgroundColor(Color.YELLOW);
-            textParameters.setPadding(20);
-            textParameters.setTextWrapping(TextWrapping.FONT_BASED);
-            textParameters.setSignerTextPosition(SignerTextPosition.LEFT);
-            textParameters.setSignerTextHorizontalAlignment(SignerTextHorizontalAlignment.RIGHT);
-            textParameters.setSignerTextVerticalAlignment(SignerTextVerticalAlignment.TOP);
-
-            final SignatureImageParameters imageParameters = new SignatureImageParameters();
-            imageParameters.setImage(new InMemoryDocument(getClass().getResourceAsStream("/signature-pen.png")));
-            imageParameters.setFieldParameters(fieldParameters);
-            imageParameters.setTextParameters(textParameters);
-
-            final PAdESSignatureParameters parameters = new PAdESSignatureParameters();
-            parameters.setSigningCertificate(privateKey.getCertificate());
-            parameters.setCertificateChain(privateKey.getCertificateChain());
-            // according to ETSI TS 119 312 V1.5.1 (2024-12), shall support SHA-256, SHA-384, SHA-512; should support SHA3
-            // SHA3_384 is not supported by Adobe Acrobat Reader
-            parameters.setDigestAlgorithm(DigestAlgorithm.SHA384);
-            parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
-            // parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_T); to make TSA working
-            parameters.setImageParameters(imageParameters);
+            final PAdESSignatureParameters parameters = createPAdESSignatureParameters(privateKey);
 
             final CertificateVerifier certificateVerifier = new CommonCertificateVerifier();
             final PAdESService padesService = new PAdESService(certificateVerifier);
-            // padesService.setTspSource(createTsa());
+            // padesService.setTspSource(createTsa()); to make TSA working
 
             final ToBeSigned dataToBeSigned = padesService.getDataToSign(toSignDocument, parameters);
 
@@ -104,6 +75,47 @@ class SignatureTest {
         final byte[] digestValue = DSSUtils.digest(digestAlgorithm, "Test data".getBytes());
         final TimestampBinary timestampToken = tspSource.getTimeStampResponse(digestAlgorithm, digestValue);
         System.out.println(DSSUtils.toHex(timestampToken.getBytes()));
+    }
+
+    private static PAdESSignatureParameters createPAdESSignatureParameters(final DSSPrivateKeyEntry privateKey) {
+        final PAdESSignatureParameters parameters = new PAdESSignatureParameters();
+        parameters.setSigningCertificate(privateKey.getCertificate());
+        parameters.setCertificateChain(privateKey.getCertificateChain());
+        // according to ETSI TS 119 312 V1.5.1 (2024-12), shall support SHA-256, SHA-384, SHA-512; should support SHA3
+        // SHA3_384 is not supported by Adobe Acrobat Reader
+        parameters.setDigestAlgorithm(DigestAlgorithm.SHA384);
+        parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        // parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_T); to make TSA working
+        parameters.setImageParameters(createSignatureImageParameters());
+        return parameters;
+    }
+
+    private static SignatureImageParameters createSignatureImageParameters() {
+        final SignatureImageParameters imageParameters = new SignatureImageParameters();
+        imageParameters.setImage(new InMemoryDocument(SignatureTest.class.getResourceAsStream("/signature-pen.png")));
+        imageParameters.setFieldParameters(createSignatureFieldParameters());
+        imageParameters.setTextParameters(createSignatureImageTextParameters());
+        return imageParameters;
+    }
+
+    private static SignatureFieldParameters createSignatureFieldParameters() {
+        final SignatureFieldParameters fieldParameters = new SignatureFieldParameters();
+        fieldParameters.setOriginX(200);
+        fieldParameters.setOriginY(400);
+        return fieldParameters;
+    }
+
+    private static SignatureImageTextParameters createSignatureImageTextParameters() {
+        final SignatureImageTextParameters textParameters = new SignatureImageTextParameters();
+        textParameters.setText("Signed");
+        textParameters.setTextColor(Color.BLUE);
+        textParameters.setBackgroundColor(Color.YELLOW);
+        textParameters.setPadding(20);
+        textParameters.setTextWrapping(TextWrapping.FONT_BASED);
+        textParameters.setSignerTextPosition(SignerTextPosition.LEFT);
+        textParameters.setSignerTextHorizontalAlignment(SignerTextHorizontalAlignment.RIGHT);
+        textParameters.setSignerTextVerticalAlignment(SignerTextVerticalAlignment.TOP);
+        return textParameters;
     }
 
     private static TSPSource createTsa() {
