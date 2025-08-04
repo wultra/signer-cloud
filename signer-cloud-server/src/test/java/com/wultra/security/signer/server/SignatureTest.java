@@ -1,5 +1,6 @@
 package com.wultra.security.signer.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europa.esig.dss.enumerations.*;
 import eu.europa.esig.dss.model.*;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
@@ -9,12 +10,15 @@ import eu.europa.esig.dss.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
+import eu.europa.esig.dss.simplereport.SimpleReport;
 import eu.europa.esig.dss.spi.DSSUtils;
 import eu.europa.esig.dss.spi.validation.CertificateVerifier;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import eu.europa.esig.dss.spi.x509.tsp.TSPSource;
 import eu.europa.esig.dss.token.DSSPrivateKeyEntry;
 import eu.europa.esig.dss.token.Pkcs12SignatureToken;
+import eu.europa.esig.dss.validation.SignedDocumentValidator;
+import eu.europa.esig.dss.validation.reports.Reports;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
@@ -70,7 +74,17 @@ class SignatureTest {
             final String targetFilePath = "target/signed-document-" + UUID.randomUUID() + ".pdf";
             signedDocument.save(targetFilePath);
             logger.info("Signed document saved to: {}", targetFilePath);
+
+            validateDocument(signedDocument, certificateVerifier);
         }
+    }
+
+    private static void validateDocument(final DSSDocument signedDocument, final CertificateVerifier certificateVerifier) throws Exception {
+        final SignedDocumentValidator documentValidator = SignedDocumentValidator.fromDocument(signedDocument);
+        documentValidator.setCertificateVerifier(certificateVerifier);
+        final Reports reports = documentValidator.validateDocument();
+        final SimpleReport simpleReport = reports.getSimpleReport();
+        logger.info("Validation report: {}", new ObjectMapper().writeValueAsString(simpleReport.getJaxbModel()));
     }
 
     @Test
