@@ -1,0 +1,39 @@
+@startuml
+
+class sc_signer {
+    ID bigint PK
+    timestamp_created timestamp
+    timestamp_last_updated timestamp
+    signer_id varchar unique
+    user_id varchar
+    csr CLOB
+    certificate CLOB 'move certificate into separate table?
+    timestamp_certificate_expiration timestamp
+    signer_status varchar ACTIVE/BLOCKED/REMOVED/REVOKED
+}
+
+class sc_document {
+    ID bigint PK
+    timestamp_created timestamp
+    timestamp_last_updated timestamp
+    document_id varchar unique
+    sc_signer_id bigint FK 'or signer_id from response?
+    external_id varchar
+    document_name varchar
+    file_name varchar
+    file_size bigint 'maybe just int is enough?
+    sc_document_content_id bigint FK
+    hash varchar
+    document_status varchar WAITING/REJECTED/SIGNED
+    signature varchar
+}
+
+class sc_document_content {
+    ID bigint PK
+    content BLOB
+}
+
+sc_document "sc_signer_id" --> sc_signer
+sc_document "sc_document_content_id" --> sc_document_content
+
+@enduml
