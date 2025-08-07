@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <!-- sc_signer table -->
+    <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sequenceExists sequenceName="sc_signer_seq"/>
+            </not>
+        </preConditions>
+        <comment>Create a new sequence sc_signer_seq</comment>
+        <createSequence sequenceName="sc_signer_seq" startValue="1" incrementBy="1" cacheSize="20"/>
+        <rollback>
+            <dropSequence sequenceName="sc_signer_seq"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="2" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="sc_signer"/>
+            </not>
+        </preConditions>
+        <comment>Create a new table sc_signer</comment>
+        <createTable tableName="sc_signer">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="timestamp_created" type="timestamp(6)">
+                <constraints nullable="false" />
+            </column>
+            <column name="timestamp_last_updated" type="timestamp(6)">
+                <constraints nullable="false" />
+            </column>
+            <column name="signer_external_id" type="varchar(255)">
+                <constraints nullable="false" unique="true"  uniqueConstraintName="sc_signer_external_id_uk" />
+            </column>
+            <column name="user_id" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="csr" type="clob">
+                <constraints nullable="false" />
+            </column>
+            <column name="certificate" type="clob" />
+            <column name="timestamp_certificate_expiration" type="timestamp(6)" />
+            <column name="signer_status" type="integer">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="sc_signer" cascadeConstraints="true"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="3" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="sc_signer_timestamp_certificate_expiration_idx"/>
+            </not>
+        </preConditions>
+        <comment>Create a new index sc_signer_timestamp_certificate_expiration_idx</comment>
+        <createIndex tableName="sc_signer" indexName="sc_signer_timestamp_certificate_expiration_idx">
+            <column name="timestamp_certificate_expiration" />
+        </createIndex>
+        <rollback>
+            <dropIndex indexName="sc_signer_timestamp_certificate_expiration_idx" tableName="sc_signer"/>
+        </rollback>
+    </changeSet>
+
+    <!-- sc_document_content table -->
+    <changeSet id="4" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sequenceExists sequenceName="sc_document_content_seq"/>
+            </not>
+        </preConditions>
+        <comment>Create a new sequence sc_document_content_seq</comment>
+        <createSequence sequenceName="sc_document_content_seq" startValue="1" incrementBy="1" cacheSize="20"/>
+        <rollback>
+            <dropSequence sequenceName="sc_document_content_seq"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="5" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="sc_document_content"/>
+            </not>
+        </preConditions>
+        <comment>Create a new table sc_document_content</comment>
+        <createTable tableName="sc_document_content">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="content" type="blob">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+        <rollback>
+            <dropTable tableName="sc_document_content" cascadeConstraints="true"/>
+        </rollback>
+    </changeSet>
+
+    <!-- sc_document table -->
+    <changeSet id="6" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sequenceExists sequenceName="sc_document_seq"/>
+            </not>
+        </preConditions>
+        <comment>Create a new sequence sc_document_seq</comment>
+        <createSequence sequenceName="sc_document_seq" startValue="1" incrementBy="1" cacheSize="20"/>
+        <rollback>
+            <dropSequence sequenceName="sc_document_seq"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="7" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="sc_document"/>
+            </not>
+        </preConditions>
+        <comment>Create a new table sc_document</comment>
+        <createTable tableName="sc_document">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="timestamp_created" type="timestamp(6)">
+                <constraints nullable="false" />
+            </column>
+            <column name="timestamp_last_updated" type="timestamp(6)">
+                <constraints nullable="false" />
+            </column>
+            <column name="document_id" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="signer_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="sc_document_signer_id_fk" referencedTableName="sc_signer" referencedColumnNames="id" />
+            </column>
+            <column name="external_id" type="varchar(255)" />
+            <column name="document_name" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="file_name" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="file_size" type="integer">
+                <constraints nullable="false" />
+            </column>
+            <column name="document_content_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="sc_document_document_content_id_fk" referencedTableName="sc_document_content" referencedColumnNames="id" />
+            </column>
+            <column name="hash" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="document_status" type="integer">
+                <constraints nullable="false" />
+            </column>
+            <column name="signature" type="varchar(255)" />
+        </createTable>
+        <rollback>
+            <dropTable tableName="sc_document" cascadeConstraints="true"/>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>
