@@ -28,9 +28,7 @@
             <column name="timestamp_created" type="timestamp(6)">
                 <constraints nullable="false" />
             </column>
-            <column name="timestamp_last_updated" type="timestamp(6)">
-                <constraints nullable="false" />
-            </column>
+            <column name="timestamp_last_updated" type="timestamp(6)" />
             <column name="signer_external_id" type="varchar(255)">
                 <constraints nullable="false" unique="true"  uniqueConstraintName="sc_signer_external_id_uk" />
             </column>
@@ -113,9 +111,7 @@
             <column name="timestamp_created" type="timestamp(6)">
                 <constraints nullable="false" />
             </column>
-            <column name="timestamp_last_updated" type="timestamp(6)">
-                <constraints nullable="false" />
-            </column>
+            <column name="timestamp_last_updated" type="timestamp(6)" />
             <column name="document_id" type="varchar(255)">
                 <constraints nullable="false" />
             </column>
