@@ -40,7 +40,7 @@
             </column>
             <column name="certificate" type="clob" />
             <column name="timestamp_certificate_expiration" type="timestamp(6)" />
-            <column name="signer_status" type="integer">
+            <column name="signer_status" type="varchar(50)">
                 <constraints nullable="false" />
             </column>
         </createTable>
@@ -134,7 +134,7 @@
             <column name="hash" type="varchar(255)">
                 <constraints nullable="false" />
             </column>
-            <column name="document_status" type="integer">
+            <column name="document_status" type="varchar(50)">
                 <constraints nullable="false" />
             </column>
             <column name="signature" type="varchar(255)" />
