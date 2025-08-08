@@ -79,15 +79,10 @@ class SignatureTest {
 
             final ToBeSigned dataToBeSigned = padesService.getDataToSign(toSignDocument, parameters);
 
-            final SignatureValue signatureValue;
-            if (signatureType == SignatureType.DSS) {
-                signatureValue = signingToken.sign(dataToBeSigned, parameters.getSignatureAlgorithm(), privateKey);
-            } else if (signatureType == SignatureType.EXTERNAL) {
-                final byte[] signatureBytes = signExternally(dataToBeSigned.getBytes());
-                signatureValue = new SignatureValue(parameters.getSignatureAlgorithm(), signatureBytes);
-            } else {
-                throw new IllegalArgumentException("Unsupported signature type: " + signatureType);
-            }
+            final SignatureValue signatureValue = switch (signatureType) {
+                case DSS -> signingToken.sign(dataToBeSigned, parameters.getSignatureAlgorithm(), privateKey);
+                case EXTERNAL -> new SignatureValue(parameters.getSignatureAlgorithm(), signExternally(dataToBeSigned.getBytes()));
+            };
 
             assertTrue(padesService.isValidSignatureValue(dataToBeSigned, signatureValue, privateKey.getCertificate()));
 
