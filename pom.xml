@@ -18,7 +18,7 @@
     <description>Signer Cloud</description>
 
     <properties>
-        <dss.version>6.2</dss.version>
+        <dss.version>6.3</dss.version>
     </properties>
 
     <modules>
