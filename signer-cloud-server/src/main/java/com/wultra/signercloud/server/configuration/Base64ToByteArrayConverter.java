@@ -15,27 +15,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.ejbca;
+package com.wultra.signercloud.server.configuration;
 
-import com.wultra.core.rest.client.base.RestClientConfiguration;
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
+import java.util.Base64;
 
 /**
- * EJBCA configuration properties.
+ * Specialization of {@link Converter} for converting Base64 encoded strings to byte arrays.
+ * This is used for converting Base64 encoded properties in the configuration.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@ConfigurationProperties(prefix = "signer-cloud.server.ejbca")
-@Getter
-@Setter
-public class EjbcaConfigurationProperties {
-    private RestClientConfiguration restClientConfiguration;
-
-    private String certificateProfileName;
-
-    private String endEntityProfileName;
-
-    private String certificateAuthorityName;
+@Component
+@ConfigurationPropertiesBinding
+class Base64ToByteArrayConverter implements Converter<String, byte[]> {
+    @Override
+    public byte[] convert(final String source) {
+        return Base64.getDecoder().decode(source);
+    }
 }

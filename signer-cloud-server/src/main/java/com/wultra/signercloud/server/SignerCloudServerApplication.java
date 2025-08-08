@@ -20,7 +20,7 @@ package com.wultra.signercloud.server;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
 import java.security.Security;
 
@@ -30,7 +30,7 @@ import java.security.Security;
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 @SpringBootApplication
-@EnableConfigurationProperties
+@ConfigurationPropertiesScan
 public class SignerCloudServerApplication {
 
     public static void main(String[] args) {
