@@ -25,7 +25,10 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.awt.*;
 import java.io.File;
+import java.io.FileInputStream;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.Signature;
 import java.util.List;
 import java.util.UUID;
 
@@ -35,22 +38,33 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * This class contains a test for signing a PDF document using a PKCS#12 keystore.
  * It demonstrates how to create a signature token, retrieve the private key,
- * and sign a document with PAdES parameters.
+ * and sign a document with PAdES parameters using the DSS (Digital Signature Service) library over Apache PDFBox.
  */
 @Slf4j
 class SignatureTest {
 
+    private static final String KEYSTORE_PASSWORD = "password";
+    private static final String KEYSTORE_ECDSA_P_12 = "keystore-ecdsa.p12";
+
     @Test
-    void testSignature() throws Exception {
+    void testDssSignature() throws Exception {
+        testSignature(SignatureType.DSS);
+    }
+
+    @Test
+    void testExternalSignature() throws Exception {
+        testSignature(SignatureType.EXTERNAL);
+    }
+
+    private void testSignature(final SignatureType signatureType) throws Exception {
         final File pdfFile = new ClassPathResource("input.pdf").getFile();
         final DSSDocument toSignDocument = new FileDocument(pdfFile);
 
         // keytool -genkeypair -alias myAlias -keyalg RSA -keysize 2048 -keystore keystore-rsa.p12 -storetype PKCS12 -validity 365
         // keytool -genkeypair -alias myAlias -keyalg EC -groupname secp384r1 -keystore keystore-ecdsa.p12 -storetype PKCS12 -validity 365
-        final File pkcs12File = new ClassPathResource("keystore-ecdsa.p12").getFile();
-        final String password = "password";
+        final File pkcs12File = new ClassPathResource(KEYSTORE_ECDSA_P_12).getFile();
 
-        try (final Pkcs12SignatureToken signingToken = new Pkcs12SignatureToken(pkcs12File, new KeyStore.PasswordProtection(password.toCharArray()))) {
+        try (final Pkcs12SignatureToken signingToken = new Pkcs12SignatureToken(pkcs12File, new KeyStore.PasswordProtection(KEYSTORE_PASSWORD.toCharArray()))) {
             final List<DSSPrivateKeyEntry> keys = signingToken.getKeys();
             if (keys.isEmpty()) {
                 fail("No private key found in the provided PKCS#12 file.");
@@ -65,7 +79,15 @@ class SignatureTest {
 
             final ToBeSigned dataToBeSigned = padesService.getDataToSign(toSignDocument, parameters);
 
-            final SignatureValue signatureValue = signingToken.sign(dataToBeSigned, parameters.getDigestAlgorithm(), privateKey);
+            final SignatureValue signatureValue;
+            if (signatureType == SignatureType.DSS) {
+                signatureValue = signingToken.sign(dataToBeSigned, parameters.getSignatureAlgorithm(), privateKey);
+            } else if (signatureType == SignatureType.EXTERNAL) {
+                final byte[] signatureBytes = signExternally(dataToBeSigned.getBytes());
+                signatureValue = new SignatureValue(parameters.getSignatureAlgorithm(), signatureBytes);
+            } else {
+                throw new IllegalArgumentException("Unsupported signature type: " + signatureType);
+            }
 
             assertTrue(padesService.isValidSignatureValue(dataToBeSigned, signatureValue, privateKey.getCertificate()));
 
@@ -73,10 +95,26 @@ class SignatureTest {
 
             final String targetFilePath = "target/signed-document-" + UUID.randomUUID() + ".pdf";
             signedDocument.save(targetFilePath);
-            logger.info("Signed document saved to: {}", targetFilePath);
+            logger.info("Signed document saved to: {}, signatureType={}", targetFilePath, signatureType);
 
             validateDocument(signedDocument, certificateVerifier);
         }
+    }
+
+    /**
+     * Simulates signing externally via SDK, when DSS does not know the private key.
+     */
+    private byte[] signExternally(final byte[] dataToBeSigned) throws Exception {
+        final KeyStore keyStore = KeyStore.getInstance("PKCS12");
+        try (final FileInputStream inputStream = new FileInputStream(new ClassPathResource(KEYSTORE_ECDSA_P_12).getFile())) {
+            keyStore.load(inputStream, KEYSTORE_PASSWORD.toCharArray());
+        }
+
+        final PrivateKey privateKey = (PrivateKey) keyStore.getKey("myAlias", KEYSTORE_PASSWORD.toCharArray());
+        final Signature signature = Signature.getInstance("SHA384withECDSA");
+        signature.initSign(privateKey);
+        signature.update(dataToBeSigned);
+        return signature.sign();
     }
 
     private static void validateDocument(final DSSDocument signedDocument, final CertificateVerifier certificateVerifier) throws Exception {
@@ -142,5 +180,10 @@ class SignatureTest {
         final OnlineTSPSource onlineTSPSource = new OnlineTSPSource(tspServer);
         onlineTSPSource.setDataLoader(new TimestampDataLoader());
         return onlineTSPSource;
+    }
+
+    enum SignatureType {
+        DSS,
+        EXTERNAL
     }
 }
