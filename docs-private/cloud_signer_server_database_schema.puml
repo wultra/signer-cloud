@@ -5,7 +5,7 @@ hide circle
 class sc_signer {
     ID bigint PK
     timestamp_created timestamp(6) NN
-    timestamp_last_updated timestamp(6) NN
+    timestamp_last_updated timestamp(6)
     signer_external_id varchar(255) U NN
     user_id varchar(255) NN
     csr CLOB NN
@@ -17,7 +17,7 @@ class sc_signer {
 class sc_document {
     ID bigint PK
     timestamp_created timestamp(6) NN
-    timestamp_last_updated timestamp(6) NN
+    timestamp_last_updated timestamp(6)
     document_id varchar(255) U NN
     signer_id bigint FK
     external_id varchar(255)

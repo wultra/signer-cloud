@@ -113,7 +113,7 @@
             </column>
             <column name="timestamp_last_updated" type="timestamp(6)" />
             <column name="document_id" type="varchar(255)">
-                <constraints nullable="false" />
+                <constraints nullable="false" unique="true"  uniqueConstraintName="sc_document_id_uk" />
             </column>
             <column name="signer_id" type="bigint">
                 <constraints nullable="false" foreignKeyName="sc_document_signer_id_fk" referencedTableName="sc_signer" referencedColumnNames="id" />
