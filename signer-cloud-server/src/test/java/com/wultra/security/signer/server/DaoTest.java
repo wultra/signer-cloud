@@ -9,6 +9,7 @@ import com.wultra.signercloud.server.repository.DocumentRepository;
 import com.wultra.signercloud.server.repository.SignerRepository;
 import com.wultra.signercloud.server.status.DocumentStatus;
 import com.wultra.signercloud.server.status.SignerStatus;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,7 +35,14 @@ public class DaoTest {
 
     /**
      * Tests all DAO save operations.
+     * It is disabled because it requires a running database.
+     * You can set up a database locally by these commands (from the project root directory):
+     * <pre> <code>
+     * docker run --name postgres-liquibase -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=testdb -p 5432:5432 -d postgres:16
+     * liquibase --url="jdbc:postgresql://localhost:5432/testdb" --username=postgres --password=postgres --changeLogFile=docs/db/changelog/changesets/signer-cloud-server/db.changelog-module.xml update
+     * </code> </pre>
      */
+    @Disabled
     @Test
     public void testSave() {
         // create a new signer
