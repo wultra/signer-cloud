@@ -20,6 +20,7 @@ package com.wultra.signercloud.server.configuration;
 import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.stereotype.Component;
+
 import java.util.Base64;
 
 /**

@@ -19,8 +19,11 @@ package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.DefaultRestClient;
 import com.wultra.core.rest.client.base.RestClient;
+import com.wultra.core.rest.client.base.RestClientConfiguration;
 import com.wultra.core.rest.client.base.RestClientException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -40,7 +43,23 @@ class EjbcaRestClient {
     private final RestClient restClient;
 
     public EjbcaRestClient(final EjbcaConfigurationProperties properties) throws RestClientException {
+        validateConfiguration(properties.getRestClientConfiguration());
         this.restClient = new DefaultRestClient(properties.getRestClientConfiguration());
+    }
+
+    private void validateConfiguration(final RestClientConfiguration restClientConfiguration) {
+        if (restClientConfiguration.isCertificateAuthEnabled()) {
+            // unfortunately, wultra-core 1.12.0 validates only non-null values, so we need to check manually non-blank ENV
+            if (StringUtils.isBlank(restClientConfiguration.getKeyStorePassword())) {
+                throw new BeanCreationException("Keystore password is not configured");
+            }
+            if (StringUtils.isBlank(restClientConfiguration.getKeyAlias())) {
+                throw new BeanCreationException("Keystore key alias is not configured");
+            }
+            if (StringUtils.isBlank(restClientConfiguration.getKeyPassword())) {
+                throw new BeanCreationException("Keystore key password is not configured");
+            }
+        }
     }
 
     public CertificateResponse callPkcs10Enroll(final CertificateRequest request) throws RestClientException {
