@@ -35,6 +35,11 @@
             <artifactId>dss-utils-apache-commons</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-cms-object</artifactId>
+        </dependency>
+
         <!--  Test dependencies  -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -45,6 +50,12 @@
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-validation</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-policy-jaxb</artifactId>
             <scope>test</scope>
         </dependency>
 
