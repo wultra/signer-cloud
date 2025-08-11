@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.time.Instant;
 
@@ -30,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
  */
 @Disabled
 @SpringBootTest(classes = SignerCloudServerApplication.class)
+@ActiveProfiles("dev")
 public class DaoTest {
 
     @Autowired
