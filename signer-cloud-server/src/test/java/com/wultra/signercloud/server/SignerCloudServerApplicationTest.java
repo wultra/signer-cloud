@@ -19,6 +19,7 @@ package com.wultra.signercloud.server;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
  * Test for context loading.
@@ -26,6 +27,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 @SpringBootTest
+@ActiveProfiles("test")
 class SignerCloudServerApplicationTest {
 
     @Test
