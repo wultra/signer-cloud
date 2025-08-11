@@ -19,15 +19,14 @@ package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.RestClientException;
 import lombok.AllArgsConstructor;
-import org.bouncycastle.cert.X509CertificateHolder;
-import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
-import org.bouncycastle.openssl.PEMParser;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.StringReader;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.Base64;
 
 /**
  * Service for calling EJBCA functionality.
@@ -60,24 +59,18 @@ public class EjbcaService {
                 .build();
 
         final CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(request);
-        if (!"PEM".equals(certificateResponse.responseFormat())) {
+        if (!"DER".equals(certificateResponse.responseFormat())) {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
         }
 
-        return convertPemToX509Certificate(certificateResponse.certificate());
+        return convertDerToX509Certificate(certificateResponse.certificate());
     }
 
-    private static X509Certificate convertPemToX509Certificate(final String pemCertificate) throws IOException, CertificateException {
-        try (final PEMParser pemParser = new PEMParser(new StringReader(pemCertificate))) {
-            final Object parsedObj = pemParser.readObject();
-
-            if (parsedObj instanceof X509CertificateHolder x509CertificateHolder) {
-                return new JcaX509CertificateConverter()
-                        .setProvider("BC")
-                        .getCertificate(x509CertificateHolder);
-            } else {
-                throw new IllegalArgumentException("Invalid PEM content: not an X.509 certificate");
-            }
+    private static X509Certificate convertDerToX509Certificate(final String derCertificateBase64) throws IOException, CertificateException {
+        final byte[] derCertificate = Base64.getDecoder().decode(derCertificateBase64);
+        final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+        try (final ByteArrayInputStream inputStream = new ByteArrayInputStream(derCertificate)) {
+            return (X509Certificate) certificateFactory.generateCertificate(inputStream);
         }
     }
 }
