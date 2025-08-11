@@ -43,23 +43,24 @@ class EjbcaServiceIT {
 
     @Test
     void testEnrollCertificate() throws Exception {
+        // openssl req -sha512 -new -subj "/C=CZ/O=Wultra SMOKE/CN=John Doe" -key wultra.com.key -out wultra.com.csr
+        // openssl asn1parse -i -in wultra.com.csr
         final String csr = """
                 -----BEGIN CERTIFICATE REQUEST-----
-                MIICrjCCAZYCAQAwaTELMAkGA1UEBhMCQ1MxGzAZBgNVBAgMElRoZSBDemVjaCBS
-                ZXB1YmxpYzEPMA0GA1UEBwwGUHJhZ3VlMRUwEwYDVQQKDAxXdWx0cmEsIEluYy4x
-                FTATBgNVBAMMDCoud3VsdHJhLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCC
-                AQoCggEBAKPiSmc+mzn9SCf7G84WBK6MmPxPlDT38cL8hWNkYGp7p8sxb+Kynx/G
-                bzEhvscLsuxlawQ/5hyDAO2Pg9860fo02lLZxOAfme9W6IYH/ZIke4sEly670WIp
-                cCXRbAwMc6GFwcIxyNywrvgwwcMmhJKcysu0sZ0RpB1j2fRfmes4LedlUqfb/R4w
-                pyZRIp5dW9kOT3v1mHaGuMy9iRSB8QRRHsoSuNX8HxAKzP80IRlbs4Kn1SBcpQKI
-                U6Y4R4YwkLas83JS+OMeLTDBeAWVAGsCGARc3Z9io39K66QNDwwgxAeqUWF5xB9H
-                XSHyPNxl072lddjiQ4S6YWMVwlgZWjcCAwEAAaAAMA0GCSqGSIb3DQEBDQUAA4IB
-                AQAwUJE9g0huEeW9QFAFQ9bBOPSwnCFTdbCua06xJIOH073iPwHQQ3ECIelaoOHS
-                poyWTNl/aumpN0D1qjM9OHxBv8te9aAHweWOjG4fdm/S3Qyhx/zTap0tLBWBolPI
-                7QbrA8pH5gpoMwTsT267hyYbQEaXyxn/ywK6Ev2etG4l7xh6aI4WDkwbgGzgTHwZ
-                uba+K2iCssb3jK4kwoPF4WARmCwCs1g9+Q+HNN5GnEnhgHN9Uc2q4JZgx7/+jkja
-                Pt0NeqcctnwtR+DbziukYzGdgJabFSXpQkRRf6vhgVm/350QXjFLpfBkEDKJtiS8
-                cAuJQRzaWMiNnSXwsFSNvuQh
+                MIICfDCCAWQCAQAwNzELMAkGA1UEBhMCQ1oxFTATBgNVBAoMDFd1bHRyYSBTTU9L
+                RTERMA8GA1UEAwwISm9obiBEb2UwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEK
+                AoIBAQCj4kpnPps5/Ugn+xvOFgSujJj8T5Q09/HC/IVjZGBqe6fLMW/isp8fxm8x
+                Ib7HC7LsZWsEP+YcgwDtj4PfOtH6NNpS2cTgH5nvVuiGB/2SJHuLBJcuu9FiKXAl
+                0WwMDHOhhcHCMcjcsK74MMHDJoSSnMrLtLGdEaQdY9n0X5nrOC3nZVKn2/0eMKcm
+                USKeXVvZDk979Zh2hrjMvYkUgfEEUR7KErjV/B8QCsz/NCEZW7OCp9UgXKUCiFOm
+                OEeGMJC2rPNyUvjjHi0wwXgFlQBrAhgEXN2fYqN/SuukDQ8MIMQHqlFhecQfR10h
+                8jzcZdO9pXXY4kOEumFjFcJYGVo3AgMBAAGgADANBgkqhkiG9w0BAQ0FAAOCAQEA
+                XUlodDJd1MSwvMsaO9lDhu1eT2E4lziXQnl5wp+pwHwyRtLHVle+A1jd+RU7vYJ6
+                XMV+0uzreVwh7GqtYq/knfo6Xf+cnt3KtHy8HxXLjPZ4AYiuRNXcXIpMO4tLJeky
+                KIldFzOoMc4EJFQVTyrYKmj5KEPuwlqCRw5E4LdOanEbayQss+xP4wt4hfMIYgdG
+                dkxiqv4Q2U4ORLWrq0ZqyWdz1bfgjfwxudmb+HcXURwtUpQSoza63WWWw0YbxjDK
+                Co5GHQEP3jrFuF/KQoUy1wuHv86xquuZp7aohlwpBUokJ/0BVXiB729/zKjECOWm
+                kDjqUncVL0qPIOsk6yrjhw==
                 -----END CERTIFICATE REQUEST-----
                 """;
 
