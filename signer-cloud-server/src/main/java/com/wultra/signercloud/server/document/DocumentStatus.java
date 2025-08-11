@@ -15,15 +15,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.repository;
-
-import com.wultra.signercloud.server.dao.Signer;
-import org.springframework.data.repository.CrudRepository;
+package com.wultra.signercloud.server.document;
 
 /**
- * Repository for accessing a {@link Signer}.
+ * Enum representing the status of a {@link Document} in the signing process.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface SignerRepository extends CrudRepository<Signer, Long> {
+public enum DocumentStatus {
+    /**
+     * Document is uploaded and is waiting for signature
+     */
+    WAITING,
+
+    /**
+     * Document was rejected by signer
+     */
+    REJECTED,
+
+    /**
+     * Document is signed
+     */
+    SIGNED
 }

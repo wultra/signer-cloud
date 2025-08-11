@@ -15,27 +15,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.dao;
+package com.wultra.signercloud.server.document;
 
-import lombok.Builder;
-import lombok.Getter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Sequence;
-import org.springframework.data.relational.core.mapping.Table;
+import org.springframework.data.repository.CrudRepository;
 
 /**
- * Data Access Object for the <code>sc_document_content</code> table.
+ * Repository for accessing a {@link Document}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Getter
-@Builder
-@Table("sc_document_content")
-public class DocumentContent {
-
-    @Id
-    @Sequence("sc_document_content_seq")
-    private long id;
-
-    private byte[] content;
+public interface DocumentRepository extends CrudRepository<Document, Long> {
 }

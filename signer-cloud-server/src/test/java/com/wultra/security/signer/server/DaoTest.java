@@ -1,14 +1,14 @@
 package com.wultra.security.signer.server;
 
 import com.wultra.signercloud.server.SignerCloudServerApplication;
-import com.wultra.signercloud.server.dao.Document;
-import com.wultra.signercloud.server.dao.DocumentContent;
-import com.wultra.signercloud.server.dao.Signer;
-import com.wultra.signercloud.server.repository.DocumentContentRepository;
-import com.wultra.signercloud.server.repository.DocumentRepository;
-import com.wultra.signercloud.server.repository.SignerRepository;
-import com.wultra.signercloud.server.status.DocumentStatus;
-import com.wultra.signercloud.server.status.SignerStatus;
+import com.wultra.signercloud.server.document.Document;
+import com.wultra.signercloud.server.document.DocumentContent;
+import com.wultra.signercloud.server.signer.Signer;
+import com.wultra.signercloud.server.document.DocumentContentRepository;
+import com.wultra.signercloud.server.document.DocumentRepository;
+import com.wultra.signercloud.server.signer.SignerRepository;
+import com.wultra.signercloud.server.document.DocumentStatus;
+import com.wultra.signercloud.server.signer.SignerStatus;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

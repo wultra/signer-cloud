@@ -15,31 +15,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.status;
+package com.wultra.signercloud.server.signer;
+
+import org.springframework.data.repository.CrudRepository;
 
 /**
- * Enum representing the status of a {@link com.wultra.signercloud.server.dao.Signer}.
+ * Repository for accessing a {@link Signer}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public enum SignerStatus {
-    /**
-     * Signer can sign documents.
-     */
-    ACTIVE,
-
-    /**
-     * Signer cannot sign documents. It can be moved back to ACTIVE.
-     */
-    BLOCKED,
-
-    /**
-     * Signer cannot sign documents, but certificate stays active until its expiration.
-     */
-    REMOVED,
-
-    /**
-     * Signer cannot sign documents and certificate is immediately revoked.
-     */
-    REVOKED
+public interface SignerRepository extends CrudRepository<Signer, Long> {
 }

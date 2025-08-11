@@ -15,26 +15,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.status;
+package com.wultra.signercloud.server.signer;
 
 /**
- * Enum representing the status of a {@link com.wultra.signercloud.server.dao.Document} in the signing process.
+ * Enum representing the status of a {@link Signer}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public enum DocumentStatus {
+public enum SignerStatus {
     /**
-     * Document is uploaded and is waiting for signature
+     * Signer can sign documents.
      */
-    WAITING,
+    ACTIVE,
 
     /**
-     * Document was rejected by signer
+     * Signer cannot sign documents. It can be moved back to ACTIVE.
      */
-    REJECTED,
+    BLOCKED,
 
     /**
-     * Document is signed
+     * Signer cannot sign documents, but certificate stays active until its expiration.
      */
-    SIGNED
+    REMOVED,
+
+    /**
+     * Signer cannot sign documents and certificate is immediately revoked.
+     */
+    REVOKED
 }
