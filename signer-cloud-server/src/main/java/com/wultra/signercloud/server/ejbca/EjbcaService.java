@@ -38,7 +38,7 @@ import java.security.cert.X509Certificate;
 @AllArgsConstructor
 public class EjbcaService {
 
-    private EjbcaRestClient ejbcaRestClient;
+    private final EjbcaRestClient ejbcaRestClient;
 
     private EjbcaConfigurationProperties configurationProperties;
 
