@@ -1,18 +1,45 @@
+/*
+ * Signer Cloud
+ * Copyright (C) 2025 Wultra s.r.o.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
 package com.wultra.signercloud.server.status;
 
 /**
- * Enum representing the status of a signer.
+ * Enum representing the status of a {@link com.wultra.signercloud.server.dao.Signer}.
  *
- * <ul>
- *   <li>ACTIVE - Signer can sign documents</li>
- *   <li>BLOCKED - Signer cannot sign documents. It can be moved back to ACTIVE</li>
- *   <li>REMOVED - Signer cannot sign documents, but certificate stays active until its expiration</li>
- *   <li>REVOKED - Signer cannot sign documents and certificate is immediately revoked</li>
- * </ul>
+ * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public enum SignerStatus {
+    /**
+     * Signer can sign documents.
+     */
     ACTIVE,
+
+    /**
+     * Signer cannot sign documents. It can be moved back to ACTIVE.
+     */
     BLOCKED,
+
+    /**
+     * Signer cannot sign documents, but certificate stays active until its expiration.
+     */
     REMOVED,
+
+    /**
+     * Signer cannot sign documents and certificate is immediately revoked.
+     */
     REVOKED
 }
