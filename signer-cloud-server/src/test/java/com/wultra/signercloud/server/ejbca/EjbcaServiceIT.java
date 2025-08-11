@@ -17,12 +17,15 @@
  */
 package com.wultra.signercloud.server.ejbca;
 
+import com.wultra.core.rest.client.base.RestClientException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.security.cert.X509Certificate;
+
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Integration test for {@link EjbcaService}.
@@ -60,8 +63,12 @@ class EjbcaServiceIT {
                 -----END CERTIFICATE REQUEST-----
                 """;
 
-        final X509Certificate x509Certificate = ejbcaService.enrollCertificate(csr);
-        System.out.println(x509Certificate);
-        // TODO (racansky, 2025-08-08) add assertions and client certificate configuration
+        try {
+            final X509Certificate x509Certificate = ejbcaService.enrollCertificate(csr);
+            System.out.println(x509Certificate);
+            // TODO (racansky, 2025-08-08) add assertions and client certificate configuration
+        } catch (final RestClientException e) {
+            fail(e.getResponse());
+        }
     }
 }
