@@ -53,7 +53,7 @@ public class Document {
 
     private String fileName;
 
-    private long fileSize;
+    private int fileSize;
 
     private long documentContentId;
 
