@@ -19,6 +19,7 @@ package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.RestClientException;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayInputStream;
@@ -35,6 +36,7 @@ import java.util.Base64;
  */
 @Service
 @AllArgsConstructor
+@Slf4j
 public class EjbcaService {
 
     private final EjbcaRestClient ejbcaRestClient;
@@ -59,6 +61,7 @@ public class EjbcaService {
                 .build();
 
         final CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(request);
+        logger.info("Got certificate serial number: {}", certificateResponse.serialNumber());
         if (!"DER".equals(certificateResponse.responseFormat())) {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
         }

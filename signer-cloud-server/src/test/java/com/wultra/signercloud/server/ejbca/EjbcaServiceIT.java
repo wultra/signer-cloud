@@ -18,6 +18,7 @@
 package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.RestClientException;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,6 +26,7 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.security.cert.X509Certificate;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -36,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @SpringBootTest
 @ActiveProfiles("dev")
+@Slf4j
 class EjbcaServiceIT {
 
     @Autowired
@@ -65,9 +68,10 @@ class EjbcaServiceIT {
                 """;
 
         try {
-            final X509Certificate x509Certificate = ejbcaService.enrollCertificate(csr);
-            System.out.println(x509Certificate);
-            // TODO (racansky, 2025-08-08) add assertions and client certificate configuration
+            final X509Certificate result = ejbcaService.enrollCertificate(csr);
+            logger.info("Got certificate: {}", result);
+            assertEquals("C=CZ,O=Wultra SMOKE,CN=John Doe", result.getSubjectX500Principal().getName());
+            assertEquals("SHA384withECDSA", result.getSigAlgName());
         } catch (final RestClientException e) {
             fail(e.getResponse());
         }
