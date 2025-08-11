@@ -61,7 +61,7 @@ public class EjbcaService {
                 .build();
 
         final CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(request);
-        logger.info("Got certificate serial number: {}", certificateResponse.serialNumber());
+        logger.info("Got certificate with serial number: {}", certificateResponse.serialNumber());
         if (!"DER".equals(certificateResponse.responseFormat())) {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
         }
