@@ -4,6 +4,7 @@ import com.wultra.signercloud.server.status.SignerStatus;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
@@ -17,6 +18,7 @@ import java.time.Instant;
 public class Signer {
 
     @Id
+    @Sequence("sc_signer_seq")
     private long id;
 
     private Instant timestampCreated;

@@ -22,7 +22,7 @@
         </preConditions>
         <comment>Create a new table sc_signer</comment>
         <createTable tableName="sc_signer">
-            <column name="id" type="bigint" defaultValueComputed="nextval('sc_signer_seq')">
+            <column name="id" type="bigint" >
                 <constraints primaryKey="true" />
             </column>
             <column name="timestamp_created" type="timestamp(6)">
@@ -77,7 +77,7 @@
         </preConditions>
         <comment>Create a new table sc_document_content</comment>
         <createTable tableName="sc_document_content">
-            <column name="id" type="bigint" defaultValueComputed="nextval('sc_document_content_seq')">
+            <column name="id" type="bigint" >
                 <constraints primaryKey="true" />
             </column>
             <column name="content" type="${blob_type}">
@@ -105,7 +105,7 @@
         </preConditions>
         <comment>Create a new table sc_document</comment>
         <createTable tableName="sc_document">
-            <column name="id" type="bigint" defaultValueComputed="nextval('sc_document_seq')" >
+            <column name="id" type="bigint" >
                 <constraints primaryKey="true" />
             </column>
             <column name="timestamp_created" type="timestamp(6)">
