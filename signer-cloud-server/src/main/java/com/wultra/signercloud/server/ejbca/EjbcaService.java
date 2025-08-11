@@ -41,7 +41,7 @@ public class EjbcaService {
 
     private final EjbcaRestClient ejbcaRestClient;
 
-    private EjbcaConfigurationProperties configurationProperties;
+    private final EjbcaConfigurationProperties configurationProperties;
 
     /**
      * Enrolls a certificate using the provided Certificate Signing Request (CSR).
