@@ -11,7 +11,7 @@ class sc_signer {
     csr CLOB NN
     certificate CLOB
     timestamp_certificate_expiration timestamp(6)
-    signer_status integer NN (ACTIVE/BLOCKED/REMOVED/REVOKED)
+    signer_status varchar(50) NN (ACTIVE/BLOCKED/REMOVED/REVOKED)
 }
 
 class sc_document {
@@ -26,7 +26,7 @@ class sc_document {
     file_size integer NN
     document_content_id bigint FK
     hash varchar(255) NN
-    document_status integer NN (WAITING/REJECTED/SIGNED)
+    document_status varchar(50) NN (WAITING/REJECTED/SIGNED)
     signature varchar(255)
 }
 
