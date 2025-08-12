@@ -11,7 +11,7 @@
             </not>
         </preConditions>
         <comment>Create a new sequence sc_signer_seq</comment>
-        <createSequence sequenceName="sc_signer_seq" startValue="1" incrementBy="1" cacheSize="20"/>
+        <createSequence sequenceName="sc_signer_seq" startValue="1" incrementBy="1" cacheSize="50"/>
     </changeSet>
 
     <changeSet id="2" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
@@ -66,7 +66,7 @@
             </not>
         </preConditions>
         <comment>Create a new sequence sc_document_content_seq</comment>
-        <createSequence sequenceName="sc_document_content_seq" startValue="1" incrementBy="1" cacheSize="20"/>
+        <createSequence sequenceName="sc_document_content_seq" startValue="1" incrementBy="1" cacheSize="50"/>
     </changeSet>
 
     <changeSet id="5" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
@@ -94,7 +94,7 @@
             </not>
         </preConditions>
         <comment>Create a new sequence sc_document_seq</comment>
-        <createSequence sequenceName="sc_document_seq" startValue="1" incrementBy="1" cacheSize="20"/>
+        <createSequence sequenceName="sc_document_seq" startValue="1" incrementBy="1" cacheSize="50"/>
     </changeSet>
 
     <changeSet id="7" logicalFilePath="signer-cloud-server/1.0.x/20250807-init-db.xml" author="Michal Rozehnal">
