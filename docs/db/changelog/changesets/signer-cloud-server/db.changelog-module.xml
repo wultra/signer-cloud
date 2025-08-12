@@ -4,8 +4,10 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
                                        https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
+    <property name="now" value="now()" dbms="h2"/>
     <property name="now" value="current_timestamp" dbms="postgresql"/>
 
+    <property name="blob_type" value="blob" dbms="h2"/>
     <property name="blob_type" value="bytea" dbms="postgresql"/>
 
     <include file="1.0.x/db.changelog-version.xml" relativeToChangelogFile="true" />
