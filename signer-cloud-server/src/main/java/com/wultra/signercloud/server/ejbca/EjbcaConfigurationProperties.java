@@ -15,26 +15,27 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server;
+package com.wultra.signercloud.server.ejbca;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-
-import java.security.Security;
+import com.wultra.core.rest.client.base.RestClientConfiguration;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Spring Boot application for the Signer Cloud Server.
+ * EJBCA configuration properties.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@SpringBootApplication
-@ConfigurationPropertiesScan
-public class SignerCloudServerApplication {
+@ConfigurationProperties(prefix = "signer-cloud.server.ejbca")
+@Getter
+@Setter
+public class EjbcaConfigurationProperties {
+    private RestClientConfiguration restClientConfiguration;
 
-    public static void main(String[] args) {
-        Security.addProvider(new BouncyCastleProvider());
-        SpringApplication.run(SignerCloudServerApplication.class, args);
-    }
+    private String certificateProfileName;
+
+    private String endEntityProfileName;
+
+    private String certificateAuthorityName;
 }

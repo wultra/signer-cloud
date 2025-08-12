@@ -16,6 +16,35 @@
     <dependencies>
 
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+
+        <!--  Spring dependencies -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!--  Wultra dependencies -->
+        <dependency>
+            <groupId>io.getlime.core</groupId>
+            <artifactId>rest-client-base</artifactId>
+        </dependency>
+
+        <!--  Bouncy Castle dependencies -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+        </dependency>
+
+        <!--  Digital Signature Service (DSS) dependencies  -->
+        <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-pades-pdfbox</artifactId>
         </dependency>
@@ -33,6 +62,19 @@
         <dependency>
             <groupId>eu.europa.ec.joinup.sd-dss</groupId>
             <artifactId>dss-utils-apache-commons</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-cms-object</artifactId>
+        </dependency>
+
+        <!-- To run on Apple M1 architecture -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <scope>runtime</scope>
+            <classifier>osx-aarch_64</classifier>
         </dependency>
 
         <dependency>
@@ -59,8 +101,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
+            <groupId>eu.europa.ec.joinup.sd-dss</groupId>
+            <artifactId>dss-policy-jaxb</artifactId>
             <scope>test</scope>
         </dependency>
 

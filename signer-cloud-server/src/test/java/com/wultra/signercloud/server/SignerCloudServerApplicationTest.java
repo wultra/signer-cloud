@@ -17,24 +17,21 @@
  */
 package com.wultra.signercloud.server;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-
-import java.security.Security;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 /**
- * Spring Boot application for the Signer Cloud Server.
+ * Test for context loading.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@SpringBootApplication
-@ConfigurationPropertiesScan
-public class SignerCloudServerApplication {
+@SpringBootTest
+@ActiveProfiles("test")
+class SignerCloudServerApplicationTest {
 
-    public static void main(String[] args) {
-        Security.addProvider(new BouncyCastleProvider());
-        SpringApplication.run(SignerCloudServerApplication.class, args);
+    @Test
+    void contextLoads() {
+        // TODO (racansky, 2025-08-01) temporary for context loading until proper tests introduced
     }
 }

@@ -18,7 +18,10 @@
     <description>Signer Cloud</description>
 
     <properties>
-        <dss.version>6.2</dss.version>
+        <wultra-core.version>1.12.0</wultra-core.version>
+
+        <bouncycastle.version>1.81</bouncycastle.version>
+        <dss.version>6.3</dss.version>
     </properties>
 
     <modules>
@@ -27,6 +30,27 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Wultra dependencies -->
+            <dependency>
+                <groupId>io.getlime.core</groupId>
+                <artifactId>rest-client-base</artifactId>
+                <version>${wultra-core.version}</version>
+            </dependency>
+
+            <!-- Bouncy Castle dependencies -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+
+            <!--  Digital Signature Service (DSS) dependencies  -->
             <dependency>
                 <groupId>eu.europa.ec.joinup.sd-dss</groupId>
                 <artifactId>dss-bom</artifactId>

@@ -15,26 +15,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server;
+package com.wultra.signercloud.server.configuration;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
+import org.springframework.boot.context.properties.ConfigurationPropertiesBinding;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.stereotype.Component;
 
-import java.security.Security;
+import java.util.Base64;
 
 /**
- * Spring Boot application for the Signer Cloud Server.
+ * Specialization of {@link Converter} for converting Base64 encoded strings to byte arrays.
+ * This is used for converting Base64 encoded properties in the configuration.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@SpringBootApplication
-@ConfigurationPropertiesScan
-public class SignerCloudServerApplication {
-
-    public static void main(String[] args) {
-        Security.addProvider(new BouncyCastleProvider());
-        SpringApplication.run(SignerCloudServerApplication.class, args);
+@Component
+@ConfigurationPropertiesBinding
+class Base64ToByteArrayConverter implements Converter<String, byte[]> {
+    @Override
+    public byte[] convert(final String source) {
+        return Base64.getDecoder().decode(source);
     }
 }

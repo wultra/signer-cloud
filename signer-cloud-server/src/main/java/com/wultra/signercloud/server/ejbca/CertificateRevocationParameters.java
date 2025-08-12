@@ -15,26 +15,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server;
+package com.wultra.signercloud.server.ejbca;
 
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
-
-import java.security.Security;
+import lombok.Builder;
 
 /**
- * Spring Boot application for the Signer Cloud Server.
+ * Parameter object for revoking a certificate in EJBCA, {@link EjbcaRestClient#revokeCertificate(CertificateRevocationParameters)}
  *
+ * @param issuerDn Subject DN of the issuing CA.
+ * @param certificateSerialNumber The hex serial number (without prefix, e.g. '00') of the certificate to be revoked
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@SpringBootApplication
-@ConfigurationPropertiesScan
-public class SignerCloudServerApplication {
-
-    public static void main(String[] args) {
-        Security.addProvider(new BouncyCastleProvider());
-        SpringApplication.run(SignerCloudServerApplication.class, args);
-    }
+@Builder
+record CertificateRevocationParameters(
+        String issuerDn,
+        String certificateSerialNumber
+) {
 }
