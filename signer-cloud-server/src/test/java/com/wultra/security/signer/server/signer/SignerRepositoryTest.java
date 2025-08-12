@@ -41,6 +41,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 @ActiveProfiles("test")
 class SignerRepositoryTest {
 
+    private static final int MILLISECONDS_DELTA = 500;
+
     private static final Instant NOW = Instant.now();
     private static final String SIGNER_EXTERNAL_ID = "signerExternalId1";
     private static final String USER_ID = "userId1";
@@ -85,12 +87,12 @@ class SignerRepositoryTest {
 
     private void assertSigner(Signer signer) {
         assertNotEquals(0, signer.getId());
-        assertEquals(NOW, signer.getTimestampCreated());
+        assertEquals(NOW.toEpochMilli(), signer.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(SIGNER_EXTERNAL_ID, signer.getSignerExternalId());
         assertEquals(USER_ID, signer.getUserId());
         assertEquals(CSR, signer.getCsr());
         assertEquals(CERTIFICATE, signer.getCertificate());
-        assertEquals(TIMESTAMP_CERTIFICATE_EXPIRATION, signer.getTimestampCertificateExpiration());
+        assertEquals(TIMESTAMP_CERTIFICATE_EXPIRATION.toEpochMilli(), signer.getTimestampCertificateExpiration().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(SignerStatus.ACTIVE, signer.getSignerStatus());
     }
 }

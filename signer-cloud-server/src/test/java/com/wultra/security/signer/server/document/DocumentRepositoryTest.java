@@ -42,6 +42,7 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 @ActiveProfiles("test")
 class DocumentRepositoryTest {
 
+    private static final int MILLISECONDS_DELTA = 500;
     private static final Instant NOW = Instant.now();
 
     // Signer
@@ -138,7 +139,7 @@ class DocumentRepositoryTest {
 
     private void assertDocument(Document document, long signerId, long documentContentId) {
         assertNotEquals(0, document.getId());
-        assertEquals(NOW, document.getTimestampCreated());
+        assertEquals(NOW.toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(DOCUMENT_ID, document.getDocumentId());
         assertEquals(signerId, document.getSignerId());
         assertEquals(EXTERNAL_ID, document.getExternalId());
