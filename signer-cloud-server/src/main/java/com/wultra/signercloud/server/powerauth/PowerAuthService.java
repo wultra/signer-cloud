@@ -59,7 +59,7 @@ public class PowerAuthService {
             logger.info("Got status: {} of registrationId: {}", activationStatus, registrationId);
             return Optional.of(activationStatus);
         } catch (final PowerAuthClientException e) {
-            logger.warn("Unable to get activation status for registrationId: {}", registrationId, e);
+            logger.warn("Unable to get activation status of registrationId: {}", registrationId, e);
             return Optional.empty();
         }
     }
