@@ -21,13 +21,13 @@ Others (like URL, username, password) depend on your environment.
 To list all undeployed changesets run this `status` command. 
 
 ```shell
-liquibase --changelog-file=./docs/db/changelog/changesets/signer-cloud-server/db.changelog-module.xml --url=jdbc:postgresql://localhost:5432/signer-cloud-server --username=signer-cloud-server status
+liquibase --changelog-file=./docs/db/changelog/changesets/signer-cloud-server/db.changelog-module.xml --url=jdbc:postgresql://localhost:5432/signer_cloud_server --username=signer_cloud_server status
 ```
 
 To apply the changesets run this `update` command.
 
 ```shell
-liquibase --changelog-file=./docs/db/changelog/changesets/signer-cloud-server/db.changelog-module.xml --url=jdbc:postgresql://localhost:5432/signer-cloud-server --username=signer-cloud-server update
+liquibase --changelog-file=./docs/db/changelog/changesets/signer-cloud-server/db.changelog-module.xml --url=jdbc:postgresql://localhost:5432/signer_cloud_server --username=signer_cloud_server update
 ```
 
 To generate SQL script run this command.
