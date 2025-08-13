@@ -7,4 +7,4 @@ liquibase --headless=true --log-level=INFO --changeLogFile="$LB_HOME/db/changelo
   --url="${DB_URL}" \
   update
 
-java ${JAVA_OPTS:-} -jar signer-cloud-server.war
+java "${JAVA_OPTS:-}" -jar signer-cloud-server.war
