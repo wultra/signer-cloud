@@ -23,6 +23,9 @@
 
         <bouncycastle.version>1.81</bouncycastle.version>
         <dss.version>6.3</dss.version>
+
+        <!-- Documentation Dependencies -->
+        <springdoc-openapi-starter-webmvc-ui.version>2.8.9</springdoc-openapi-starter-webmvc-ui.version>
     </properties>
 
     <modules>
@@ -64,6 +67,13 @@
                 <version>${dss.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+
+            <!-- Documentation -->
+            <dependency>
+                <groupId>org.springdoc</groupId>
+                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+                <version>${springdoc-openapi-starter-webmvc-ui.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
