@@ -24,7 +24,7 @@ import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
 /**
- * Data Access Object for the <code>sc_document_content</code> table.
+ * Data Access Object for the {@code sc_document_content} table.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */

@@ -24,17 +24,17 @@ package com.wultra.signercloud.server.document;
  */
 public enum DocumentStatus {
     /**
-     * Document is uploaded and is waiting for signature
+     * Document is uploaded and is waiting for signature.
      */
     WAITING,
 
     /**
-     * Document was rejected by signer
+     * Document was rejected by signer.
      */
     REJECTED,
 
     /**
-     * Document is signed
+     * Document is signed.
      */
     SIGNED
 }

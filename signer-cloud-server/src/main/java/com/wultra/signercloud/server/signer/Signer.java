@@ -26,7 +26,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import java.time.Instant;
 
 /**
- * Data Access Object for the <code>sc_signer</code> table.
+ * Data Access Object for the {@code sc_signer} table.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
