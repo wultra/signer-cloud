@@ -29,8 +29,8 @@
                 <constraints nullable="false" />
             </column>
             <column name="timestamp_last_updated" type="timestamp(6)" />
-            <column name="signer_external_id" type="varchar(255)">
-                <constraints nullable="false" unique="true"  uniqueConstraintName="sc_signer_external_id_uk" />
+            <column name="external_signer_id" type="varchar(255)">
+                <constraints nullable="false" unique="true"  uniqueConstraintName="sc_external_signer_id_uk" />
             </column>
             <column name="user_id" type="varchar(255)">
                 <constraints nullable="false" />
@@ -40,7 +40,7 @@
             </column>
             <column name="certificate" type="clob" />
             <column name="timestamp_certificate_expiration" type="timestamp(6)" />
-            <column name="signer_status" type="varchar(50)">
+            <column name="status" type="varchar(50)">
                 <constraints nullable="false" />
             </column>
         </createTable>
@@ -134,7 +134,7 @@
             <column name="hash" type="varchar(255)">
                 <constraints nullable="false" />
             </column>
-            <column name="document_status" type="varchar(50)">
+            <column name="status" type="varchar(50)">
                 <constraints nullable="false" />
             </column>
             <column name="signature" type="varchar(255)" />

@@ -43,7 +43,7 @@ public class Signer {
 
     private Instant timestampLastUpdated;
 
-    private String signerExternalId;
+    private String externalSignerId;
 
     private String userId;
 
@@ -53,5 +53,5 @@ public class Signer {
 
     private Instant timestampCertificateExpiration;
 
-    private SignerStatus signerStatus;
+    private SignerStatus status;
 }

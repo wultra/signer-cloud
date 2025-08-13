@@ -44,7 +44,7 @@ class SignerRepositoryTest {
     private static final int MILLISECONDS_DELTA = 500;
 
     private static final Instant NOW = Instant.now();
-    private static final String SIGNER_EXTERNAL_ID = "signerExternalId1";
+    private static final String EXTERNAL_SIGNER_ID = "externalSignerId1";
     private static final String USER_ID = "userId1";
     private static final String CSR = "csr1";
     private static final String CERTIFICATE = "certificate1";
@@ -73,12 +73,12 @@ class SignerRepositoryTest {
     private long createSigner() {
         var signer = Signer.builder()
                 .timestampCreated(NOW)
-                .signerExternalId(SIGNER_EXTERNAL_ID)
+                .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
                 .csr(CSR)
                 .certificate(CERTIFICATE)
                 .timestampCertificateExpiration(TIMESTAMP_CERTIFICATE_EXPIRATION)
-                .signerStatus(SignerStatus.ACTIVE)
+                .status(SignerStatus.ACTIVE)
                 .build();
 
         signer = signerRepository.save(signer);
@@ -88,11 +88,11 @@ class SignerRepositoryTest {
     private void assertSigner(Signer signer) {
         assertNotEquals(0, signer.getId());
         assertEquals(NOW.toEpochMilli(), signer.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
-        assertEquals(SIGNER_EXTERNAL_ID, signer.getSignerExternalId());
+        assertEquals(EXTERNAL_SIGNER_ID, signer.getExternalSignerId());
         assertEquals(USER_ID, signer.getUserId());
         assertEquals(CSR, signer.getCsr());
         assertEquals(CERTIFICATE, signer.getCertificate());
         assertEquals(TIMESTAMP_CERTIFICATE_EXPIRATION.toEpochMilli(), signer.getTimestampCertificateExpiration().toEpochMilli(), MILLISECONDS_DELTA);
-        assertEquals(SignerStatus.ACTIVE, signer.getSignerStatus());
+        assertEquals(SignerStatus.ACTIVE, signer.getStatus());
     }
 }

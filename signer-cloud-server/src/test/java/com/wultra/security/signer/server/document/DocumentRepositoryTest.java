@@ -46,7 +46,7 @@ class DocumentRepositoryTest {
     private static final Instant NOW = Instant.now();
 
     // Signer
-    private static final String SIGNER_EXTERNAL_ID = "signerExternalId1";
+    private static final String EXTERNAL_SIGNER_ID = "externalSignerId1";
     private static final String USER_ID = "userId1";
     private static final String CSR = "csr1";
     private static final String CERTIFICATE = "certificate1";
@@ -97,12 +97,12 @@ class DocumentRepositoryTest {
     private long createSigner() {
         var signer = Signer.builder()
                 .timestampCreated(NOW)
-                .signerExternalId(SIGNER_EXTERNAL_ID)
+                .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
                 .csr(CSR)
                 .certificate(CERTIFICATE)
                 .timestampCertificateExpiration(TIMESTAMP_CERTIFICATE_EXPIRATION)
-                .signerStatus(SignerStatus.ACTIVE)
+                .status(SignerStatus.ACTIVE)
                 .build();
 
         signer = signerRepository.save(signer);
@@ -129,7 +129,7 @@ class DocumentRepositoryTest {
                 .fileSize(FILE_SIZE)
                 .documentContentId(documentContentId)
                 .hash(HASH)
-                .documentStatus(DocumentStatus.WAITING)
+                .status(DocumentStatus.WAITING)
                 .signature(SIGNATURE)
                 .build();
 
@@ -148,7 +148,7 @@ class DocumentRepositoryTest {
         assertEquals(FILE_SIZE, document.getFileSize());
         assertEquals(documentContentId, document.getDocumentContentId());
         assertEquals(HASH, document.getHash());
-        assertEquals(DocumentStatus.WAITING, document.getDocumentStatus());
+        assertEquals(DocumentStatus.WAITING, document.getStatus());
         assertEquals(SIGNATURE, document.getSignature());
     }
 }

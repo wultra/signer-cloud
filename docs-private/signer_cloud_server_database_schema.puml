@@ -6,12 +6,12 @@ class sc_signer {
     ID bigint PK
     timestamp_created timestamp(6) NN
     timestamp_last_updated timestamp(6)
-    signer_external_id varchar(255) U NN
+    external_signer_id varchar(255) U NN
     user_id varchar(255) NN
     csr CLOB NN
     certificate CLOB
     timestamp_certificate_expiration timestamp(6)
-    signer_status varchar(50) NN (ACTIVE/BLOCKED/REMOVED/REVOKED)
+    status varchar(50) NN (ACTIVE/BLOCKED/REMOVED/REVOKED)
 }
 
 class sc_document {
@@ -26,7 +26,7 @@ class sc_document {
     file_size integer NN
     document_content_id bigint FK
     hash varchar(255) NN
-    document_status varchar(50) NN (WAITING/REJECTED/SIGNED)
+    status varchar(50) NN (WAITING/REJECTED/SIGNED)
     signature varchar(255)
 }
 

@@ -45,6 +45,9 @@ public class Document {
 
     private String documentId;
 
+    /**
+     * {@link com.wultra.signercloud.server.signer.Signer#id}
+     */
     private long signerId;
 
     private String externalId;
@@ -55,11 +58,14 @@ public class Document {
 
     private int fileSize;
 
+    /**
+     * {@link DocumentContent#id}
+     */
     private long documentContentId;
 
     private String hash;
 
-    private DocumentStatus documentStatus;
+    private DocumentStatus status;
 
     private String signature;
 }
