@@ -82,6 +82,12 @@
             <classifier>osx-aarch_64</classifier>
         </dependency>
 
+        <!--  Monitoring  -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+
         <!--  Test dependencies  -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
