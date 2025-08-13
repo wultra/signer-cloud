@@ -32,6 +32,11 @@
             <artifactId>rest-client-base</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>io.getlime.security</groupId>
+            <artifactId>powerauth-rest-client-spring</artifactId>
+        </dependency>
+
         <!--  Bouncy Castle dependencies -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
@@ -77,6 +82,13 @@
             <classifier>osx-aarch_64</classifier>
         </dependency>
 
+        <!--  Monitoring  -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-tracing-bridge-otel</artifactId>
+        </dependency>
+
+        <!-- Database -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jdbc</artifactId>
