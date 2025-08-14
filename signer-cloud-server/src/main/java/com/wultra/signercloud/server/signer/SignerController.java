@@ -17,6 +17,10 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -37,6 +41,21 @@ public class SignerController {
 
     private final SignerService signerService;
 
+    @Operation(
+            summary = "Create a new signer",
+            description = "Creates a new signer with provided data.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "REST API call was successful. Check the 'result' field in the response to determine if the signer was actually created.",
+                            content = @Content(schema = @Schema(implementation = SignerResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input data"
+                    )
+            }
+    )
     @PostMapping
     public ResponseEntity<SignerResponse> create(@Valid @RequestBody CreateSignerRequest createSignerRequest) {
         final var response = signerService.createSigner(createSignerRequest);
