@@ -15,27 +15,38 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.ejbca;
+package com.wultra.signercloud.server.document;
 
-import com.wultra.core.rest.client.base.RestClientConfiguration;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 /**
- * EJBCA configuration properties.
+ * Document configuration properties.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@ConfigurationProperties(prefix = "signer-cloud.server.ejbca")
+@ConfigurationProperties(prefix = "signer-cloud.server.document")
 @Getter
 @Setter
-class EjbcaConfigurationProperties {
-    private RestClientConfiguration restClientConfiguration;
+class DocumentConfigurationProperties {
 
-    private String certificateProfileName;
+    /**
+     * Maximal timeout threshold between document upload and signing.
+     */
+    private Duration waitingTimeout = Duration.ofSeconds(3600);
 
-    private String endEntityProfileName;
+    /**
+     * Retention period for rejected documents. Empty value means no retention period is used, value 0 means documents will be deleted immediately.
+     */
+//    TODO Lubos map signer-cloud.server.document.signed.retention-period
+    private Duration rejectedRetentionPeriod;
 
-    private String certificateAuthorityName;
+    /**
+     * Retention period for signed documents in days. Empty value means no retention period is used, value 0 means documents will be deleted immediately.
+     */
+    private Duration signedRetentionPeriod;
+
 }

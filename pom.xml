@@ -23,6 +23,7 @@
 
         <bouncycastle.version>1.81</bouncycastle.version>
         <dss.version>6.3</dss.version>
+        <shedlock.version>6.9.2</shedlock.version>
 
         <logstash.version>8.1</logstash.version>
 
@@ -67,6 +68,15 @@
                 <groupId>eu.europa.ec.joinup.sd-dss</groupId>
                 <artifactId>dss-bom</artifactId>
                 <version>${dss.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Job Scheduling -->
+            <dependency>
+                <groupId>net.javacrumbs.shedlock</groupId>
+                <artifactId>shedlock-bom</artifactId>
+                <version>${shedlock.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
