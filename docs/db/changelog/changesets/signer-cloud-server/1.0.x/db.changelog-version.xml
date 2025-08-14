@@ -6,5 +6,6 @@
 
     <!-- 1.0.x -->
     <include file="20250807-init-db.xml" relativeToChangelogFile="true" />
+    <include file="20250814-indexes-foreign-keys.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>
