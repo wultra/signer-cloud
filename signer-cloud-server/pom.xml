@@ -12,6 +12,7 @@
 
     <artifactId>signer-cloud-server</artifactId>
     <description>Signer Cloud Server</description>
+    <packaging>war</packaging>
 
     <dependencies>
 
@@ -93,9 +94,16 @@
             <artifactId>micrometer-tracing-bridge-otel</artifactId>
         </dependency>
 
+        <!-- Documentation -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
         </dependency>
 
         <!-- Database -->
