@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,7 +38,7 @@ public class SignerController {
     private final SignerService signerService;
 
     @PostMapping
-    public ResponseEntity<SignerResponse> create(@RequestBody CreateSignerRequest createSignerRequest) {
+    public ResponseEntity<SignerResponse> create(@Valid @RequestBody CreateSignerRequest createSignerRequest) {
         final var response = signerService.createSigner(createSignerRequest);
         return ResponseEntity.ok(response);
     }

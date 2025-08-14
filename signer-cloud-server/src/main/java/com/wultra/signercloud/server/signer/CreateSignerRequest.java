@@ -17,14 +17,16 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import jakarta.validation.constraints.NotBlank;
+
 /**
  * REST body for creating a new {@link Signer}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public record CreateSignerRequest(
-        String signerId,
-        String userId,
-        String csr
+        @NotBlank String signerId,
+        @NotBlank String userId,
+        @NotBlank String csr
 ) {
 }
