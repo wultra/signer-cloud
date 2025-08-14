@@ -9,6 +9,7 @@ on:
         description: Publish to registry?
       environment:
         type: environment
+        default: docker-internal
         description: Select the environment
   pull_request:
     branches:
@@ -17,9 +18,24 @@ on:
       - 'releases/*'
 
 jobs:
+  set-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Set environment output
+        id: set-env
+        run: |
+          if [ -z "${{ inputs.environment }}" ]; then
+            echo "environment=docker-internal" >> $GITHUB_OUTPUT
+          else
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          fi
+
   build:
     runs-on: 'ubuntu-latest'
-    environment: ${{ inputs.environment }}
+    needs: set-environment
+    environment: ${{ needs.set-environment.outputs.environment }}
     env:
       # these are global secrets - for readonly access to artifactory
       INTERNAL_USERNAME: ${{ secrets.JFROG_USERNAME }}
