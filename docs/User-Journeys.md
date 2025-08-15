@@ -19,6 +19,7 @@ It is basically a combination of user and device certificate but we will call it
 The signing process involves adding a digital signature, including a certificate from previous step, to a file. Unlike the previous steps, which are one-time actions, signing may be repeated if you have a valid certificate.
 
 ## Certificate Enrollment
+
 Certificate is issued by Certification Authority (CA) based on Certificate Signing Request (CSR) which is the file that contains user and cryptography data. So we need to construct this file first (on mobile device).
 
 ![Certificate Enrollment Process](./img/Certificate_Enrollment_Process.png)
