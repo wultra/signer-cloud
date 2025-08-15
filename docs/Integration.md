@@ -26,7 +26,7 @@ Steps
 
 ## Application States
 
-Chapter descibes application states.
+Chapter describes application states.
 
 ### Signer
 
