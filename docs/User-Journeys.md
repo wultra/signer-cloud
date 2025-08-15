@@ -67,7 +67,7 @@ Multiple documents
 ![Document Signing - Multiple Documents](./img/Document_Signing-Multiple_Documents.png)
 
 **Steps**
-
+1. This step is completely on the application. In general, user should be able to read the document and select what he wants to sign. For example, you can also allow signing only if the user opened/read the file.
 1. This step is completely on the application. In general, user should be able to read the document and select what he wants to subscribe. For example, you can also allow signing only if the user opened/read the file.
 2. After the confirmation, you need to send PDF files to the CloudSigner. It stores the file and calculates hash.
 3. User enters the PIN so app can sign document hash generated in the previous step.
