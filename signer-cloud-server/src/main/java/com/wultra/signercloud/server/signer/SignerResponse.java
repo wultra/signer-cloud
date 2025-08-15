@@ -22,7 +22,7 @@ package com.wultra.signercloud.server.signer;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record SignerResponse(
+record SignerResponse(
         SignerResponseResult result,
         String reason
 ) {

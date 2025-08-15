@@ -37,7 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("api/signers")
 @AllArgsConstructor
-public class SignerController {
+class SignerController {
 
     private final SignerService signerService;
 
@@ -57,7 +57,7 @@ public class SignerController {
             }
     )
     @PostMapping
-    public ResponseEntity<SignerResponse> create(@Valid @RequestBody CreateSignerRequest createSignerRequest) {
+    ResponseEntity<SignerResponse> create(@Valid @RequestBody final CreateSignerRequest createSignerRequest) {
         final var response = signerService.createSigner(createSignerRequest);
         return ResponseEntity.ok(response);
     }

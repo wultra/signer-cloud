@@ -37,13 +37,13 @@ import java.util.Base64;
 @Service
 @AllArgsConstructor
 @Slf4j
-public class SignerService {
+class SignerService {
 
     private final PowerAuthService powerAuthService;
     private final EjbcaService ejbcaService;
     private final SignerRepository signerRepository;
 
-    public SignerResponse createSigner(CreateSignerRequest request) {
+    SignerResponse createSigner(CreateSignerRequest request) {
         try {
             createSignerWithCertificate(request);
             return new SignerResponse(SignerResponseResult.OK, null);
