@@ -274,7 +274,7 @@ Content-Type: application/pdf
 
 Maximum file size limitations depends on server configuration (web/apps server, database, network) with max size around 50MB.
 
-Validation for document mime-type.
+Document mime-type validation is performed.
 <!-- end -->
 
 <!-- begin api PUT /api/cloudsigner/documents/{documentId} -->
