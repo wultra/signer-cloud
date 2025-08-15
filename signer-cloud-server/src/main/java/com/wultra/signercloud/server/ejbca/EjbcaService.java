@@ -53,8 +53,8 @@ public class EjbcaService {
      * @throws CertificateException if an error occurs during the enrollment process
      * @throws RestClientException if an error occurs during the enrollment process
      */
-    public X509Certificate enrollCertificate(final ParameterObject request) throws IOException, CertificateException, RestClientException {
-        final CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(convert(request));
+    public X509Certificate enrollCertificate(final CertificateRequest request) throws IOException, CertificateException, RestClientException {
+        final EjbcaRestClient.CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(convert(request));
         logger.info("Got certificate with serial number: {}", certificateResponse.serialNumber());
         if (!"DER".equals(certificateResponse.responseFormat())) {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
@@ -63,8 +63,8 @@ public class EjbcaService {
         return convertDerToX509Certificate(certificateResponse.certificate());
     }
 
-    private CertificateRequest convert(final ParameterObject source) {
-        return CertificateRequest.builder()
+    private EjbcaRestClient.CertificateRequest convert(final CertificateRequest source) {
+        return EjbcaRestClient.CertificateRequest.builder()
                 .accountBindingId(source.userId())
                 .username(source.externalSignerId())
                 .certificateRequest(source.csr())
@@ -90,5 +90,5 @@ public class EjbcaService {
      * @param csr Certificate Signing Request in PKCS #10 format
      */
     @Builder
-    public record ParameterObject(String userId, String externalSignerId, String csr){}
+    public record CertificateRequest(String userId, String externalSignerId, String csr){}
 }
