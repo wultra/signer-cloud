@@ -192,7 +192,7 @@ Get signer state.
 <!-- begin api POST /api/cloudsigner/documents -->
 ###  Upload Document
 
-Upload document as one file using multipart/from-data. Maximum file size depends on server configuration.
+Upload document as one file using multipart/form-data. Maximum file size depends on server configuration.
 
 <!-- begin remove -->
 <table>
