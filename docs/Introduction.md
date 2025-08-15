@@ -14,6 +14,6 @@ Wultra CloudSigner is a powerful and secure mobile solution that enables users t
 ## Standards
 CloudSigner supports PDF Advanced Electronic Signatures (PAdES) defined by ETSI EN 319 142 standard with level **PAdES-B-B** (Basic Signature).
 
-PAdDES is [recognized by eIDAS](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Standards+and+specifications#Standardsandspecifications-PAdES(PDFAdvancedElectronicSignature)BaselineProfile) as [Advanced Electronic Signature](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/What+is+eSignature#WhatiseSignature-AdvancedElectronicSignatures(AdES)) (AdES).
+PAdES is [recognized by eIDAS](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Standards+and+specifications#Standardsandspecifications-PAdES(PDFAdvancedElectronicSignature)BaselineProfile) as [Advanced Electronic Signature](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/What+is+eSignature#WhatiseSignature-AdvancedElectronicSignatures(AdES)) (AdES).
 
 CloudSigner supports **PDF 2.0** documents defined by ISO 32000-2 standard.
