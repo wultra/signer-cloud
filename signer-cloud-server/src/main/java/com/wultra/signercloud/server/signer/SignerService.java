@@ -47,7 +47,7 @@ class SignerService {
         try {
             createSignerWithCertificate(request);
             return new SignerResponse(SignerResponseResult.OK, null);
-        } catch (Exception e) {
+        } catch (InactiveSignerException | RestClientException | CertificateException | IOException e) {
             logger.error("Exception during signer creation", e);
             return new SignerResponse(SignerResponseResult.FAIL, e.getMessage());
         }
@@ -58,7 +58,7 @@ class SignerService {
 
         var isRegistrationActive = powerAuthService.isRegistrationActive(externalSignerId);
         if (!isRegistrationActive) {
-            throw new IllegalStateException("Signer registration is not active for external signer ID: " + externalSignerId);
+            throw new InactiveSignerException("Signer registration is not active for external signer ID: " + externalSignerId);
         }
 
         final var csr = request.csr();
