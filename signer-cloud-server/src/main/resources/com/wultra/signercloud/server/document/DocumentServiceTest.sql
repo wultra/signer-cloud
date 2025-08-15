@@ -11,4 +11,4 @@ INSERT INTO sc_document (id, document_content_id, document_id, document_name, ex
     (1, 1, '1', 'test', '1', 'test.pdf', 100, '1', '1', 1, 'WAITING', now() - interval '2' day),
     (2, 2, '2', 'test', '2', 'test.pdf', 100, '1', '1', 1, 'REJECTED', now() - interval '1' hour),
     (3, 3, '3', 'test', '3', 'test.pdf', 100, '1', '1', 1, 'SIGNED', now() - interval '2' day),
-    (4, 4, '4', 'test', '4', 'test.pdf', 100, '1', '1', 1, 'WAITING', now() - interval '1' hour);
+<file moved to src/test/resources/com/wultra/signercloud/server/document/DocumentServiceTest.sql>
