@@ -15,7 +15,7 @@ class sc_signer <<table>>{
 
 class sc_document <<table>> {
     ID bigint PK
-    timestamp_created timestamp(6) NN
+    timestamp_created timestamp(6) NN I
     timestamp_last_updated timestamp(6)
     document_id varchar(255) U NN
     signer_id bigint FK I
@@ -25,7 +25,7 @@ class sc_document <<table>> {
     file_size integer NN
     document_content_id bigint FK I
     hash varchar(255) NN
-    status varchar(50) NN (WAITING/REJECTED/SIGNED)
+    status varchar(50) NN I (WAITING/REJECTED/SIGNED)
     signature varchar(255)
 }
 
