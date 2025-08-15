@@ -2,7 +2,7 @@
 
 The system consists of two main components - CloudSigner Server and Certification Authority. As the Certification Authority, Keyfactor EJBCA is currently supported.
 
-For time defining values, following syntax is supported: 1s 1h 1d 1y.
+For time-defining values, the following syntax is supported: 1s 1h 1d 1y.
 
 ## CloudSigner Server
 
