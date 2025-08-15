@@ -93,7 +93,7 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 <!-- begin api PUT /api/cloudsigner/signers/{signerId} -->
 ###  Change Signer Status
 
-Create new signer and enroll for new certificate using CSR. System will track certificate expiration and starts auto-renewal job.
+Change the status of an existing signer (e.g., activate, deactivate, suspend) identified by <code>signerId</code>.
 
 <!-- begin remove -->
 <table>
