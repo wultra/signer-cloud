@@ -24,7 +24,7 @@ import jakarta.validation.constraints.NotBlank;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-record CreateSignerRequest(
+record CreateUpdateSignerRequest(
         @NotBlank String signerId,
         @NotBlank String userId,
         @NotBlank String csr

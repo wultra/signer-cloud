@@ -42,8 +42,10 @@ class SignerController {
     private final SignerService signerService;
 
     @Operation(
-            summary = "Create a new signer",
-            description = "Creates a new signer with provided data.",
+            summary = "Create a new signer or update an existing one",
+            description = "Creates a new signer with the provided data. If a signer with the provided {@code externalSignerId} " +
+                    "already exists, it is updated. In both cases, activation is checked in PowerAuth, and a certificate " +
+                    "is generated in EJBCA from the provided {@code csr}.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -57,8 +59,8 @@ class SignerController {
             }
     )
     @PostMapping
-    ResponseEntity<SignerResponse> create(@Valid @RequestBody final CreateSignerRequest createSignerRequest) {
-        final var response = signerService.createSigner(createSignerRequest);
+    ResponseEntity<SignerResponse> crateUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
+        final var response = signerService.createOrUpdateSigner(requestBody);
         return ResponseEntity.ok(response);
     }
 

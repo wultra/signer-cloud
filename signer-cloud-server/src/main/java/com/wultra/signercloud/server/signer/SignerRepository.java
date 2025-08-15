@@ -19,10 +19,13 @@ package com.wultra.signercloud.server.signer;
 
 import org.springframework.data.repository.CrudRepository;
 
+import java.util.Optional;
+
 /**
  * Repository for accessing a {@link Signer}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public interface SignerRepository extends CrudRepository<Signer, Long> {
+    Optional<Signer> findByExternalSignerId(String externalSignerId);
 }

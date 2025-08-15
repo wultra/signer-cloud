@@ -23,6 +23,7 @@ import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
@@ -43,9 +44,18 @@ class SignerService {
     private final EjbcaService ejbcaService;
     private final SignerRepository signerRepository;
 
-    SignerResponse createSigner(CreateSignerRequest request) {
+    /**
+     * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#externalSignerId}).
+     * This method checks whether the registration in PowerAuth is active, then generates a certificate via the EJBCA service
+     * (based on {@link CreateUpdateSignerRequest#csr}), and finally stores the signer in the database.
+     *
+     * @param request the request containing details of signer
+     * @return {@link SignerResponse} indicating the result of the operation.
+     */
+    @Transactional
+    SignerResponse createOrUpdateSigner(CreateUpdateSignerRequest request) {
         try {
-            createSignerWithCertificate(request);
+            createOrUpdateSignerWithCertificate(request);
             return new SignerResponse(SignerResponseResult.OK, null);
         } catch (InactiveSignerException | RestClientException | CertificateException | IOException e) {
             logger.error("Exception during signer creation", e);
@@ -53,7 +63,7 @@ class SignerService {
         }
     }
 
-    private void createSignerWithCertificate(CreateSignerRequest request) throws RestClientException, CertificateException, IOException {
+    private void createOrUpdateSignerWithCertificate(CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
         final var externalSignerId = request.signerId();
 
         var isRegistrationActive = powerAuthService.isRegistrationActive(externalSignerId);
@@ -67,9 +77,11 @@ class SignerService {
         final var certificate = Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
         final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
 
-        final var signer = Signer.builder()
-                .timestampCreated(Instant.now())
-                .externalSignerId(request.signerId())
+        final var signerBuilder = signerRepository.findByExternalSignerId(externalSignerId)
+                .map(this::updateSigner)
+                .orElse(createSigner(externalSignerId));
+
+        final var signer = signerBuilder
                 .userId(request.userId())
                 .csr(csr)
                 .certificate(certificate)
@@ -78,5 +90,16 @@ class SignerService {
                 .build();
 
         signerRepository.save(signer);
+    }
+
+    private Signer.SignerBuilder createSigner(String externalSignerId) {
+        return Signer.builder()
+                .timestampCreated(Instant.now())
+                .externalSignerId(externalSignerId);
+    }
+
+    private Signer.SignerBuilder updateSigner(Signer signer) {
+        return signer.toBuilder()
+                .timestampCreated(Instant.now());
     }
 }
