@@ -1,6 +1,6 @@
 # User Journeys
 
-Schema illustrates process the user must undergo to sign documents.
+The schema illustrates the process the user must undergo to sign documents.
 
 ![User Journeys](./img/User_Journeys.png)
 
