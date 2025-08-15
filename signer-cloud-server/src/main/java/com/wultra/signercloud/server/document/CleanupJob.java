@@ -36,7 +36,7 @@ class CleanupJob {
 
     private final DocumentService documentService;
 
-    @Scheduled(cron = "${signer-cloud.server.document.cleanup.cron:0 0/10 * * * *}", zone = "UTC")
+    @Scheduled(cron = "${signer-cloud.server.document.cleanup.cron}", zone = "UTC")
     @SchedulerLock(name = "cleanupDocuments")
     public void cleanupDocuments() {
         logger.info("action: cleanupDocuments, state: initiated");
