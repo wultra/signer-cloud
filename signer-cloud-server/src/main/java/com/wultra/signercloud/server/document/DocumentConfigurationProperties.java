@@ -34,19 +34,24 @@ import java.time.Duration;
 class DocumentConfigurationProperties {
 
     /**
-     * Maximal timeout threshold between document upload and signing.
+     * Retention period for waiting documents. Empty value means no retention period is used, value 0 means documents will be deleted immediately.
      */
-    private Duration waitingTimeout = Duration.ofSeconds(3600);
+    private DocumentConfiguration waiting = new DocumentConfiguration();
 
     /**
      * Retention period for rejected documents. Empty value means no retention period is used, value 0 means documents will be deleted immediately.
      */
-//    TODO Lubos map signer-cloud.server.document.signed.retention-period
-    private Duration rejectedRetentionPeriod;
+    private DocumentConfiguration rejected = new DocumentConfiguration();
 
     /**
      * Retention period for signed documents in days. Empty value means no retention period is used, value 0 means documents will be deleted immediately.
      */
-    private Duration signedRetentionPeriod;
+    private DocumentConfiguration signed = new DocumentConfiguration();
+
+    @Getter
+    @Setter
+    static class DocumentConfiguration {
+        private Duration retentionPeriod;
+    }
 
 }
