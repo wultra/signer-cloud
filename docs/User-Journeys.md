@@ -24,10 +24,9 @@ Certificate is issued by Certification Authority (CA) based on Certificate Signi
 
 ![Certificate Enrollment Process](./img/Certificate_Enrollment_Process.png)
 
-2. To assemble CSR we need User Data, Public Key and Signature (made using Private Key). App needs to provide missing User Data, the remaining two points are covered by activated device. 
-2. To assembly CSR we need User Data, Public Key and Signature (made using Private Key). App needs to provide missing User Data, the remaining two point are covered by activated device. 
-3. CSR is created.
-4. CSR is sent from mobile device to the CloudSigner to generate (using Certification Authority) and store certificate.
+1. To assemble CSR we need User Data, Public Key and Signature (made using Private Key). App needs to provide missing User Data, the remaining two points are covered by activated device. 
+2. CSR is created.
+3. CSR is sent from mobile device to the CloudSigner to generate (using Certification Authority) and store certificate.
 
 **User Journey**
 
@@ -67,8 +66,8 @@ Multiple documents
 ![Document Signing - Multiple Documents](./img/Document_Signing-Multiple_Documents.png)
 
 **Steps**
+
 1. This step is completely on the application. In general, user should be able to read the document and select what he wants to sign. For example, you can also allow signing only if the user opened/read the file.
-1. This step is completely on the application. In general, user should be able to read the document and select what he wants to subscribe. For example, you can also allow signing only if the user opened/read the file.
 2. After the confirmation, you need to send PDF files to the CloudSigner. It stores the file and calculates hash.
 3. User enters the PIN so app can sign document hash generated in the previous step.
 4. Document hash is checked and if everything is OK, we will include user’s certificate into the document stored in step 2.
