@@ -34,35 +34,14 @@ import org.springframework.stereotype.Component;
 @Slf4j
 class CleanupJob {
 
-    private final DocumentConfigurationProperties configurationProperties;
+    private final DocumentService documentService;
 
-    private final DocumentRepository documentRepository;
-
-    // TODO Lubos make single method
-    @Scheduled(cron = "${signer-cloud.server.document.waiting.cron:0 0/10 * * * *}", zone = "UTC")
-    @SchedulerLock(name = "cleanupWaitingDocuments")
-    public void cleanupWaitingDocuments() {
-        logger.info("action: cleanupWaitingDocuments, state: initiated");
+    @Scheduled(cron = "${signer-cloud.server.document.cleanup.cron:0 0/10 * * * *}", zone = "UTC")
+    @SchedulerLock(name = "cleanupDocuments")
+    public void cleanupDocuments() {
+        logger.info("action: cleanupDocuments, state: initiated");
         LockAssert.assertLocked();
-        // TODO Lubos
-        logger.info("action: cleanupWaitingDocuments, state: succeeded, size: {}", 0);
-    }
-
-    @Scheduled(cron = "${signer-cloud.server.document.rejected.cron:0 3/10 * * * *}", zone = "UTC")
-    @SchedulerLock(name = "cleanupRejectedDocuments")
-    public void cleanupRejectedDocuments() {
-        logger.info("action: cleanupRejectedDocuments, state: initiated");
-        LockAssert.assertLocked();
-        // TODO Lubos
-        logger.info("action: cleanupRejectedDocuments, state: succeeded, size: {}", 0);
-    }
-
-    @Scheduled(cron = "${signer-cloud.server.document.signed.cron:0 6/10 * * * *}", zone = "UTC")
-    @SchedulerLock(name = "cleanupSignedDocuments")
-    public void cleanupSignedDocuments() {
-        logger.info("action: cleanupSignedDocuments, state: initiated");
-        LockAssert.assertLocked();
-        // TODO Lubos
-        logger.info("action: cleanupSignedDocuments, state: succeeded, size: {}", 0);
+        final var result = documentService.cleanupDocuments();
+        logger.info("action: cleanupDocuments, state: succeeded, {}", result);
     }
 }
