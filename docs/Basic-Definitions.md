@@ -10,7 +10,7 @@ Digital signatures verify the authenticity and integrity of digital information.
 
 **Digital Certificate**
 
-An electronic document that uses cryptography to verify the identity of a user (website, device, device…). Certificates are issued by Certificate Authorities.
+An electronic document that uses cryptography to verify the identity of a user (website, device, organization…). Certificates are issued by Certificate Authorities.
 
 **Certificate Signing Request (CSR)**
 
