@@ -38,7 +38,7 @@ import javax.sql.DataSource;
 class SchedulerConfig {
 
     @Bean
-    public LockProvider lockProviderDefaultDataSource(DataSource dataSource) {
+    public LockProvider lockProviderDefaultDataSource(final DataSource dataSource) {
         return new JdbcTemplateLockProvider(
                 JdbcTemplateLockProvider.Configuration.builder()
                         .usingDbTime()
@@ -46,5 +46,4 @@ class SchedulerConfig {
                         .build()
         );
     }
-
 }
