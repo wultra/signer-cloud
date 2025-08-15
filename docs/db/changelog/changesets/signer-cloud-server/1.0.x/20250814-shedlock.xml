@@ -4,7 +4,7 @@
                    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
     <!--  Scheduler lock table - https://github.com/lukas-krecan/ShedLock#configure-lockprovider  -->
-    <changeSet id="1" logicalFilePath="enrollment-server-onboarding/1.0.x/20250814-shedlock.xml" author="Lubos Racansky">
+    <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20250814-shedlock.xml" author="Lubos Racansky">
         <preConditions onFail="MARK_RAN">
             <not>
                 <tableExists tableName="shedlock"/>
