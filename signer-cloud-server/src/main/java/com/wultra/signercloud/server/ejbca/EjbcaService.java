@@ -19,6 +19,7 @@ package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.RestClientException;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -46,27 +47,31 @@ public class EjbcaService {
     /**
      * Enrolls a certificate using the provided Certificate Signing Request (CSR).
      *
-     * @param csr the Certificate Signing Request in PKCS #10 format
+     * @param request the request containing CSR and other metadata
      * @return the enrolled certificate
      * @throws IOException if an error occurs during the enrollment process
      * @throws CertificateException if an error occurs during the enrollment process
      * @throws RestClientException if an error occurs during the enrollment process
      */
-    public X509Certificate enrollCertificate(final String csr) throws IOException, CertificateException, RestClientException {
-        final CertificateRequest request = CertificateRequest.builder()
-                .certificateRequest(csr)
-                .certificateProfileName(configurationProperties.getCertificateProfileName())
-                .certificateAuthorityName(configurationProperties.getCertificateAuthorityName())
-                .endEntityProfileName(configurationProperties.getEndEntityProfileName())
-                .build();
-
-        final CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(request);
+    public X509Certificate enrollCertificate(final ParameterObject request) throws IOException, CertificateException, RestClientException {
+        final CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(convert(request));
         logger.info("Got certificate with serial number: {}", certificateResponse.serialNumber());
         if (!"DER".equals(certificateResponse.responseFormat())) {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
         }
 
         return convertDerToX509Certificate(certificateResponse.certificate());
+    }
+
+    private CertificateRequest convert(final ParameterObject source) {
+        return CertificateRequest.builder()
+                .accountBindingId(source.userId())
+                .username(source.externalSignerId())
+                .certificateRequest(source.csr())
+                .certificateProfileName(configurationProperties.getCertificateProfileName())
+                .certificateAuthorityName(configurationProperties.getCertificateAuthorityName())
+                .endEntityProfileName(configurationProperties.getEndEntityProfileName())
+                .build();
     }
 
     private static X509Certificate convertDerToX509Certificate(final String derCertificateBase64) throws IOException, CertificateException {
@@ -76,4 +81,14 @@ public class EjbcaService {
             return (X509Certificate) certificateFactory.generateCertificate(inputStream);
         }
     }
+
+    /**
+     * Parameter object for enrolling a certificate.
+     *
+     * @param userId user identifier
+     * @param externalSignerId signer identifier
+     * @param csr Certificate Signing Request in PKCS #10 format
+     */
+    @Builder
+    public record ParameterObject(String userId, String externalSignerId, String csr){}
 }

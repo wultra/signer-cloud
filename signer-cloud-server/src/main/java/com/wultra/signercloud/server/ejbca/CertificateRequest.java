@@ -31,6 +31,8 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 record CertificateRequest(
+        String accountBindingId,
+        String username,
         String certificateRequest,
         String certificateProfileName,
         String endEntityProfileName,
