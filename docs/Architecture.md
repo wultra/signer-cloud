@@ -5,6 +5,7 @@ CloudSigner consists of two main backend components: The CloudSigner Server and 
 Integrators must implement both the mobile application and the orchestrator service. Wultra, however, provides software development kits (SDKs) to help with the integration on mobile application.
 
 ## Block Diagram
+
 ![Architecture](./img/Architecture.png)
 
 ## Components
