@@ -24,7 +24,7 @@ Certificate is issued by Certification Authority (CA) based on Certificate Signi
 
 ![Certificate Enrollment Process](./img/Certificate_Enrollment_Process.png)
 
-1. Enrollment is triggered from mobile device.
+2. To assemble CSR we need User Data, Public Key and Signature (made using Private Key). App needs to provide missing User Data, the remaining two points are covered by activated device. 
 2. To assembly CSR we need User Data, Public Key and Signature (made using Private Key). App needs to provide missing User Data, the remaining two point are covered by activated device. 
 3. CSR is created.
 4. CSR is sent from mobile device to the CloudSigner to generate (using Certification Authority) and store certificate.
