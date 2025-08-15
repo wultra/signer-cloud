@@ -12,6 +12,7 @@ Wultra CloudSigner is a powerful and secure mobile solution that enables users t
 **End-to-End Security**: The process—from user authentication to signature generation—is designed with strong security and integrity in mind. The solution is on the Wultra roadmap to **quantum-resistant authentication**.
 
 ## Standards
+
 CloudSigner supports PDF Advanced Electronic Signatures (PAdES) defined by ETSI EN 319 142 standard with level **PAdES-B-B** (Basic Signature).
 
 PAdES is [recognized by eIDAS](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Standards+and+specifications#Standardsandspecifications-PAdES(PDFAdvancedElectronicSignature)BaselineProfile) as [Advanced Electronic Signature](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/What+is+eSignature#WhatiseSignature-AdvancedElectronicSignatures(AdES)) (AdES).
