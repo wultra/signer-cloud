@@ -10,7 +10,7 @@ Integrators must implement both the mobile application and the orchestrator serv
 
 ## Components
 
-**PowerAuth SDK**
+### PowerAuth SDK
 
 Mobile SDK provides cryptography operations support.
 
