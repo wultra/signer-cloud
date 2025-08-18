@@ -23,7 +23,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -59,9 +58,8 @@ class SignerController {
             }
     )
     @PostMapping
-    ResponseEntity<SignerResponse> crateUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
-        final var response = signerService.createUpdateSigner(requestBody);
-        return ResponseEntity.ok(response);
+    SignerResponse crateUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
+        return signerService.createUpdateSigner(requestBody);
     }
 
 }
