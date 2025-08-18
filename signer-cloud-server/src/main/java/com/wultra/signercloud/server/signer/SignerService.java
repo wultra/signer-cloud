@@ -109,6 +109,6 @@ class SignerService {
 
     private Signer.SignerBuilder updateSigner(Signer signer) {
         return signer.toBuilder()
-                .timestampCreated(Instant.now());
+                .timestampLastUpdated(Instant.now());
     }
 }

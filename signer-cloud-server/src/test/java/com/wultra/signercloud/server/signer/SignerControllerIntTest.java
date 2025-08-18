@@ -64,6 +64,7 @@ class SignerControllerIntTest {
 
     private static final String DUMMY_CERTIFICATE = "dummyCertificate";
     private static final long DUMMY_CERTIFICATE_EXPIRATION_SECONDS = 3_600;
+    private static final Instant DUMMY_TIMESTAMP_CREATED = Instant.now().minusSeconds(120);
 
     @Autowired
     private MockMvc mockMvc;
@@ -174,7 +175,7 @@ class SignerControllerIntTest {
 
         // then
         final var signer = signerRepository.findAll().iterator().next();
-        assertSigner(signer);
+        assertSigner(signer, Instant.now());
         assertNull(signer.getTimestampLastUpdated());
     }
 
@@ -235,13 +236,13 @@ class SignerControllerIntTest {
 
         // then
         final var signer = signerRepository.findAll().iterator().next();
-        assertSigner(signer);
-        assertEquals(Instant.now().toEpochMilli(), signer.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
+        assertSigner(signer, DUMMY_TIMESTAMP_CREATED);
+        assertEquals(Instant.now().toEpochMilli(), signer.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
     }
 
-    private void assertSigner(Signer signer) {
+    private void assertSigner(Signer signer, Instant expectedTimestampCreated) {
         assertNotEquals(0, signer.getId());
-        assertEquals(Instant.now().toEpochMilli(), signer.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
+        assertEquals(expectedTimestampCreated.toEpochMilli(), signer.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(DUMMY_EXTERNAL_SIGNER_ID, signer.getExternalSignerId());
         assertEquals(DUMMY_USER_ID, signer.getUserId());
         assertEquals(DUMMY_CSR, signer.getCsr());
@@ -252,7 +253,7 @@ class SignerControllerIntTest {
 
     private void createSigner() {
         final var signer = Signer.builder()
-                .timestampCreated(Instant.now())
+                .timestampCreated(DUMMY_TIMESTAMP_CREATED)
                 .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
                 .userId(DUMMY_USER_ID)
                 .csr(DUMMY_CSR)
