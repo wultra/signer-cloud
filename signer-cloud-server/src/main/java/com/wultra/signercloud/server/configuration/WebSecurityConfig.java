@@ -28,7 +28,6 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.util.Assert;
 
 import static org.springframework.security.config.Customizer.withDefaults;
 
@@ -54,8 +53,6 @@ public class WebSecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
-        Assert.state(authType != null, "No authentication type configured.");
-
         if (authType == AuthType.BASIC_HTTP) {
             logger.info("Initializing HTTP basic authentication.");
             http.httpBasic(withDefaults());
