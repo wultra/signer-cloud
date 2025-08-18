@@ -55,10 +55,12 @@ class SignerService {
     @Transactional
     SignerResponse createUpdateSigner(CreateUpdateSignerRequest request) {
         try {
+            logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", request.userId(), request.signerId());
             createUpdateSignerWithCertificate(request);
+            logger.info("action: createUpdateSigner, state: succeeded");
             return new SignerResponse(SignerResponseResult.OK, null);
         } catch (InactiveSignerException | RestClientException | CertificateException | IOException e) {
-            logger.error("Exception during signer creation", e);
+            logger.info("action: createUpdateSigner, state: failed, errorMessage: {}", e.getMessage());
             return new SignerResponse(SignerResponseResult.FAIL, e.getMessage());
         }
     }
