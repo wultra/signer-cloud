@@ -1,4 +1,4 @@
-package com.wultra.security.signer.server;
+package com.wultra.signercloud.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.europa.esig.dss.enumerations.*;

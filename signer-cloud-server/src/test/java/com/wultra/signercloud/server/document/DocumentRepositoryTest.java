@@ -15,10 +15,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.security.signer.server.document;
+package com.wultra.signercloud.server.document;
 
 import com.wultra.signercloud.server.SignerCloudServerApplication;
-import com.wultra.signercloud.server.document.*;
 import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;

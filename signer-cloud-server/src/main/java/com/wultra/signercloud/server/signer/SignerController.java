@@ -60,7 +60,7 @@ class SignerController {
     )
     @PostMapping
     ResponseEntity<SignerResponse> crateUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
-        final var response = signerService.createOrUpdateSigner(requestBody);
+        final var response = signerService.createUpdateSigner(requestBody);
         return ResponseEntity.ok(response);
     }
 
