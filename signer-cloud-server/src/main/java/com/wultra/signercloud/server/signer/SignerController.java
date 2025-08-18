@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("api/signers")
 @AllArgsConstructor
+@Slf4j
 class SignerController {
 
     private final SignerService signerService;
@@ -59,6 +61,7 @@ class SignerController {
     )
     @PostMapping
     SignerResponse createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
+        logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.signerId());
         return signerService.createUpdateSigner(requestBody);
     }
 

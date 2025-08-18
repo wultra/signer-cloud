@@ -55,7 +55,6 @@ class SignerService {
     @Transactional
     SignerResponse createUpdateSigner(CreateUpdateSignerRequest request) {
         try {
-            logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", request.userId(), request.signerId());
             createUpdateSignerWithCertificate(request);
             logger.info("action: createUpdateSigner, state: succeeded");
             return new SignerResponse(SignerResponseResult.OK, null);
