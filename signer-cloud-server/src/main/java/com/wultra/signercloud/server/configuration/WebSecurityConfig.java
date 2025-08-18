@@ -81,7 +81,7 @@ public class WebSecurityConfig {
                 ).build();
     }
 
-    enum AuthType {
+    private enum AuthType {
         BASIC_HTTP,
 
         OAUTH2
