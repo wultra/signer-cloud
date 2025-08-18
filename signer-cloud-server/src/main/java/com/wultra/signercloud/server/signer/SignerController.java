@@ -58,7 +58,7 @@ class SignerController {
             }
     )
     @PostMapping
-    SignerResponse crateUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
+    SignerResponse createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
         return signerService.createUpdateSigner(requestBody);
     }
 
