@@ -53,7 +53,7 @@ class SignerService {
      * @return {@link SignerResponse} indicating the result of the operation.
      */
     @Transactional
-    SignerResponse createUpdateSigner(CreateUpdateSignerRequest request) {
+    SignerResponse createUpdateSigner(final CreateUpdateSignerRequest request) {
         try {
             createUpdateSignerWithCertificate(request);
             logger.info("action: createUpdateSigner, state: succeeded");
@@ -64,7 +64,7 @@ class SignerService {
         }
     }
 
-    private void createUpdateSignerWithCertificate(CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
+    private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
         final var externalSignerId = request.signerId();
 
         var isRegistrationActive = powerAuthService.isRegistrationActive(externalSignerId);
@@ -100,13 +100,13 @@ class SignerService {
         signerRepository.save(signer);
     }
 
-    private Signer.SignerBuilder createSigner(String externalSignerId) {
+    private Signer.SignerBuilder createSigner(final String externalSignerId) {
         return Signer.builder()
                 .timestampCreated(Instant.now())
                 .externalSignerId(externalSignerId);
     }
 
-    private Signer.SignerBuilder updateSigner(Signer signer) {
+    private Signer.SignerBuilder updateSigner(final Signer signer) {
         return signer.toBuilder()
                 .timestampLastUpdated(Instant.now());
     }
