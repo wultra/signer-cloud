@@ -62,7 +62,12 @@ class SignerController {
     @PostMapping
     SignerResponse createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
         logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.signerId());
-        return signerService.createUpdateSigner(requestBody);
+        final var result = signerService.createUpdateSigner(requestBody);
+        logger.info("action: createUpdateSigner, state: {}, errorMessage: {}",
+                result.result() == SignerResponseResult.OK ? "succeeded" : "failed",
+                result.reason());
+
+        return result;
     }
 
 }

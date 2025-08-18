@@ -21,7 +21,6 @@ import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +36,6 @@ import java.util.Base64;
  */
 @Service
 @AllArgsConstructor
-@Slf4j
 class SignerService {
 
     private final PowerAuthService powerAuthService;
@@ -56,10 +54,8 @@ class SignerService {
     SignerResponse createUpdateSigner(final CreateUpdateSignerRequest request) {
         try {
             createUpdateSignerWithCertificate(request);
-            logger.info("action: createUpdateSigner, state: succeeded");
             return new SignerResponse(SignerResponseResult.OK, null);
         } catch (InactiveSignerException | RestClientException | CertificateException | IOException e) {
-            logger.info("action: createUpdateSigner, state: failed, errorMessage: {}", e.getMessage());
             return new SignerResponse(SignerResponseResult.FAIL, e.getMessage());
         }
     }
