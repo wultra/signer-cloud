@@ -72,7 +72,14 @@ class SignerService {
         }
 
         final var csr = request.csr();
-        var x509Certificate = ejbcaService.enrollCertificate(csr);
+        final var userId = request.userId();
+        final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(csr)
+                .externalSignerId(externalSignerId)
+                .userId(userId)
+                .build();
+
+        var x509Certificate = ejbcaService.enrollCertificate(certificateRequest);
 
         final var certificate = Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
         final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
@@ -82,7 +89,7 @@ class SignerService {
                 .orElse(createSigner(externalSignerId));
 
         final var signer = signerBuilder
-                .userId(request.userId())
+                .userId(userId)
                 .csr(csr)
                 .certificate(certificate)
                 .timestampCertificateExpiration(certificateExpiration)

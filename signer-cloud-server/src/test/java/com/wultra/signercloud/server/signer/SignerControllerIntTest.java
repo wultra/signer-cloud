@@ -124,8 +124,14 @@ class SignerControllerIntTest {
     @Test
     void testCreateUpdateWhenSignerIsCreatedThenOkResponseIsReturned() throws Exception {
         // given
+        final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(DUMMY_CSR)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .userId(DUMMY_USER_ID)
+                .build();
+
         when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(DUMMY_CSR)).thenReturn(certificate);
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificate);
         when(certificate.getEncoded()).thenReturn(Base64.getDecoder().decode(DUMMY_CERTIFICATE));
         when(certificate.getNotAfter()).thenReturn(Date.from(Instant.now().plusSeconds(DUMMY_CERTIFICATE_EXPIRATION_SECONDS)));
 
@@ -147,8 +153,14 @@ class SignerControllerIntTest {
     @Test
     void testCreateUpdateWhenSignerIsCreatedThenItIsStoredIntoDatabase() throws Exception {
         // given
+        final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(DUMMY_CSR)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .userId(DUMMY_USER_ID)
+                .build();
+
         when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(DUMMY_CSR)).thenReturn(certificate);
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificate);
         when(certificate.getEncoded()).thenReturn(Base64.getDecoder().decode(DUMMY_CERTIFICATE));
         when(certificate.getNotAfter()).thenReturn(Date.from(Instant.now().plusSeconds(DUMMY_CERTIFICATE_EXPIRATION_SECONDS)));
 
@@ -171,8 +183,14 @@ class SignerControllerIntTest {
         // given
         createSigner();
 
+        final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(DUMMY_CSR)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .userId(DUMMY_USER_ID)
+                .build();
+
         when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(DUMMY_CSR)).thenReturn(certificate);
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificate);
         when(certificate.getEncoded()).thenReturn(Base64.getDecoder().decode(DUMMY_CERTIFICATE));
         when(certificate.getNotAfter()).thenReturn(Date.from(Instant.now().plusSeconds(DUMMY_CERTIFICATE_EXPIRATION_SECONDS)));
 
@@ -196,8 +214,14 @@ class SignerControllerIntTest {
         // given
         createSigner();
 
+        final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(DUMMY_CSR)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .userId(DUMMY_USER_ID)
+                .build();
+
         when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(DUMMY_CSR)).thenReturn(certificate);
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificate);
         when(certificate.getEncoded()).thenReturn(Base64.getDecoder().decode(DUMMY_CERTIFICATE));
         when(certificate.getNotAfter()).thenReturn(Date.from(Instant.now().plusSeconds(DUMMY_CERTIFICATE_EXPIRATION_SECONDS)));
 

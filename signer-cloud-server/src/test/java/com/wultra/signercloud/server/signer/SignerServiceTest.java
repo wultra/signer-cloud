@@ -80,8 +80,14 @@ class SignerServiceTest {
     @Test
     void testCreateUpdateSignerWhenExceptionIsThrownByEjbcaServiceThenFailResultIsReturned() throws RestClientException, CertificateException, IOException {
         // given
+        final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(DUMMY_CSR)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .userId(DUMMY_USER_ID)
+                .build();
+
         when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(DUMMY_CSR)).thenThrow(new RestClientException("Exception from test"));
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenThrow(new RestClientException("Exception from test"));
 
         final var request = new CreateUpdateSignerRequest(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_USER_ID, DUMMY_CSR);
 
@@ -95,8 +101,14 @@ class SignerServiceTest {
     @Test
     void testCreateUpdateSignerWhenSignerIsCreatedThenOkResultIsReturned() throws RestClientException, CertificateException, IOException {
         // given
+        final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(DUMMY_CSR)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .userId(DUMMY_USER_ID)
+                .build();
+
         when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(DUMMY_CSR)).thenReturn(certificate);
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificate);
         when(certificate.getEncoded()).thenReturn(DUMMY_CERTIFICATE_ENCODED);
         when(certificate.getNotAfter()).thenReturn(DUMMY_CERTIFICATE_EXPIRATION_DATE);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
@@ -113,8 +125,14 @@ class SignerServiceTest {
     @Test
     void testCreateUpdateSignerWhenSignerIsUpdatedThenOkResultIsReturned() throws RestClientException, CertificateException, IOException {
         // given
+        final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(DUMMY_CSR)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .userId(DUMMY_USER_ID)
+                .build();
+
         when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(DUMMY_CSR)).thenReturn(certificate);
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificate);
         when(certificate.getEncoded()).thenReturn(DUMMY_CERTIFICATE_ENCODED);
         when(certificate.getNotAfter()).thenReturn(DUMMY_CERTIFICATE_EXPIRATION_DATE);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(Signer.builder().build()));
