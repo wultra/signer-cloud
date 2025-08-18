@@ -19,10 +19,13 @@ package com.wultra.signercloud.server.document;
 
 import org.springframework.data.repository.CrudRepository;
 
+import java.time.Instant;
+
 /**
  * Repository for accessing a {@link Document}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public interface DocumentRepository extends CrudRepository<Document, Long> {
+    long deleteByStatusAndTimestampCreatedBefore(DocumentStatus status, Instant timestampCreated);
 }

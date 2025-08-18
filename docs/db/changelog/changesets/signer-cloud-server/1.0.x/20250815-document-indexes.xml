@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20250815-document-indexes" author="Lubos Racansky">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="sc_document_timestamp_created_idx"/>
+            </not>
+        </preConditions>
+        <comment>Create a new index sc_document_timestamp_created_idx</comment>
+        <createIndex tableName="sc_document" indexName="sc_document_timestamp_created_idx">
+            <column name="timestamp_created"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="2" logicalFilePath="signer-cloud-server/1.0.x/20250815-document-indexes" author="Lubos Racansky">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="sc_document_status_idx"/>
+            </not>
+        </preConditions>
+        <comment>Create a new index sc_document_status_idx</comment>
+        <createIndex tableName="sc_document" indexName="sc_document_status_idx">
+            <column name="status"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>

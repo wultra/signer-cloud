@@ -1,8 +1,7 @@
 @startuml
-hide stereotypes
 hide circle
 
-class sc_signer {
+class sc_signer <<table>>{
     ID bigint PK
     timestamp_created timestamp(6) NN
     timestamp_last_updated timestamp(6)
@@ -10,37 +9,41 @@ class sc_signer {
     user_id varchar(255) NN
     csr CLOB NN
     certificate CLOB
-    timestamp_certificate_expiration timestamp(6)
+    timestamp_certificate_expiration timestamp(6) I
     status varchar(50) NN (ACTIVE/BLOCKED/REMOVED/REVOKED)
 }
 
-class sc_document {
+class sc_document <<table>> {
     ID bigint PK
-    timestamp_created timestamp(6) NN
+    timestamp_created timestamp(6) NN I
     timestamp_last_updated timestamp(6)
     document_id varchar(255) U NN
-    signer_id bigint FK
+    signer_id bigint FK I
     external_id varchar(255)
     document_name varchar(255) NN
     file_name varchar(255) NN
     file_size integer NN
-    document_content_id bigint FK
+    document_content_id bigint FK I
     hash varchar(255) NN
-    status varchar(50) NN (WAITING/REJECTED/SIGNED)
+    status varchar(50) NN I (WAITING/REJECTED/SIGNED)
     signature varchar(255)
 }
 
-class sc_document_content {
+class sc_document_content <<table>>{
     ID bigint PK
     content BLOB NN
 }
 
-sc_document "sc_document_signer_id_fk" --> sc_signer
-sc_document "sc_document_document_content_id_fk" --> sc_document_content
+class sc_signer_seq <<sequence>>
+class sc_document_seq <<sequence>>
+class sc_document_content_seq <<sequence>>
 
 sc_signer_seq -> sc_signer
 sc_document_seq -> sc_document
 sc_document_content_seq -> sc_document_content
+
+sc_document "sc_document_signer_id_fk" --> sc_signer
+sc_document "sc_document_document_content_id_fk" --> sc_document_content
 
 note as note1
 Legend:
@@ -48,6 +51,7 @@ PK = Primary Key
 FK = Foreign Key
 NN = Not Null
 U = Unique
+I = Index
 end note
 
 @enduml

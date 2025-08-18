@@ -12,6 +12,7 @@
 
     <artifactId>signer-cloud-server</artifactId>
     <description>Signer Cloud Server</description>
+    <packaging>war</packaging>
 
     <dependencies>
 
@@ -79,6 +80,16 @@
             <artifactId>dss-cms-object</artifactId>
         </dependency>
 
+        <!-- Job Scheduling -->
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-spring</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>net.javacrumbs.shedlock</groupId>
+            <artifactId>shedlock-provider-jdbc-template</artifactId>
+        </dependency>
+
         <!-- To run on Apple M1 architecture -->
         <dependency>
             <groupId>io.netty</groupId>
@@ -93,9 +104,16 @@
             <artifactId>micrometer-tracing-bridge-otel</artifactId>
         </dependency>
 
+        <!-- Documentation -->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+        </dependency>
+
+        <!-- Logging -->
+        <dependency>
+            <groupId>net.logstash.logback</groupId>
+            <artifactId>logstash-logback-encoder</artifactId>
         </dependency>
 
         <!-- Database -->

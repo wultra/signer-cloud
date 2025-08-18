@@ -17,10 +17,14 @@
  */
 package com.wultra.signercloud.server.ejbca;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import com.wultra.core.rest.client.base.DefaultRestClient;
 import com.wultra.core.rest.client.base.RestClient;
 import com.wultra.core.rest.client.base.RestClientConfiguration;
 import com.wultra.core.rest.client.base.RestClientException;
+import lombok.Builder;
+import lombok.extern.jackson.Jacksonized;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.BeanCreationException;
@@ -90,5 +94,29 @@ class EjbcaRestClient {
         logger.info("Got revocation certificate response, revoked: {}", response.getBody().revoked());
         logger.debug("Got revocation certificate response: {}", response.getBody());
         return response.getBody();
+    }
+
+    @Jacksonized
+    @Builder
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    record CertificateRequest(
+            String accountBindingId,
+            String username,
+            String certificateRequest,
+            String certificateProfileName,
+            String endEntityProfileName,
+            String certificateAuthorityName
+    ) {
+    }
+
+    @Jacksonized
+    @Builder
+    @JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
+    record CertificateResponse(
+            String responseFormat,
+            String certificate,
+            String serialNumber,
+            String certificate_chain
+    ) {
     }
 }

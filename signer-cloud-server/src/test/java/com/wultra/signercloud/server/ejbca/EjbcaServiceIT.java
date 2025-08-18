@@ -25,6 +25,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.security.cert.X509Certificate;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -67,8 +68,14 @@ class EjbcaServiceIT {
                 -----END CERTIFICATE REQUEST-----
                 """;
 
+        final var request = EjbcaService.CertificateRequest.builder()
+                .userId("user123")
+                .externalSignerId(UUID.randomUUID().toString())
+                .csr(csr)
+                .build();
+
         try {
-            final X509Certificate result = ejbcaService.enrollCertificate(csr);
+            final X509Certificate result = ejbcaService.enrollCertificate(request);
             logger.info("Got certificate: {}", result);
             assertEquals("C=CZ,O=Wultra SMOKE,CN=John Doe", result.getSubjectX500Principal().getName());
             assertEquals("SHA384withECDSA", result.getSigAlgName());
