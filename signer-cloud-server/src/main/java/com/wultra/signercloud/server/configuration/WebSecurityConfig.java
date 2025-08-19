@@ -83,7 +83,6 @@ public class WebSecurityConfig {
 
     private enum AuthType {
         BASIC_HTTP,
-
         OAUTH2
     }
 }
