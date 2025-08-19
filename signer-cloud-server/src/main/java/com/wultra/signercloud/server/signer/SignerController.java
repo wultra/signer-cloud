@@ -64,13 +64,13 @@ class SignerController {
         logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.signerId());
         final var result = signerService.createUpdateSigner(requestBody);
 
-        if (result.result() == SignerResponseResult.OK) {
+        if (result.isSuccess()) {
             logger.info("action: createUpdateSigner, state: succeeded");
+            return new SignerResponse(SignerResponseResult.OK, null);
         } else {
-            logger.error("action: createUpdateSigner, state: failed, errorMessage: {}", result.reason());
+            logger.error("action: createUpdateSigner, state: failed, errorMessage: {}", result.getError().getMessage());
+            return new SignerResponse(SignerResponseResult.FAIL, result.getError().getMessage());
         }
-
-        return result;
     }
 
 }

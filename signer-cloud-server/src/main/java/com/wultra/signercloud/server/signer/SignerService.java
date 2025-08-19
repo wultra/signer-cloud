@@ -20,6 +20,7 @@ package com.wultra.signercloud.server.signer;
 import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
+import com.wultra.signercloud.server.restapi.Try;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,12 +52,12 @@ class SignerService {
      * @return {@link SignerResponse} indicating the result of the operation.
      */
     @Transactional
-    SignerResponse createUpdateSigner(final CreateUpdateSignerRequest request) {
+    Try createUpdateSigner(final CreateUpdateSignerRequest request) {
         try {
             createUpdateSignerWithCertificate(request);
-            return new SignerResponse(SignerResponseResult.OK, null);
+            return Try.success();
         } catch (InactiveSignerException | RestClientException | CertificateException | IOException e) {
-            return new SignerResponse(SignerResponseResult.FAIL, e.getMessage());
+            return Try.error(e);
         }
     }
 
