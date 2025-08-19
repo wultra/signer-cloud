@@ -15,17 +15,13 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
-
-import org.springframework.data.repository.CrudRepository;
-
-import java.util.Optional;
+package com.wultra.signercloud.server.restapi;
 
 /**
- * Repository for accessing a {@link Signer}.
+ * Response for HTTP error.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface SignerRepository extends CrudRepository<Signer, Long> {
-    Optional<Signer> findByExternalSignerId(String externalSignerId);
-}
+public record ErrorResponse(String status, ErrorDetails responseObject) {}
+
+record ErrorDetails(ErrorCode code, String message) {}

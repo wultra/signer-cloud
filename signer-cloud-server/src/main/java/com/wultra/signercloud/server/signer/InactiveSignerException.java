@@ -17,15 +17,13 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import org.springframework.data.repository.CrudRepository;
-
-import java.util.Optional;
-
 /**
- * Repository for accessing a {@link Signer}.
+ * Exception thrown when an operation is attempted on an inactive signer.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface SignerRepository extends CrudRepository<Signer, Long> {
-    Optional<Signer> findByExternalSignerId(String externalSignerId);
+public class InactiveSignerException extends RuntimeException {
+    public InactiveSignerException(String message) {
+        super(message);
+    }
 }

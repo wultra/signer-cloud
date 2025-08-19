@@ -31,7 +31,7 @@ import java.time.Instant;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @Table("sc_signer")
 public class Signer {
 

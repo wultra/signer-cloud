@@ -17,15 +17,16 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import org.springframework.data.repository.CrudRepository;
-
-import java.util.Optional;
+import jakarta.validation.constraints.NotBlank;
 
 /**
- * Repository for accessing a {@link Signer}.
+ * REST body for creating a new {@link Signer}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface SignerRepository extends CrudRepository<Signer, Long> {
-    Optional<Signer> findByExternalSignerId(String externalSignerId);
+record CreateUpdateSignerRequest(
+        @NotBlank String signerId,
+        @NotBlank String userId,
+        @NotBlank String csr
+) {
 }

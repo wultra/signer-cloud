@@ -15,17 +15,21 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
-
-import org.springframework.data.repository.CrudRepository;
-
-import java.util.Optional;
+package com.wultra.signercloud.server.restapi;
 
 /**
- * Repository for accessing a {@link Signer}.
+ * Error codes for {@link ErrorResponse}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface SignerRepository extends CrudRepository<Signer, Long> {
-    Optional<Signer> findByExternalSignerId(String externalSignerId);
+public enum ErrorCode {
+    /**
+     * HTTP 400, Issue with a request format or issue of the business logic.
+     */
+    ERROR_GENERIC,
+
+    /**
+     * HTTP 401, Unauthorized request.
+     */
+    ERROR_UNAUTHORIZED
 }
