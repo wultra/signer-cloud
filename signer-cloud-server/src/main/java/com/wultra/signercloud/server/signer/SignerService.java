@@ -63,7 +63,7 @@ class SignerService {
     private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
         final var externalSignerId = request.signerId();
 
-        var isRegistrationActive = powerAuthService.isRegistrationActive(externalSignerId);
+        final var isRegistrationActive = powerAuthService.isRegistrationActive(externalSignerId);
         if (!isRegistrationActive) {
             throw new InactiveSignerException("Signer registration is not active for external signer ID: " + externalSignerId);
         }
@@ -76,7 +76,7 @@ class SignerService {
                 .userId(userId)
                 .build();
 
-        var x509Certificate = ejbcaService.enrollCertificate(certificateRequest);
+        final var x509Certificate = ejbcaService.enrollCertificate(certificateRequest);
 
         final var certificate = Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
         final var certificateExpiration = x509Certificate.getNotAfter().toInstant();

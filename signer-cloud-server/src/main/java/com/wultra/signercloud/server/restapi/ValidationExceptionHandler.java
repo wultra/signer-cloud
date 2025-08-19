@@ -31,8 +31,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 public class ValidationExceptionHandler {
     private static final String ERROR_STATUS = "ERROR";
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException ex) {
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleValidationException(final MethodArgumentNotValidException ex) {
         final var message = "Validation failed: " + ex.getBindingResult().getFieldErrors().stream()
                 .map(e -> e.getField() + " " + e.getDefaultMessage())
                 .findFirst()
