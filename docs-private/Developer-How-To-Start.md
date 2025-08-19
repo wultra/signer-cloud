@@ -16,7 +16,7 @@ The application runs on port `8090` by default to avoid conflicts with other app
 
 ### Swagger
 
-[http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
+[http://localhost:8090/swagger-ui.html](http://localhost:8090/swagger-ui.html)
 
 
 ### Database
