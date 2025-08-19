@@ -24,6 +24,7 @@ For local development you can use docker image
 ```shell
 docker run --name postgres-liquibase -e POSTGRES_USER=signer_cloud_server -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=signer_cloud_server -p 5432:5432 -d postgres:16
 ```
+
 Don't forget to run the Liquibase script (see the section below); it is not applied automatically.
 
 
@@ -77,16 +78,16 @@ The EJBCA provides a REST API. For creating a new certificate call:
 
 ```shell
 curl --location 'https://smoke-ejbca-dev.wultra.app/ejbca/ejbca-rest-api/v1/certificate/pkcs10enroll' \
---cert client.crt \
---key client.key \
---json '{
-    "end_entity_profile_name": "UserEndEntityProfile",
-    "certificate_authority_name": "IssuingCA",
-    "certificate_request": "MIICfDCCAWQCAQAwNzE...",
-    "certificate_profile_name": "UserCertificateProfile",
-    "accountBindingId": "userId",
-    "username": "externalSignerId"
-}'
+     --cert client.crt \
+     --key client.key \
+     --json '{
+        "end_entity_profile_name": "UserEndEntityProfile",
+        "certificate_authority_name": "IssuingCA",
+        "certificate_request": "MIICfDCCAWQCAQAwNzE...",
+        "certificate_profile_name": "UserCertificateProfile",
+        "accountBindingId": "userId",
+        "username": "externalSignerId"
+     }'
 ```
 
 The instance uses mTLS authentication, so you need to provide a client certificate and key. See config properties with prefix `signer-cloud.server.ejbca.rest-client-configuration`
