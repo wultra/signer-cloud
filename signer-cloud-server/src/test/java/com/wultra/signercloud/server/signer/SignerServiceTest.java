@@ -32,7 +32,7 @@ import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 /**
@@ -74,7 +74,7 @@ class SignerServiceTest {
         final var response = signerService.createUpdateSigner(request);
 
         // then
-        assertEquals(SignerResponseResult.FAIL, response.result());
+        assertFalse(response.isSuccess());
     }
 
     @Test
@@ -95,7 +95,7 @@ class SignerServiceTest {
         final var response = signerService.createUpdateSigner(request);
 
         // then
-        assertEquals(SignerResponseResult.FAIL, response.result());
+        assertFalse(response.isSuccess());
     }
 
     @Test
@@ -119,7 +119,7 @@ class SignerServiceTest {
         final var response = signerService.createUpdateSigner(request);
 
         // then
-        assertEquals(SignerResponseResult.OK, response.result());
+        assertTrue(response.isSuccess());
     }
 
     @Test
@@ -143,6 +143,6 @@ class SignerServiceTest {
         final var response = signerService.createUpdateSigner(request);
 
         // then
-        assertEquals(SignerResponseResult.OK, response.result());
+        assertTrue(response.isSuccess());
     }
 }
