@@ -23,7 +23,7 @@ package com.wultra.signercloud.server.restapi;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public sealed interface Try permits Try.TrySuccess, Try.TryError {
-    // TODO: Currently, there is no parameterized value for the return, because so far we don't have any service that requires it.
+    // TODO (michal-rozehnal-w, 2025-08-19) Currently, there is no parameterized value for the return, because so far we don't have any service that requires it.
     // However, feel free to add it here if you need it.
     boolean isSuccess();
     Throwable getError();
@@ -39,8 +39,7 @@ public sealed interface Try permits Try.TrySuccess, Try.TryError {
     /**
      * Represents a successful operation.
      */
-    final class TrySuccess implements Try {
-        private TrySuccess() {}
+    record TrySuccess() implements Try {
 
         @Override
         public boolean isSuccess() {
@@ -56,12 +55,7 @@ public sealed interface Try permits Try.TrySuccess, Try.TryError {
     /**
      * Represents a failed operation with an error.
      */
-    final class TryError implements Try {
-        private final Throwable throwable;
-
-        public TryError(Throwable t) {
-            this.throwable = t;
-        }
+    record TryError(Throwable throwable) implements Try {
 
         @Override
         public boolean isSuccess() {
