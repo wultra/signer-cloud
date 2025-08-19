@@ -22,7 +22,9 @@ package com.wultra.signercloud.server.restapi;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface Try {
+public sealed interface Try permits Try.TrySuccess, Try.TryError {
+    // TODO: Currently, there is no parameterized value for the return, because so far we don't have any service that requires it.
+    // However, feel free to add it here if you need it.
     boolean isSuccess();
     Throwable getError();
 
