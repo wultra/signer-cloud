@@ -40,6 +40,7 @@ import java.util.Date;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -56,8 +57,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @WithMockUser
 class SignerControllerIntTest {
-
-    private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/api/signers";
     private static final int MILLISECONDS_DELTA = 1_000;
 
     private static final String DUMMY_EXTERNAL_SIGNER_ID = "dummyExternalSignerId";
@@ -67,6 +66,9 @@ class SignerControllerIntTest {
     private static final String DUMMY_CERTIFICATE = "dummyCertificate";
     private static final long DUMMY_CERTIFICATE_EXPIRATION_SECONDS = 3_600;
     private static final Instant DUMMY_TIMESTAMP_CREATED = Instant.now().minusSeconds(120);
+
+    private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/api/signers";
+    private static final String UPDATE_SIGNER_STATUS_ENDPOINT = "/api/signers/" + DUMMY_EXTERNAL_SIGNER_ID;
 
     @Autowired
     private MockMvc mockMvc;
@@ -97,7 +99,7 @@ class SignerControllerIntTest {
         final var request = new CreateUpdateSignerRequest(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_USER_ID, DUMMY_CSR);
 
         // when
-        var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
+        final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
             .andExpect(status().isOk())
@@ -141,7 +143,7 @@ class SignerControllerIntTest {
         final var request = new CreateUpdateSignerRequest(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_USER_ID, DUMMY_CSR);
 
         // when
-        var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
+        final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -177,14 +179,14 @@ class SignerControllerIntTest {
 
         // then
         final var signer = signerRepository.findAll().iterator().next();
-        assertSigner(signer, Instant.now());
+        assertSigner(signer, Instant.now(), SignerStatus.ACTIVE);
         assertNull(signer.getTimestampLastUpdated());
     }
 
     @Test
     void testCreateUpdateWhenSignerIsUpdatedThenOkResponseIsReturned() throws Exception {
         // given
-        createSigner();
+        createSigner(SignerStatus.ACTIVE);
 
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(DUMMY_CSR)
@@ -200,7 +202,7 @@ class SignerControllerIntTest {
         final var request = new CreateUpdateSignerRequest(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_USER_ID, DUMMY_CSR);
 
         // when
-        var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
+        final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -215,7 +217,7 @@ class SignerControllerIntTest {
     @Test
     void testCreateUpdateWhenSignerIsUpdatedThenItIsStoredIntoDatabase() throws Exception {
         // given
-        createSigner();
+        createSigner(SignerStatus.ACTIVE);
 
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(DUMMY_CSR)
@@ -238,11 +240,85 @@ class SignerControllerIntTest {
 
         // then
         final var signer = signerRepository.findAll().iterator().next();
-        assertSigner(signer, DUMMY_TIMESTAMP_CREATED);
+        assertSigner(signer, DUMMY_TIMESTAMP_CREATED, SignerStatus.ACTIVE);
         assertEquals(Instant.now().toEpochMilli(), signer.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
     }
 
-    private void assertSigner(Signer signer, Instant expectedTimestampCreated) {
+    @Test
+    void testUpdateStatusWhenSignerIsNotFoundThenFailResponseIsReturned() throws Exception {
+        // given
+        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
+
+        // when
+        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
+        assertEquals(SignerResponseResult.FAIL, responseBody.result());
+        assertNotNull(responseBody.reason());
+    }
+
+    @Test
+    void testUpdateStatusWhenStatusTransitionIsNotValidThenFailResponseIsReturned() throws Exception {
+        // given
+        createSigner(SignerStatus.REVOKED);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.ACTIVE);
+
+        // when
+        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
+        assertEquals(SignerResponseResult.FAIL, responseBody.result());
+        assertNotNull(responseBody.reason());
+    }
+
+    @Test
+    void testUpdateStatusWhenStatusTransitionIsValidThenSuccessResponseIsReturned() throws Exception {
+        // given
+        createSigner(SignerStatus.ACTIVE);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
+
+        // when
+        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
+        assertEquals(SignerResponseResult.OK, responseBody.result());
+        assertNull(responseBody.reason());
+    }
+
+    @Test
+    void testUpdateStatusWhenStatusTransitionIsValidThenStatusIsUpdatedInDatabase() throws Exception {
+        // given
+        createSigner(SignerStatus.ACTIVE);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
+
+        // when
+        mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // then
+        final var signer = signerRepository.findAll().iterator().next();
+        assertSigner(signer, DUMMY_TIMESTAMP_CREATED, SignerStatus.BLOCKED);
+        assertEquals(Instant.now().toEpochMilli(), signer.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
+    }
+
+    private void assertSigner(final Signer signer, final Instant expectedTimestampCreated, final SignerStatus expectedStatus) {
         assertNotEquals(0, signer.getId());
         assertEquals(expectedTimestampCreated.toEpochMilli(), signer.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(DUMMY_EXTERNAL_SIGNER_ID, signer.getExternalSignerId());
@@ -250,10 +326,10 @@ class SignerControllerIntTest {
         assertEquals(DUMMY_CSR, signer.getCsr());
         assertEquals(DUMMY_CERTIFICATE, signer.getCertificate());
         assertEquals(Instant.now().plusSeconds(DUMMY_CERTIFICATE_EXPIRATION_SECONDS).toEpochMilli(), signer.getTimestampCertificateExpiration().toEpochMilli(), MILLISECONDS_DELTA);
-        assertEquals(SignerStatus.ACTIVE, signer.getStatus());
+        assertEquals(expectedStatus, signer.getStatus());
     }
 
-    private void createSigner() {
+    private void createSigner(final SignerStatus status) {
         final var signer = Signer.builder()
                 .timestampCreated(DUMMY_TIMESTAMP_CREATED)
                 .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
@@ -261,7 +337,7 @@ class SignerControllerIntTest {
                 .csr(DUMMY_CSR)
                 .certificate(DUMMY_CERTIFICATE)
                 .timestampCertificateExpiration(Instant.now().plusSeconds(DUMMY_CERTIFICATE_EXPIRATION_SECONDS))
-                .status(SignerStatus.ACTIVE)
+                .status(status)
                 .build();
         signerRepository.save(signer);
     }

@@ -140,7 +140,7 @@ class SignerService {
         final var oldStatus = signer.getStatus();
 
         if (oldStatus == newStatus) {
-            throw new SignerStatusTransitionException("Signer status is already: " + newStatus);
+            return;
         }
 
         final var isTransitionValid = VALID_STATUS_TRANSITIONS.getOrDefault(oldStatus, Collections.emptySet())
@@ -156,6 +156,7 @@ class SignerService {
 
         signer = signer.toBuilder()
                 .status(newStatus)
+                .timestampLastUpdated(Instant.now())
                 .build();
 
         signerRepository.save(signer);

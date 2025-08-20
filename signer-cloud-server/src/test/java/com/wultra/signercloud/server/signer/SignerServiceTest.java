@@ -29,10 +29,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -144,5 +147,85 @@ class SignerServiceTest {
 
         // then
         assertTrue(response.isSuccess());
+    }
+
+    @Test
+    void testUpdateStatusWhenSignerIsNotFoundThenFailResultIsReturned() {
+        // given
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
+
+        // when
+        final var response = signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+
+        // then
+        assertFalse(response.isSuccess());
+    }
+
+    @Test
+    void testUpdateStatusWhenOldStatusEqualsNewStatusThenSuccessResultIsReturned() {
+        // given
+        final var signer = createSigner(SignerStatus.BLOCKED);
+
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        // when
+        final var response = signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+
+        // then
+        assertTrue(response.isSuccess());
+    }
+
+    @Test
+    void testUpdateStatusWhenStatusTransitionIsNotValidThenFailResultIsReturned() {
+        // given
+        final var signer = createSigner(SignerStatus.REVOKED);
+
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        // when
+        final var response = signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.ACTIVE));
+
+        // then
+        assertFalse(response.isSuccess());
+    }
+
+    @Test
+    void testUpdateStatusWhenStatusTransitionIsValidThenSuccessResultIsReturned() {
+        // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        // when
+        final var response = signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+
+        // then
+        assertTrue(response.isSuccess());
+    }
+
+    @Test
+    void testUpdateStatusWhenStatusIsSetToRevokedThenEjbcaIsCalled() throws RestClientException {
+        // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        // when
+        signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED));
+
+        // then
+        verify(ejbcaService).revokeCertificates(DUMMY_EXTERNAL_SIGNER_ID);
+    }
+
+    private Signer createSigner(final SignerStatus status) {
+        return Signer.builder()
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .userId(DUMMY_USER_ID)
+                .csr(DUMMY_CSR)
+                .certificate(Base64.getEncoder().encodeToString(DUMMY_CERTIFICATE_ENCODED))
+                .timestampCertificateExpiration(DUMMY_CERTIFICATE_EXPIRATION_DATE.toInstant())
+                .status(status)
+                .timestampCreated(Instant.now())
+                .build();
     }
 }
