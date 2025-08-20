@@ -28,10 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Service for {@link Signer} operations.
@@ -42,9 +39,9 @@ import java.util.Set;
 @AllArgsConstructor
 class SignerService {
 
-    private static final Map<SignerStatus, Set<SignerStatus>> VALID_STATUS_TRANSITIONS = Map.of(
-            SignerStatus.ACTIVE, Set.of(SignerStatus.BLOCKED, SignerStatus.REMOVED, SignerStatus.REVOKED),
-            SignerStatus.BLOCKED, Set.of(SignerStatus.ACTIVE, SignerStatus.REMOVED, SignerStatus.REVOKED)
+    private static final Map<SignerStatus, EnumSet<SignerStatus>> VALID_STATUS_TRANSITIONS = Map.of(
+            SignerStatus.ACTIVE, EnumSet.of(SignerStatus.BLOCKED, SignerStatus.REMOVED, SignerStatus.REVOKED),
+            SignerStatus.BLOCKED, EnumSet.of(SignerStatus.ACTIVE, SignerStatus.REMOVED, SignerStatus.REVOKED)
     );
 
     private final PowerAuthService powerAuthService;
@@ -134,7 +131,7 @@ class SignerService {
     }
 
     private void updateStatus(final String externalSignerId, final SignerStatus newStatus) throws RestClientException {
-        var signer = signerRepository.findByExternalSignerId(externalSignerId)
+        final var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
 
         final var oldStatus = signer.getStatus();
@@ -143,7 +140,7 @@ class SignerService {
             return;
         }
 
-        final var isTransitionValid = VALID_STATUS_TRANSITIONS.getOrDefault(oldStatus, Collections.emptySet())
+        final var isTransitionValid = VALID_STATUS_TRANSITIONS.getOrDefault(oldStatus, EnumSet.noneOf(SignerStatus.class))
                 .contains(newStatus);
 
         if (!isTransitionValid) {
@@ -154,11 +151,11 @@ class SignerService {
             ejbcaService.revokeCertificates(externalSignerId);
         }
 
-        signer = signer.toBuilder()
+        final var updatedSigner = signer.toBuilder()
                 .status(newStatus)
                 .timestampLastUpdated(Instant.now())
                 .build();
 
-        signerRepository.save(signer);
+        signerRepository.save(updatedSigner);
     }
 }
