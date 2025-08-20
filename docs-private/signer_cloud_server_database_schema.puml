@@ -10,7 +10,7 @@ class sc_signer <<table>>{
     csr CLOB NN
     certificate CLOB
     timestamp_certificate_expiration timestamp(6) I
-    status varchar(50) NN (ACTIVE/BLOCKED/REMOVED/REVOKED/EXPIRED)
+    status varchar(50) NN I (ACTIVE/BLOCKED/REMOVED/REVOKED/EXPIRED)
 }
 
 class sc_document <<table>> {

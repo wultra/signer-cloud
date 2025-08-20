@@ -8,5 +8,6 @@
     <include file="20250814-indexes-foreign-keys.xml" relativeToChangelogFile="true" />
     <include file="20250814-shedlock.xml" relativeToChangelogFile="true" />
     <include file="20250815-document-indexes.xml" relativeToChangelogFile="true" />
+    <include file="20250820-signer-index.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>
