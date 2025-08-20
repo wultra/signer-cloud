@@ -1,0 +1,16 @@
+@startuml
+hide empty description
+
+[*] --> ACTIVE
+ACTIVE --> BLOCKED
+ACTIVE --> REVOKED
+ACTIVE --> REMOVED
+
+BLOCKED --> ACTIVE
+BLOCKED --> REVOKED
+BLOCKED --> REMOVED
+
+REVOKED --> [*]
+REMOVED --> [*]
+
+@enduml
