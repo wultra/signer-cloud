@@ -68,7 +68,7 @@ class SignerControllerIntTest {
     private static final Instant DUMMY_TIMESTAMP_CREATED = Instant.now().minusSeconds(120);
 
     private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/api/signers";
-    private static final String UPDATE_SIGNER_STATUS_ENDPOINT = "/api/signers/" + DUMMY_EXTERNAL_SIGNER_ID;
+    private static final String UPDATE_SIGNER_STATUS_ENDPOINT = "/api/signers/{externalSignerId}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -250,7 +250,7 @@ class SignerControllerIntTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
 
         // when
-        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT)
+        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT, DUMMY_EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -269,7 +269,7 @@ class SignerControllerIntTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.ACTIVE);
 
         // when
-        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT)
+        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT, DUMMY_EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -288,7 +288,7 @@ class SignerControllerIntTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
 
         // when
-        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT)
+        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT, DUMMY_EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -307,7 +307,7 @@ class SignerControllerIntTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
 
         // when
-        mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT)
+        mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT, DUMMY_EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
