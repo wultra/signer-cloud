@@ -24,10 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Controller for {@link Signer} operations.
@@ -69,6 +66,17 @@ class SignerController {
             return new SignerResponse(SignerResponseResult.OK, null);
         } else {
             logger.error("action: createUpdateSigner, state: failed, errorMessage: {}", result.getError().getMessage());
+            return new SignerResponse(SignerResponseResult.FAIL, result.getError().getMessage());
+        }
+    }
+
+    @PutMapping("/{externalSignerId}")
+    SignerResponse updateStatus(@PathVariable final String externalSignerId, @RequestBody final UpdateSignerStatusRequest requestBody) {
+        final var result =  signerService.updateStatus(externalSignerId, requestBody);
+
+        if (result.isSuccess()) {
+            return new SignerResponse(SignerResponseResult.OK, null);
+        } else {
             return new SignerResponse(SignerResponseResult.FAIL, result.getError().getMessage());
         }
     }
