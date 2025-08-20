@@ -17,8 +17,12 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import org.springframework.data.jdbc.repository.query.Modifying;
+import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 
+import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -27,5 +31,43 @@ import java.util.Optional;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public interface SignerRepository extends CrudRepository<Signer, Long> {
+
     Optional<Signer> findByExternalSignerId(String externalSignerId);
+
+    /**
+     * Find signer IDs for expiration.
+     *
+     * @param now Current time.
+     * @return List of signer IDs.
+     */
+    @Query("SELECT id FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration < :now")
+    List<Long> findIdsForExpiration(Instant now);
+
+
+    /**
+     * Marks signers as expired.
+     * <p>
+     * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
+     *
+     * @param ids Signer IDs to mark as expired.
+     * @param now Current time.
+     */
+    @Modifying
+    @Query("UPDATE sc_signer SET timestamp_last_updated = :now, status = 'EXPIRED' WHERE id IN (:ids)")
+    void markAsExpired(List<Long> ids, Instant now);
+
+    /**
+     * Marks signers as expired.
+     * <p>
+     * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
+     *
+     * @param now Current time.
+     * @return List of signer IDs marked as expired.
+     * @implSpec Unfortunately, usage of Common Table Expressions is limited to PostgreSQL only.
+     */
+    default List<Long> markAsExpired(Instant now) {
+        final List<Long> ids = findIdsForExpiration(now);
+        markAsExpired(ids, now);
+        return ids;
+    }
 }

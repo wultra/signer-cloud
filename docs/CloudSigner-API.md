@@ -118,10 +118,10 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
 
 ##### Request Params
 
-| Attribute                | Type     | Description                                                                                                                            |
-|:-------------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------|
-| `signerId`               | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                        |
-| `signerStatus`                 | `String` | Select new signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED                                                                |
+| Attribute      | Type     | Description                                                                |
+|:---------------|:---------|:---------------------------------------------------------------------------|
+| `signerId`     | `String` | Activation ID (Registration ID) from PowerAuth.                            |
+| `signerStatus` | `String` | Select new signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED, EXPIRED |
 
 #### Response 200
 
@@ -182,11 +182,11 @@ Get signer state.
 
 ##### Response  Params
 
-| Attribute      | Type     | Description                                            |
-|:---------------|:---------|:-------------------------------------------------------|
-| `signerId`     | `String` | Activation ID (Registration ID) from PowerAuth.        |
-| `userId`       | `String` | Custom User ID mostly for tracking purposes.           |
-| `signerStatus` | `String` | Signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED |
+| Attribute      | Type     | Description                                                     |
+|:---------------|:---------|:----------------------------------------------------------------|
+| `signerId`     | `String` | Activation ID (Registration ID) from PowerAuth.                 |
+| `userId`       | `String` | Custom User ID mostly for tracking purposes.                    |
+| `signerStatus` | `String` | Signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED, EXPIRED |
 <!-- end -->
 
 <!-- begin api POST /api/cloudsigner/documents -->

@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.document;
+package com.wultra.signercloud.server.signer;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,23 +25,23 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 /**
- * A scheduled job that performs cleanup operations on documents.
+ * A scheduled job that performs cleanup operations on signers.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 @Component
 @AllArgsConstructor
 @Slf4j
-class CleanupJob {
+class SignerCleanupJob {
 
-    private final DocumentService documentService;
+    private final SignerService signerService;
 
-    @Scheduled(cron = "${signer-cloud.server.document.cleanup.cron}", zone = "UTC")
-    @SchedulerLock(name = "cleanupDocuments")
-    public void cleanupDocuments() {
-        logger.info("action: cleanupDocuments, state: initiated");
+    @Scheduled(cron = "${signer-cloud.server.signer.expiration.job.cron}", zone = "UTC")
+    @SchedulerLock(name = "cleanupSigners")
+    public void cleanupSigners() {
+        logger.info("action: cleanupSigners, state: initiated");
         LockAssert.assertLocked();
-        final var result = documentService.cleanupDocuments();
-        logger.info("action: cleanupDocuments, state: succeeded, {}", result);
+        final var result = signerService.cleanupSigners();
+        logger.info("action: cleanupSigners, state: succeeded, count: {}", result);
     }
 }

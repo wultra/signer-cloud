@@ -22,6 +22,9 @@ import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +32,7 @@ import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.time.Instant;
 import java.util.*;
+import java.util.List;
 
 /**
  * Service for {@link Signer} operations.
@@ -36,7 +40,9 @@ import java.util.*;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Service
+@Transactional
 @AllArgsConstructor
+@Slf4j
 class SignerService {
 
     private static final Map<SignerStatus, EnumSet<SignerStatus>> VALID_STATUS_TRANSITIONS = Map.of(
@@ -47,16 +53,16 @@ class SignerService {
     private final PowerAuthService powerAuthService;
     private final EjbcaService ejbcaService;
     private final SignerRepository signerRepository;
+    private final SignerConfigurationProperties configurationProperties;
 
     /**
-     * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#externalSignerId}).
+     * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
      * This method checks whether the registration in PowerAuth is active, then generates a certificate via the EJBCA service
-     * (based on {@link CreateUpdateSignerRequest#csr}), and finally stores the signer in the database.
+     * (based on {@link CreateUpdateSignerRequest#csr()}), and finally stores the signer in the database.
      *
      * @param request the request containing details of signer
      * @return result of operation as {@link Try}
      */
-    @Transactional
     Try<Void> createUpdateSigner(final CreateUpdateSignerRequest request) {
         try {
             createUpdateSignerWithCertificate(request);
@@ -64,6 +70,24 @@ class SignerService {
         } catch (final InactiveSignerException | RestClientException | CertificateException | IOException e) {
             return Try.error(e);
         }
+    }
+
+    /**
+     * Marks all signers that have expired as expired and creates expiration callbacks if configured.
+     *
+     * @return Number of expired signers.
+     */
+    long cleanupSigners() {
+        final Instant now = Instant.now();
+        final List<Long> ids = signerRepository.findIdsForExpiration(now);
+        signerRepository.markAsExpired(ids, now);
+
+        if (configurationProperties.getExpiration().enabled()) {
+            logger.info("Creating {} expiration callbacks.", ids.size());
+            // TODO Lubos create callback
+        }
+
+        return ids.size();
     }
 
     private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
@@ -120,7 +144,6 @@ class SignerService {
      * @param request request containing the new status
      * @return result of operation as {@link Try}
      */
-    @Transactional
     Try<Void> updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
         try {
             updateStatus(externalSignerId, request.signerStatus());

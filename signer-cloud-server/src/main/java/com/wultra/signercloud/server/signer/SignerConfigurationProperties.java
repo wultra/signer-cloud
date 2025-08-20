@@ -15,23 +15,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server;
+package com.wultra.signercloud.server.signer;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Test for context loading.
+ * Signer configuration properties.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@SpringBootTest
-@ActiveProfiles("test")
-class SignerCloudServerApplicationTest {
+@ConfigurationProperties(prefix = "signer-cloud.server.signer")
+@Getter
+@Setter
+class SignerConfigurationProperties {
 
-    @Test
-    void contextLoads() {
-        // TODO (racansky, 2025-08-01) temporary for context loading until proper tests introduced
+    private Expiration expiration = new Expiration(false, null);
+
+    record Expiration(boolean enabled, String url) {
     }
+
 }
