@@ -57,7 +57,7 @@ class SignerRepositoryTest {
         assertEquals(3, id);
 
         final Signer signer = signerRepository.findById(id)
-                .orElseThrow(() -> new AssertionFailedError("Signer ID: 1 does not exist"));
+                .orElseThrow(() -> new AssertionFailedError("Signer ID: %s does not exist".formatted(id)));
         assertEquals(SignerStatus.EXPIRED, signer.getStatus());
         assertNotNull(signer.getTimestampLastUpdated());
         assertEquals(now.truncatedTo(ChronoUnit.SECONDS), signer.getTimestampLastUpdated().truncatedTo(ChronoUnit.SECONDS));
