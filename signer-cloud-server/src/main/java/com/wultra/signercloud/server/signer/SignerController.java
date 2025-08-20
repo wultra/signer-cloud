@@ -87,7 +87,7 @@ class SignerController {
             }
     )
     @PutMapping("/{externalSignerId}")
-    SignerResponse updateStatus(@PathVariable final String externalSignerId, @RequestBody final UpdateSignerStatusRequest requestBody) {
+    SignerResponse updateStatus(@PathVariable final String externalSignerId, @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
         logger.info("action: updateSignerStatus, state: initiated, externalSignerId: {}, newStatus: {}", externalSignerId, requestBody.signerStatus());
         final var result =  signerService.updateStatus(externalSignerId, requestBody);
 
