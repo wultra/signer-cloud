@@ -102,3 +102,16 @@ for keystore configuration.
 Remove `-----BEGIN CERTIFICATE REQUEST-----` and `-----END CERTIFICATE REQUEST-----` from the `certificate_request` value.
 If included, it will return `{"error_code":400,"error_message":"Invalid certificate request"}`.
 <!-- end -->
+
+
+### Revoke certificates
+
+For revoking all certificates issued to a `externalSignerId` call:
+
+```shell
+curl -X PUT
+     -H "Content-Type: application/json"
+     --location 'https://smoke-ejbca-dev.wultra.app/ejbca/ejbca-rest-api/v1/endentity/e43a5dec-afea-4a10-a80b-b2183399f16b/revoke' \
+     --cert client.crt \
+     --key client.key
+```
