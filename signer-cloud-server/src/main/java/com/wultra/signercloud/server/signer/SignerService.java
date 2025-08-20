@@ -144,7 +144,7 @@ class SignerService {
                 .contains(newStatus);
 
         if (!isTransitionValid) {
-            throw new SignerStatusTransitionException("Invalid status transition from " + oldStatus + " to " + newStatus);
+            throw new SignerStatusTransitionException("Invalid status transition from %s to %s".formatted(oldStatus, newStatus));
         }
 
         if (newStatus == SignerStatus.REVOKED) {
