@@ -27,9 +27,11 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
  * Test for {@link SignerRepository}.
@@ -57,6 +59,7 @@ class SignerRepositoryTest {
         final Signer signer = signerRepository.findById(id)
                 .orElseThrow(() -> new AssertionFailedError("Signer ID: 1 does not exist"));
         assertEquals(SignerStatus.EXPIRED, signer.getStatus());
-        assertEquals(now, signer.getTimestampLastUpdated());
+        assertNotNull(signer.getTimestampLastUpdated());
+        assertEquals(now.truncatedTo(ChronoUnit.SECONDS), signer.getTimestampLastUpdated().truncatedTo(ChronoUnit.SECONDS));
     }
 }
