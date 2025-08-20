@@ -53,6 +53,7 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * @param now Current time.
      */
     @Modifying
+    // TODO (racansky, 2025-08-20) we ignore Oracle limit so far; 'ORA-01795: maximum number of expressions in a list is 1000 error'
     @Query("UPDATE sc_signer SET timestamp_last_updated = :now, status = 'EXPIRED' WHERE id IN (:ids)")
     void markAsExpired(List<Long> ids, Instant now);
 
