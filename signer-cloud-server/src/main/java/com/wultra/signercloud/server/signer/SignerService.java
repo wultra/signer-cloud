@@ -128,12 +128,12 @@ class SignerService {
         try {
             updateStatus(externalSignerId, request.signerStatus());
             return Try.success();
-        } catch (SignerNotFoundException | SignerStatusTransitionException e) {
+        } catch (SignerNotFoundException | SignerStatusTransitionException | RestClientException e) {
             return Try.error(e);
         }
     }
 
-    private void updateStatus(final String externalSignerId, final SignerStatus newStatus) {
+    private void updateStatus(final String externalSignerId, final SignerStatus newStatus) throws RestClientException {
         var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
 
@@ -151,7 +151,7 @@ class SignerService {
         }
 
         if (newStatus == SignerStatus.REVOKED) {
-            // TODO: Call EJBCA to revoke the certificate
+            ejbcaService.revokeCertificates(externalSignerId);
         }
 
         signer = signer.toBuilder()
