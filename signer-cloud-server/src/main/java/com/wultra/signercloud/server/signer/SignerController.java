@@ -70,6 +70,22 @@ class SignerController {
         }
     }
 
+    @Operation(
+            summary = "Change status of a signer",
+            description = "Change status of Signer identified by {@code externalSignerId}. If status is changed to {@code REVOKED}, " +
+                    "then EJBCA is called and all certificates linked to the Signer are invalidated",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "REST API call was successful. Check the 'result' field in the response to determine if the status change was successful.",
+                            content = @Content(schema = @Schema(implementation = SignerResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input data"
+                    )
+            }
+    )
     @PutMapping("/{externalSignerId}")
     SignerResponse updateStatus(@PathVariable final String externalSignerId, @RequestBody final UpdateSignerStatusRequest requestBody) {
         final var result =  signerService.updateStatus(externalSignerId, requestBody);
