@@ -57,11 +57,11 @@ class SignerService {
      * @return result of operation as {@link Try}
      */
     @Transactional
-    Try createUpdateSigner(final CreateUpdateSignerRequest request) {
+    Try<Void> createUpdateSigner(final CreateUpdateSignerRequest request) {
         try {
             createUpdateSignerWithCertificate(request);
             return Try.success();
-        } catch (InactiveSignerException | RestClientException | CertificateException | IOException e) {
+        } catch (final InactiveSignerException | RestClientException | CertificateException | IOException e) {
             return Try.error(e);
         }
     }
@@ -157,5 +157,19 @@ class SignerService {
                 .build();
 
         signerRepository.save(updatedSigner);
+    }
+
+    /**
+     * Get details of {@link Signer}.
+     *
+     * @param externalSignerId identifier of the signer to get details for
+     * @return result as {@link Try} containing {@link SignerDetailResponse} or an error
+     */
+    @Transactional
+    Try<SignerDetailResponse> getDetail(final String externalSignerId) {
+        return signerRepository.findByExternalSignerId(externalSignerId)
+                .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getUserId(), signer.getStatus()))
+                .map(Try::success)
+                .orElse(Try.error(new SignerNotFoundException(externalSignerId)));
     }
 }

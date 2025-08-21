@@ -22,24 +22,27 @@ package com.wultra.signercloud.server.restapi;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public sealed interface Try permits Try.TrySuccess, Try.TryError {
-    // TODO (michal-rozehnal-w, 2025-08-19) Currently, there is no parameterized value for the return, because so far we don't have any service that requires it.
-    // However, feel free to add it here if you need it.
+public sealed interface Try<T> permits Try.TryError, Try.TrySuccess{
     boolean isSuccess();
     Throwable getError();
+    T getResponse();
 
-    static Try success() {
-        return new TrySuccess();
+    static <T> Try<T> success() {
+        return new TrySuccess<>(null);
     }
 
-    static Try error(Throwable t) {
-        return new TryError(t);
+    static <T> Try<T> success(final T result) {
+        return new TrySuccess<>(result);
+    }
+
+    static <T> Try<T> error(final Throwable t) {
+        return new TryError<>(t);
     }
 
     /**
      * Represents a successful operation.
      */
-    record TrySuccess() implements Try {
+    record TrySuccess<T>(T response) implements Try<T> {
 
         @Override
         public boolean isSuccess() {
@@ -50,12 +53,17 @@ public sealed interface Try permits Try.TrySuccess, Try.TryError {
         public Throwable getError() {
             throw new UnsupportedOperationException("No error in success");
         }
+
+        @Override
+        public T getResponse() {
+            return response;
+        }
     }
 
     /**
      * Represents a failed operation with an error.
      */
-    record TryError(Throwable throwable) implements Try {
+    record TryError<T>(Throwable throwable) implements Try<T> {
 
         @Override
         public boolean isSuccess() {
@@ -65,6 +73,11 @@ public sealed interface Try permits Try.TrySuccess, Try.TryError {
         @Override
         public Throwable getError() {
             return throwable;
+        }
+
+        @Override
+        public T getResponse() {
+            throw new UnsupportedOperationException("No result in error");
         }
     }
 }
