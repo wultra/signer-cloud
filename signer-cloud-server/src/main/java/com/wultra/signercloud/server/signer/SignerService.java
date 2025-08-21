@@ -77,8 +77,8 @@ class SignerService {
      */
     long cleanupSigners() {
         final Instant now = Instant.now();
-        final List<Long> ids = signerRepository.findIdsForExpiration(now);
-        signerRepository.markAsExpired(ids, now);
+        // TODO Lubos limit size
+        final List<Long> ids = signerRepository.markAsExpired(now);
 
         if (configurationProperties.getExpiration().enabled()) {
             logger.info("Creating {} expiration callbacks.", ids.size());
