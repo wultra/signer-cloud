@@ -18,6 +18,8 @@
 package com.wultra.signercloud.server.signer;
 
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.callback.CallbackEvent;
+import com.wultra.signercloud.server.callback.CallbackService;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
@@ -52,6 +54,7 @@ class SignerService {
     private final EjbcaService ejbcaService;
     private final SignerRepository signerRepository;
     private final SignerConfigurationProperties configurationProperties;
+    private final CallbackService callbackService;
 
     /**
      * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
@@ -75,6 +78,7 @@ class SignerService {
      *
      * @return Number of expired signers.
      */
+    // TODO Lubos test
     long cleanupSigners() {
         final Instant now = Instant.now();
         // TODO Lubos limit size
@@ -83,6 +87,8 @@ class SignerService {
         if (configurationProperties.getExpiration().enabled()) {
             logger.info("Creating {} expiration callbacks.", ids.size());
             // TODO Lubos create callback
+            callbackService.save(CallbackEvent.builder()
+                    .build());
         }
 
         return ids.size();

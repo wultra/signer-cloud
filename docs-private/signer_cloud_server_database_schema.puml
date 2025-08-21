@@ -34,9 +34,24 @@ class sc_document_content <<table>>{
     content BLOB NN
 }
 
+class sc_callback_event <<table>> {
+    ID bigint PK
+    callback_type varchar(32) NN I (EXPIRED/RENEWED)
+    callback_data text NN
+    status varchar(32) NN I (PROCESSING/PENDING/FAILED/COMPLETED)
+    timestamp_created timestamp(6) NN
+    timestamp_last_call timestamp(6)
+    timestamp_next_call timestamp(6)
+    timestamp_delete_after timestamp(6) I
+    timestamp_rerun_after timestamp(6)
+    attempts integer timestamp(6) NN
+    idempotency_key varchar(36) NN
+}
+
 class sc_signer_seq <<sequence>>
 class sc_document_seq <<sequence>>
 class sc_document_content_seq <<sequence>>
+class sc_callback_event_seq <<sequence>>
 
 sc_signer_seq -> sc_signer
 sc_document_seq -> sc_document
