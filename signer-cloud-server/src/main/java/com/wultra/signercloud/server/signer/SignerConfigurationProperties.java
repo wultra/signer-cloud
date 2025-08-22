@@ -17,34 +17,29 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
 /**
- * Enum representing the status of a {@link Signer}.
+ * Signer configuration properties.
  *
- * @author Michal Rozehnal, michal.rozehnal@wultra.com
+ * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public enum SignerStatus {
-    /**
-     * Signer can sign documents.
-     */
-    ACTIVE,
+@ConfigurationProperties(prefix = "signer-cloud.server.signer")
+@Getter
+@Setter
+class SignerConfigurationProperties {
 
-    /**
-     * Signer cannot sign documents. It can be moved back to ACTIVE.
-     */
-    BLOCKED,
+    private Expiration expiration = new Expiration(new Callback(false, null), new Job(1000));
 
-    /**
-     * Signer cannot sign documents, but certificate stays active until its expiration.
-     */
-    REMOVED,
+    record Job(int limit) {
+    }
 
-    /**
-     * Signer cannot sign documents and certificate is immediately revoked.
-     */
-    REVOKED,
+    record Expiration(Callback callback, Job job) {
+    }
 
-    /**
-     * Signer cannot sign documents.
-     */
-    EXPIRED
+    record Callback(boolean enabled, String url) {
+    }
+
 }

@@ -15,36 +15,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
+
+package com.wultra.signercloud.server.callback;
 
 /**
- * Enum representing the status of a {@link Signer}.
+ * Possible types of a {@link CallbackEvent}.
  *
- * @author Michal Rozehnal, michal.rozehnal@wultra.com
+ * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public enum SignerStatus {
-    /**
-     * Signer can sign documents.
-     */
-    ACTIVE,
+public enum CallbackType {
 
     /**
-     * Signer cannot sign documents. It can be moved back to ACTIVE.
+     * A callback when the certificate expired.
      */
-    BLOCKED,
+    EXPIRED,
 
     /**
-     * Signer cannot sign documents, but certificate stays active until its expiration.
+     * A callback when the certificate was renewed.
      */
-    REMOVED,
-
-    /**
-     * Signer cannot sign documents and certificate is immediately revoked.
-     */
-    REVOKED,
-
-    /**
-     * Signer cannot sign documents.
-     */
-    EXPIRED
+    RENEWED
 }

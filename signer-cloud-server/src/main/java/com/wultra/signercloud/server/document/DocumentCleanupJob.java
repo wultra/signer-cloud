@@ -32,7 +32,7 @@ import org.springframework.stereotype.Component;
 @Component
 @AllArgsConstructor
 @Slf4j
-class CleanupJob {
+class DocumentCleanupJob {
 
     private final DocumentService documentService;
 

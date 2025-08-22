@@ -38,6 +38,7 @@ States of the entity (user/device) that can sign documents. Some states can be d
 | BLOCKED | Signer cannot sign documents, certificate renewal is suspended but certificate stays active until its expiration. State can be changed back to ACTIVE. |
 | REMOVED | Signer cannot sign documents, certificate renewal is suspended but certificate stays active until its expiration.                                      |
 | REVOKED | Signer cannot sign documents, certificate renewal is suspended and certificate is immediately revoked.                                                 |
+| EXPIRED | Signer cannot sign documents.                                                                                                                          |
 
 ### Document
 
