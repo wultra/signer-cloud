@@ -17,12 +17,14 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import jakarta.validation.constraints.NotNull;
-
 /**
- * REST API request body for changing the {@link SignerStatus} of a {@link Signer}.
+ * REST API response for details of a {@link Signer}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record UpdateSignerStatusRequest(@NotNull SignerStatus signerStatus) {
+record SignerDetailResponse(
+        String externalSignerId,
+        String userId,
+        SignerStatus signerStatus
+) {
 }

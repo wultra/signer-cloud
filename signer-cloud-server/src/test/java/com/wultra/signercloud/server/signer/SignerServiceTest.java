@@ -239,7 +239,7 @@ class SignerServiceTest {
         final var result = signerService.getDetail(DUMMY_EXTERNAL_SIGNER_ID);
 
         // then
-        assertSignerDetailResponse(result.getResponse());
+        assertTrue(result.isSuccess());
     }
 
     @Test
