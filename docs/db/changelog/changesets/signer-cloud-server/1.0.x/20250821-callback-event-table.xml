@@ -69,7 +69,7 @@
                 <indexExists indexName="sc_callback_event_callback_type_idx"/>
             </not>
         </preConditions>
-        <comment>Create a new index on sc_callback_event(timestamp_delete_after).</comment>
+        <comment>Create a new index on sc_callback_event(callback_type).</comment>
         <createIndex tableName="sc_callback_event" indexName="sc_callback_event_callback_type_idx">
             <column name="callback_type" />
         </createIndex>
