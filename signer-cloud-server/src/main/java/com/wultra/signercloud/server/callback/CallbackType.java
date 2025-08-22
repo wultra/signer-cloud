@@ -24,6 +24,14 @@ package com.wultra.signercloud.server.callback;
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 public enum CallbackType {
+
+    /**
+     * A callback when the certificate expired.
+     */
     EXPIRED,
+
+    /**
+     * A callback when the certificate was renewed.
+     */
     RENEWED
 }
