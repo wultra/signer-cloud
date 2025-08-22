@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.time.Instant;
-import java.util.Base64;
+import java.util.*;
 
 /**
  * Service for {@link Signer} operations.
@@ -38,6 +38,11 @@ import java.util.Base64;
 @Service
 @AllArgsConstructor
 class SignerService {
+
+    private static final Map<SignerStatus, EnumSet<SignerStatus>> VALID_STATUS_TRANSITIONS = Map.of(
+            SignerStatus.ACTIVE, EnumSet.of(SignerStatus.BLOCKED, SignerStatus.REMOVED, SignerStatus.REVOKED),
+            SignerStatus.BLOCKED, EnumSet.of(SignerStatus.ACTIVE, SignerStatus.REMOVED, SignerStatus.REVOKED)
+    );
 
     private final PowerAuthService powerAuthService;
     private final EjbcaService ejbcaService;
@@ -49,7 +54,7 @@ class SignerService {
      * (based on {@link CreateUpdateSignerRequest#csr}), and finally stores the signer in the database.
      *
      * @param request the request containing details of signer
-     * @return {@link SignerResponse} indicating the result of the operation.
+     * @return result of operation as {@link Try}
      */
     @Transactional
     Try createUpdateSigner(final CreateUpdateSignerRequest request) {
@@ -106,5 +111,51 @@ class SignerService {
     private Signer.SignerBuilder updateSigner(final Signer signer) {
         return signer.toBuilder()
                 .timestampLastUpdated(Instant.now());
+    }
+
+    /**
+     * Updates the {@link SignerStatus} of a {@link Signer}.
+     *
+     * @param externalSignerId identifier of the signer to update
+     * @param request request containing the new status
+     * @return result of operation as {@link Try}
+     */
+    @Transactional
+    Try updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
+        try {
+            updateStatus(externalSignerId, request.signerStatus());
+            return Try.success();
+        } catch (SignerNotFoundException | SignerStatusTransitionException | RestClientException e) {
+            return Try.error(e);
+        }
+    }
+
+    private void updateStatus(final String externalSignerId, final SignerStatus newStatus) throws RestClientException {
+        final var signer = signerRepository.findByExternalSignerId(externalSignerId)
+                .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
+
+        final var oldStatus = signer.getStatus();
+
+        if (oldStatus == newStatus) {
+            return;
+        }
+
+        final var isTransitionValid = VALID_STATUS_TRANSITIONS.getOrDefault(oldStatus, EnumSet.noneOf(SignerStatus.class))
+                .contains(newStatus);
+
+        if (!isTransitionValid) {
+            throw new SignerStatusTransitionException("Invalid status transition from %s to %s".formatted(oldStatus, newStatus));
+        }
+
+        if (newStatus == SignerStatus.REVOKED) {
+            ejbcaService.revokeCertificates(externalSignerId);
+        }
+
+        final var updatedSigner = signer.toBuilder()
+                .status(newStatus)
+                .timestampLastUpdated(Instant.now())
+                .build();
+
+        signerRepository.save(updatedSigner);
     }
 }

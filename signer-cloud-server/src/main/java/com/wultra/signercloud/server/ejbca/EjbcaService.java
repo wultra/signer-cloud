@@ -83,6 +83,16 @@ public class EjbcaService {
     }
 
     /**
+     * Revokes all certificates associated with the given {@link com.wultra.signercloud.server.signer.Signer#externalSignerId}.
+     *
+     * @param externalSignerId the external signer ID to identify the signer whose certificates should be revoked
+     * @throws RestClientException if an error occurs during the revocation process
+     */
+    public void revokeCertificates(final String externalSignerId) throws RestClientException {
+        ejbcaRestClient.revokeCertificates(externalSignerId);
+    }
+
+    /**
      * Parameter object for enrolling a certificate.
      *
      * @param userId user identifier

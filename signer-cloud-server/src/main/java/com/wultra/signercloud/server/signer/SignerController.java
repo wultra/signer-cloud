@@ -24,10 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * Controller for {@link Signer} operations.
@@ -69,6 +66,36 @@ class SignerController {
             return new SignerResponse(SignerResponseResult.OK, null);
         } else {
             logger.error("action: createUpdateSigner, state: failed, errorMessage: {}", result.getError().getMessage());
+            return new SignerResponse(SignerResponseResult.FAIL, result.getError().getMessage());
+        }
+    }
+
+    @Operation(
+            summary = "Change status of a signer",
+            description = "Change status of Signer identified by {@code externalSignerId}. If status is changed to {@code REVOKED}, " +
+                    "then EJBCA is called and all certificates linked to the Signer are invalidated",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "REST API call was successful. Check the 'result' field in the response to determine if the status change was successful.",
+                            content = @Content(schema = @Schema(implementation = SignerResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input data"
+                    )
+            }
+    )
+    @PutMapping("/{externalSignerId}")
+    SignerResponse updateStatus(@PathVariable final String externalSignerId, @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
+        logger.info("action: updateSignerStatus, state: initiated, externalSignerId: {}, newStatus: {}", externalSignerId, requestBody.signerStatus());
+        final var result =  signerService.updateStatus(externalSignerId, requestBody);
+
+        if (result.isSuccess()) {
+            logger.info("action: updateSignerStatus, state: succeeded");
+            return new SignerResponse(SignerResponseResult.OK, null);
+        } else {
+            logger.error("action: updateSignerStatus, state: failed, errorMessage: {}", result.getError().getMessage());
             return new SignerResponse(SignerResponseResult.FAIL, result.getError().getMessage());
         }
     }

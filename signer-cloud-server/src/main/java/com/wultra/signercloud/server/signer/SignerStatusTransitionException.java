@@ -15,30 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.ejbca;
-
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import lombok.Builder;
-import lombok.extern.jackson.Jacksonized;
-
-import java.time.LocalDateTime;
+package com.wultra.signercloud.server.signer;
 
 /**
- * Certificate revocation response class.
+ * Exception thrown when requested change of {@link SignerStatus} for a given {@link Signer} is not valid.
  *
- * @author Lubos Racansky, lubos.racansky@wultra.com
+ * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Jacksonized
-@Builder
-@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
-record CertificateRevocationResponse(
-        String issuerDn,
-        String revocationReason,
-        LocalDateTime revocation_date,
-        String serialNumber,
-        String message,
-        boolean revoked,
-        LocalDateTime invalidityDate
-) {
+public class SignerStatusTransitionException extends RuntimeException {
+    public SignerStatusTransitionException(String message) {
+        super(message);
+    }
 }

@@ -15,20 +15,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.ejbca;
+package com.wultra.signercloud.server.signer;
 
-import lombok.Builder;
+import jakarta.validation.constraints.NotNull;
 
 /**
- * Parameter object for revoking a certificate in EJBCA, {@link EjbcaRestClient#revokeCertificate(CertificateRevocationParameters)}
+ * REST API request body for changing the {@link SignerStatus} of a {@link Signer}.
  *
- * @param issuerDn Subject DN of the issuing CA.
- * @param certificateSerialNumber The hex serial number (without prefix, e.g. '00') of the certificate to be revoked
- * @author Lubos Racansky, lubos.racansky@wultra.com
+ * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Builder
-record CertificateRevocationParameters(
-        String issuerDn,
-        String certificateSerialNumber
-) {
+public record UpdateSignerStatusRequest(@NotNull SignerStatus signerStatus) {
 }

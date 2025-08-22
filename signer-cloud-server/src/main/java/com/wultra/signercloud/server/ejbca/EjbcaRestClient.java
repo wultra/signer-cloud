@@ -75,25 +75,13 @@ class EjbcaRestClient {
         return response.getBody();
     }
 
-    /**
-     * Revokes a certificate.
-     *
-     * @param parameters parameters identifying the certificate to be revoked
-     * @return the response containing revocation details
-     * @throws RestClientException if an error occurs during the revocation process
-     */
-    public CertificateRevocationResponse revokeCertificate(final CertificateRevocationParameters parameters) throws RestClientException {
-        final String url = UriComponentsBuilder.fromPath("/v1/certificate/{issuer_dn}/{certificate_serial_number}/revoke")
-                .buildAndExpand(parameters.issuerDn(), parameters.certificateSerialNumber())
+    void revokeCertificates(final String externalSignerId) throws RestClientException {
+        final String url = UriComponentsBuilder.fromPath("/v1/endentity/{external_signer_id}/revoke")
+                .buildAndExpand(externalSignerId)
                 .toUriString();
 
-        logger.info("Revoking certificate, serial number: {}", parameters.certificateSerialNumber());
-        final ResponseEntity<CertificateRevocationResponse> response = restClient.put(url, new Object(), ParameterizedTypeReference.forType(CertificateRevocationResponse.class));
-
-        Assert.notNull(response.getBody(), "Response body must not be null");
-        logger.info("Got revocation certificate response, revoked: {}", response.getBody().revoked());
-        logger.debug("Got revocation certificate response: {}", response.getBody());
-        return response.getBody();
+        logger.info("Revoking certificates, externalSignerId: {}", externalSignerId);
+        restClient.put(url, null, ParameterizedTypeReference.forType(Void.class));
     }
 
     @Jacksonized
