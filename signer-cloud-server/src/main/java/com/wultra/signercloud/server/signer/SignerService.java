@@ -121,7 +121,7 @@ class SignerService {
      * @return result of operation as {@link Try}
      */
     @Transactional
-    Try updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
+    Try<Void> updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
         try {
             updateStatus(externalSignerId, request.signerStatus());
             return Try.success();

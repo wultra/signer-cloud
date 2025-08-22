@@ -217,6 +217,44 @@ class SignerServiceTest {
         verify(ejbcaService).revokeCertificates(DUMMY_EXTERNAL_SIGNER_ID);
     }
 
+    @Test
+    void testGetDetailWhenWhenSignerIsNotFoundThenFailResultIsReturned() {
+        // given
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
+
+        // when
+        final var result = signerService.getDetail(DUMMY_EXTERNAL_SIGNER_ID);
+
+        // then
+        assertFalse(result.isSuccess());
+    }
+
+    @Test
+    void testGetDetailWhenWhenSignerIsFoundThenSuccessResultIsReturned() {
+        // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        // when
+        final var result = signerService.getDetail(DUMMY_EXTERNAL_SIGNER_ID);
+
+        // then
+        assertSignerDetailResponse(result.getResponse());
+    }
+
+    @Test
+    void testGetDetailWhenWhenSignerIsFoundThenResponseContainsCorrectValues() {
+        // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        // when
+        final var result = signerService.getDetail(DUMMY_EXTERNAL_SIGNER_ID);
+
+        // then
+        assertSignerDetailResponse(result.getResponse());
+    }
+
     private Signer createSigner(final SignerStatus status) {
         return Signer.builder()
                 .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
@@ -227,5 +265,11 @@ class SignerServiceTest {
                 .status(status)
                 .timestampCreated(Instant.now())
                 .build();
+    }
+
+    private void assertSignerDetailResponse(final SignerDetailResponse response) {
+        assertEquals(DUMMY_EXTERNAL_SIGNER_ID, response.externalSignerId());
+        assertEquals(DUMMY_USER_ID, response.userId());
+        assertEquals(SignerStatus.ACTIVE, response.signerStatus());
     }
 }
