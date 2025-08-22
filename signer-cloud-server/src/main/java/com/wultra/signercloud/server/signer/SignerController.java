@@ -25,8 +25,6 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Controller for {@link Signer} operations.
@@ -118,7 +116,7 @@ class SignerController {
             }
     )
     @GetMapping("/{externalSignerId}")
-    SignerDetailResponse getDetail(@PathVariable final String externalSignerId) {
+    SignerDetailResponse getDetail(@PathVariable final String externalSignerId) throws Throwable {
         logger.info("action: getSignerDetail, state: initiated, externalSignerId: {}", externalSignerId);
         final var result = signerService.getDetail(externalSignerId);
 
@@ -127,7 +125,7 @@ class SignerController {
             return result.getResponse();
         } else {
             logger.info("action: getSignerDetail, state: failed, errorMessage: {}", result.getError().getMessage());
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, result.getError().getMessage());
+            throw result.getError();
         }
     }
 

@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,12 +33,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit tests for {@link ValidationExceptionHandler}.
+ * Unit tests for {@link RestExceptionHandler}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @ExtendWith(MockitoExtension.class)
-class ValidationExceptionHandlerTest {
+class RestExceptionHandlerTest {
 
     private static final String ERROR_STATUS = "ERROR";
     private static final String ERROR_MESSAGE = "Validation Failed";
@@ -54,7 +55,7 @@ class ValidationExceptionHandlerTest {
     private MethodArgumentNotValidException exception;
 
     @InjectMocks
-    private ValidationExceptionHandler validationExceptionHandler;
+    private RestExceptionHandler restExceptionHandler;
 
     @BeforeEach
     void setUp() {
@@ -69,10 +70,10 @@ class ValidationExceptionHandlerTest {
         when(exception.getBindingResult()).thenReturn(bindingResult);
 
         // When
-        final var response = validationExceptionHandler.handleValidationException(exception);
+        final var response = restExceptionHandler.handleValidationException(exception);
 
         // Then
-        assertErrorResponse(response.getBody(), EXPECTED_SPECIFIC_MESSAGE);
+        assertErrorResponse(response.getBody(), EXPECTED_SPECIFIC_MESSAGE, ErrorCode.ERROR_GENERIC);
     }
 
     @Test
@@ -81,17 +82,29 @@ class ValidationExceptionHandlerTest {
         when(exception.getBindingResult()).thenReturn(bindingResult);
 
         // When
-        final var response = validationExceptionHandler.handleValidationException(exception);
+        final var response = restExceptionHandler.handleValidationException(exception);
 
         // Then
-        assertErrorResponse(response.getBody(), EXPECTED_GENERIC_MESSAGE);
+        assertErrorResponse(response.getBody(), EXPECTED_GENERIC_MESSAGE, ErrorCode.ERROR_GENERIC);
     }
 
-    private void assertErrorResponse(ErrorResponse errorResponse, String expectedMessage) {
+    @Test
+    void testHandleSignerNotFoundExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Signer not found: dummyExternalSignerId";
+
+        // When
+        final var response = restExceptionHandler.handleSignerNotFoundException(new SignerNotFoundException(message));
+
+        // Then
+        assertErrorResponse(response.getBody(), message, ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+    }
+
+    private void assertErrorResponse(final ErrorResponse errorResponse, final String expectedMessage, final ErrorCode expectedCode) {
         assertEquals(ERROR_STATUS, errorResponse.status());
 
         final var responseObject = errorResponse.responseObject();
-        assertEquals(ErrorCode.ERROR_GENERIC, responseObject.code());
+        assertEquals(expectedCode, responseObject.code());
         assertEquals(expectedMessage, responseObject.message());
     }
 }

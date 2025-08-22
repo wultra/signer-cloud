@@ -170,6 +170,6 @@ class SignerService {
         return signerRepository.findByExternalSignerId(externalSignerId)
                 .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getUserId(), signer.getStatus()))
                 .map(Try::success)
-                .orElse(Try.error(new SignerNotFoundException(externalSignerId)));
+                .orElse(Try.error(new SignerNotFoundException("Signer not found: " + externalSignerId)));
     }
 }

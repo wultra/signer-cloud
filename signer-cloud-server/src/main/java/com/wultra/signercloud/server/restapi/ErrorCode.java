@@ -31,5 +31,10 @@ public enum ErrorCode {
     /**
      * HTTP 401, Unauthorized request.
      */
-    ERROR_UNAUTHORIZED
+    ERROR_UNAUTHORIZED,
+
+    /**
+     * HTTP 404, Resource is not found.
+     */
+    ERROR_RESOURCE_NOT_FOUND
 }
