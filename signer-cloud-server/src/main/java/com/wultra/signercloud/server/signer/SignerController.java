@@ -100,4 +100,33 @@ class SignerController {
         }
     }
 
+    @Operation(
+            summary = "Gets details of a signer",
+            description = "Gets the details of a Signer, including {@code userId} and {@code signerStatus}.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Response contains details of the signer",
+                            content = @Content(schema = @Schema(implementation = SignerDetailResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Signer for given {@code externalSignerId} not found"
+                    )
+            }
+    )
+    @GetMapping("/{externalSignerId}")
+    SignerDetailResponse getDetail(@PathVariable final String externalSignerId) throws Throwable {
+        logger.info("action: getSignerDetail, state: initiated, externalSignerId: {}", externalSignerId);
+        final var result = signerService.getDetail(externalSignerId);
+
+        if (result.isSuccess()) {
+            logger.info("action: getSignerDetail, state: succeeded");
+            return result.getResponse();
+        } else {
+            logger.info("action: getSignerDetail, state: failed, errorMessage: {}", result.getError().getMessage());
+            throw result.getError();
+        }
+    }
+
 }

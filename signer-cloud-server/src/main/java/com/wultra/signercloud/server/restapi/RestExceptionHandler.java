@@ -17,6 +17,8 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import com.wultra.signercloud.server.signer.SignerNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -28,9 +30,15 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @ControllerAdvice
-public class ValidationExceptionHandler {
+public class RestExceptionHandler {
     private static final String ERROR_STATUS = "ERROR";
 
+    /**
+     * Handler for {@link MethodArgumentNotValidException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleValidationException(final MethodArgumentNotValidException ex) {
         final var message = "Validation failed: " + ex.getBindingResult().getFieldErrors().stream()
@@ -44,5 +52,21 @@ public class ValidationExceptionHandler {
         );
 
         return ResponseEntity.badRequest().body(responseBody);
+    }
+
+    /**
+     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#NOT_FOUND} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
+        final var responseBody = new ErrorResponse(
+                ERROR_STATUS,
+                new ErrorDetails(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage())
+        );
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
     }
 }

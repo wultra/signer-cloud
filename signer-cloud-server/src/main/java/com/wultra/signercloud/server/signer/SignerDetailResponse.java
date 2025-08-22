@@ -15,26 +15,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.restapi;
+package com.wultra.signercloud.server.signer;
 
 /**
- * Error codes for {@link ErrorResponse}.
+ * REST API response for details of a {@link Signer}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public enum ErrorCode {
-    /**
-     * HTTP 400, Issue with a request format or issue of the business logic.
-     */
-    ERROR_GENERIC,
-
-    /**
-     * HTTP 401, Unauthorized request.
-     */
-    ERROR_UNAUTHORIZED,
-
-    /**
-     * HTTP 404, Resource is not found.
-     */
-    ERROR_RESOURCE_NOT_FOUND
+record SignerDetailResponse(
+        String externalSignerId,
+        String userId,
+        SignerStatus signerStatus
+) {
 }
