@@ -218,7 +218,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testGetDetailWhenWhenSignerIsNotFoundThenFailResultIsReturned() {
+    void testGetDetailWhenSignerIsNotFoundThenFailResultIsReturned() {
         // given
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
 
@@ -230,7 +230,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testGetDetailWhenWhenSignerIsFoundThenSuccessResultIsReturned() {
+    void testGetDetailWhenSignerIsFoundThenSuccessResultIsReturned() {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
@@ -243,7 +243,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testGetDetailWhenWhenSignerIsFoundThenResponseContainsCorrectValues() {
+    void testGetDetailWhenSignerIsFoundThenResponseContainsCorrectValues() {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
