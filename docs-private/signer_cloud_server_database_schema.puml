@@ -44,7 +44,7 @@ class sc_callback_event <<table>> {
     timestamp_next_call timestamp(6)
     timestamp_delete_after timestamp(6) I
     timestamp_rerun_after timestamp(6)
-    attempts integer timestamp(6) NN
+    attempts integer NN
     idempotency_key varchar(36) NN
 }
 
