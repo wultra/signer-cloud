@@ -217,7 +217,6 @@ class SignerService {
      * @param externalSignerId identifier of the signer to get details for
      * @return result as {@link Try} containing {@link SignerDetailResponse} or an error
      */
-    @Transactional
     Try<SignerDetailResponse> getDetail(final String externalSignerId) {
         return signerRepository.findByExternalSignerId(externalSignerId)
                 .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getUserId(), signer.getStatus()))
