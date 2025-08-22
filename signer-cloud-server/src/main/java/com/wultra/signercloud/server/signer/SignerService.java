@@ -76,15 +76,15 @@ class SignerService {
     /**
      * Marks all signers that have expired as expired and creates expiration callbacks if configured.
      *
+     * @param limit Maximum number of signers to mark as expired.
      * @return Number of expired signers.
      */
     // TODO Lubos test
-    long cleanupSigners() {
+    long cleanupSigners(final int limit) {
         final Instant now = Instant.now();
-        // TODO Lubos limit size
-        final List<Long> ids = signerRepository.markAsExpired(now);
+        final List<Long> ids = signerRepository.markAsExpired(now, limit);
 
-        if (configurationProperties.getExpiration().enabled()) {
+        if (configurationProperties.getExpiration().callback().enabled()) {
             logger.info("Creating {} expiration callbacks.", ids.size());
             // TODO Lubos create callback
             callbackService.save(CallbackEvent.builder()

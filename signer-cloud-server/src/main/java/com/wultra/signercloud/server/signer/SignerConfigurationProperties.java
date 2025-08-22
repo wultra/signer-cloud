@@ -31,9 +31,15 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 class SignerConfigurationProperties {
 
-    private Expiration expiration = new Expiration(false, null);
+    private Expiration expiration = new Expiration(new Callback(false, null), new Job(1000));
 
-    record Expiration(boolean enabled, String url) {
+    record Job(int limit) {
+    }
+
+    record Expiration(Callback callback, Job job) {
+    }
+
+    record Callback(boolean enabled, String url) {
     }
 
 }

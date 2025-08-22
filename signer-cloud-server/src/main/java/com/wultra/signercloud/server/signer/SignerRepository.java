@@ -39,9 +39,15 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      *
      * @param now Current time.
      * @return List of signer IDs.
+     * @apiNote Internal API, use {@link #markAsExpired(Instant, int)} instead.
+     * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
-    @Query("SELECT id FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration < :now")
-    List<Long> findIdsForExpiration(Instant now);
+    @Query("""
+        SELECT id FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration < :now
+                ORDER BY timestamp_certificate_expiration
+                FETCH FIRST :limit ROWS ONLY
+        """)
+    List<Long> findIdsForExpiration(Instant now, int limit);
 
 
     /**
@@ -51,9 +57,9 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      *
      * @param ids Signer IDs to mark as expired.
      * @param now Current time.
+     * @apiNote Internal API, use {@link #markAsExpired(Instant, int)} instead.
      */
     @Modifying
-    // TODO (racansky, 2025-08-20) we ignore Oracle limit so far; 'ORA-01795: maximum number of expressions in a list is 1000 error'
     @Query("UPDATE sc_signer SET timestamp_last_updated = :now, status = 'EXPIRED' WHERE id IN (:ids)")
     void markAsExpired(List<Long> ids, Instant now);
 
@@ -63,11 +69,12 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
      *
      * @param now Current time.
+     * @param limit Limit of signers to mark as expired in a single query.
      * @return List of signer IDs marked as expired.
      * @implSpec Unfortunately, usage of Common Table Expressions is limited to PostgreSQL only.
      */
-    default List<Long> markAsExpired(Instant now) {
-        final List<Long> ids = findIdsForExpiration(now);
+    default List<Long> markAsExpired(Instant now, int limit) {
+        final List<Long> ids = findIdsForExpiration(now, limit);
         markAsExpired(ids, now);
         return ids;
     }

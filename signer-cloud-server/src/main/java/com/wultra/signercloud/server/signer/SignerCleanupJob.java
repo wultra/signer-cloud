@@ -36,12 +36,15 @@ class SignerCleanupJob {
 
     private final SignerService signerService;
 
+    private final SignerConfigurationProperties configurationProperties;
+
     @Scheduled(cron = "${signer-cloud.server.signer.expiration.job.cron}", zone = "UTC")
     @SchedulerLock(name = "cleanupSigners")
     public void cleanupSigners() {
-        logger.info("action: cleanupSigners, state: initiated");
+        final int limit = configurationProperties.getExpiration().job().limit();
+        logger.info("action: cleanupSigners, state: initiated, limit: {}", limit);
         LockAssert.assertLocked();
-        final var result = signerService.cleanupSigners();
+        final var result = signerService.cleanupSigners(limit);
         logger.info("action: cleanupSigners, state: succeeded, count: {}", result);
     }
 }

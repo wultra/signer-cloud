@@ -50,7 +50,7 @@ class SignerRepositoryTest {
     @Test
     void testMarkAsExpired() {
         final Instant now = Instant.now();
-        final List<Long> result = signerRepository.markAsExpired(now);
+        final List<Long> result = signerRepository.markAsExpired(now, 1);
 
         assertEquals(1, result.size());
         final Long id = result.get(0);
