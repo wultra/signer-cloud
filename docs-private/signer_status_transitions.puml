@@ -5,6 +5,7 @@ hide empty description
 ACTIVE --> BLOCKED
 ACTIVE --> REVOKED
 ACTIVE --> REMOVED
+ACTIVE --> EXPIRED
 
 BLOCKED --> ACTIVE
 BLOCKED --> REVOKED
@@ -12,5 +13,6 @@ BLOCKED --> REMOVED
 
 REVOKED --> [*]
 REMOVED --> [*]
+EXPIRED --> [*]
 
 @enduml
