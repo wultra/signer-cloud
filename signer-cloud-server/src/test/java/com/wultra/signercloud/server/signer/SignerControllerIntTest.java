@@ -58,6 +58,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 @WithMockUser
 class SignerControllerIntTest {
+
+    private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/api/signers";
     private static final int MILLISECONDS_DELTA = 1_000;
 
     private static final String DUMMY_EXTERNAL_SIGNER_ID = "dummyExternalSignerId";
