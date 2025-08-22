@@ -35,19 +35,19 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
     Optional<Signer> findByExternalSignerId(String externalSignerId);
 
     /**
-     * Find signer IDs for expiration.
+     * Find signers for expiration.
      *
      * @param now Current time.
-     * @return List of signer IDs.
+     * @return List of signers.
      * @apiNote Internal API, use {@link #markAsExpired(Instant, int)} instead.
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-        SELECT id FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration < :now
+        SELECT * FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration < :now
                 ORDER BY timestamp_certificate_expiration
                 FETCH FIRST :limit ROWS ONLY
         """)
-    List<Long> findIdsForExpiration(Instant now, int limit);
+    List<Signer> findForExpiration(Instant now, int limit);
 
 
     /**
@@ -70,12 +70,15 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      *
      * @param now Current time.
      * @param limit Limit of signers to mark as expired in a single query.
-     * @return List of signer IDs marked as expired.
+     * @return List of signers marked as expired.
      * @implSpec Unfortunately, usage of Common Table Expressions is limited to PostgreSQL only.
      */
-    default List<Long> markAsExpired(Instant now, int limit) {
-        final List<Long> ids = findIdsForExpiration(now, limit);
+    default List<Signer> markAsExpired(Instant now, int limit) {
+        final List<Signer> signers = findForExpiration(now, limit);
+        final List<Long> ids = signers.stream()
+                .map(Signer::getId)
+                .toList();
         markAsExpired(ids, now);
-        return ids;
+        return signers;
     }
 }

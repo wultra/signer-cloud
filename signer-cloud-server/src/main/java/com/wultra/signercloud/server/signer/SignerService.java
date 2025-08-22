@@ -85,34 +85,38 @@ class SignerService {
      */
     long cleanupSigners(final int limit) {
         final Instant now = Instant.now();
-        final List<Long> ids = signerRepository.markAsExpired(now, limit);
+        final List<Signer> signers = signerRepository.markAsExpired(now, limit);
 
         if (configurationProperties.getExpiration().callback().enabled()) {
-            createCallbacks(ids);
+            createCallbacks(signers);
         }
 
-        return ids.size();
+        return signers.size();
     }
 
-    private void createCallbacks(final List<Long> ids) {
-        logger.info("Creating {} expiration callbacks.", ids.size());
+    private void createCallbacks(final List<Signer> signers) {
+        logger.info("Creating {} expiration callbacks.", signers.size());
         final LocalDateTime now = LocalDateTime.now();
-        final List<CallbackEvent> callbackEvents = ids.stream()
-                .map(id -> createCallback(id, now))
+        final List<CallbackEvent> callbackEvents = signers.stream()
+                .map(signer -> createCallback(signer, now))
                 .toList();
         callbackService.save(callbackEvents);
     }
 
-    private static CallbackEvent createCallback(final Long id, final LocalDateTime now) {
+    private static CallbackEvent createCallback(final Signer signer, final LocalDateTime now) {
         return CallbackEvent.builder()
                 .status(CallbackEventStatus.PENDING)
-                // TODO Lubos save externalSignerId and userId
-                .callbackData("""
-                        {"signerId": "%s"}""".formatted(id))
+                .callbackData(createCallbackData(signer))
                 .callbackType(CallbackType.EXPIRED)
                 .timestampCreated(now)
                 .idempotencyKey(UUID.randomUUID().toString())
                 .build();
+    }
+
+    @SuppressWarnings("java:S5663")
+    private static String createCallbackData(final Signer signer) {
+        return """
+                {"externalSignerId": "%s", "userId": "%s"}""".formatted(signer.getExternalSignerId(), signer.getUserId());
     }
 
     private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
