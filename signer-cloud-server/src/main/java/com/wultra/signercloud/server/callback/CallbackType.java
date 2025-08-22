@@ -23,7 +23,7 @@ package com.wultra.signercloud.server.callback;
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-enum CallbackType {
+public enum CallbackType {
     EXPIRED,
     RENEWED
 }

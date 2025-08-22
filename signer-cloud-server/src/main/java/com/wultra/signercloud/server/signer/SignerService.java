@@ -19,7 +19,9 @@ package com.wultra.signercloud.server.signer;
 
 import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.signercloud.server.callback.CallbackEvent;
+import com.wultra.signercloud.server.callback.CallbackEventStatus;
 import com.wultra.signercloud.server.callback.CallbackService;
+import com.wultra.signercloud.server.callback.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
@@ -31,8 +33,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service for {@link Signer} operations.
@@ -79,19 +83,36 @@ class SignerService {
      * @param limit Maximum number of signers to mark as expired.
      * @return Number of expired signers.
      */
-    // TODO Lubos test
     long cleanupSigners(final int limit) {
         final Instant now = Instant.now();
         final List<Long> ids = signerRepository.markAsExpired(now, limit);
 
         if (configurationProperties.getExpiration().callback().enabled()) {
-            logger.info("Creating {} expiration callbacks.", ids.size());
-            // TODO Lubos create callback
-            callbackService.save(CallbackEvent.builder()
-                    .build());
+            createCallbacks(ids);
         }
 
         return ids.size();
+    }
+
+    private void createCallbacks(final List<Long> ids) {
+        logger.info("Creating {} expiration callbacks.", ids.size());
+        final LocalDateTime now = LocalDateTime.now();
+        final List<CallbackEvent> callbackEvents = ids.stream()
+                .map(id -> createCallback(id, now))
+                .toList();
+        callbackService.save(callbackEvents);
+    }
+
+    private static CallbackEvent createCallback(final Long id, final LocalDateTime now) {
+        return CallbackEvent.builder()
+                .status(CallbackEventStatus.PENDING)
+                // TODO Lubos save externalSignerId and userId
+                .callbackData("""
+                        {"signerId": "%s"}""".formatted(id))
+                .callbackType(CallbackType.EXPIRED)
+                .timestampCreated(now)
+                .idempotencyKey(UUID.randomUUID().toString())
+                .build();
     }
 
     private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {

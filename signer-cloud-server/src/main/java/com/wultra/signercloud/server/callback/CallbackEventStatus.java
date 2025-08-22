@@ -23,7 +23,7 @@ package com.wultra.signercloud.server.callback;
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-enum CallbackUrlEventStatus {
+public enum CallbackEventStatus {
 
     /**
      * Status of a Callback URL Event that is currently being dispatched.

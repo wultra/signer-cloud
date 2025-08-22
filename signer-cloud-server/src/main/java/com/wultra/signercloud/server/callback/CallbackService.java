@@ -33,11 +33,11 @@ public class CallbackService {
     private final CallbackEventRepository callbackEventRepository;
 
     /**
-     * Saves a new {@link CallbackEvent} to the repository.
+     * Saves a new {@link CallbackEvent}s to the repository.
      *
-     * @param event the event to save
+     * @param events the events to save
      */
-    public void save(final CallbackEvent event) {
-        callbackEventRepository.save(event);
+    public void save(final Iterable<CallbackEvent> events) {
+        callbackEventRepository.saveAll(events);
     }
 }

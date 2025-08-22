@@ -18,23 +18,22 @@
 
 package com.wultra.signercloud.server.callback;
 
-import lombok.Builder;
-import lombok.Getter;
+import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 /**
  * Callback event data access object.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
+@Table("sc_callback_event")
 @Getter
 @Builder
-@Table("sc_callback_event")
+@ToString
 public class CallbackEvent {
 
     @Id
@@ -43,9 +42,9 @@ public class CallbackEvent {
 
     private CallbackType callbackType;
 
-    private Map<String, Object> callbackData;
+    private String callbackData;
 
-    private CallbackUrlEventStatus status;
+    private CallbackEventStatus status;
 
     private LocalDateTime timestampCreated;
 
