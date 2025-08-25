@@ -106,13 +106,18 @@ class DocumentService {
      * @param file the PDF document to be stored for signing
      * @return response as a {@link Try}
      */
-    UploadDocumentResponse uploadDocument(
+    Try<UploadDocumentResponse> uploadDocument(
             final String externalSignerId,
             final String externalDocumentId,
             final String documentName,
             final MultipartFile file
     ) {
-        return processDocumentUpload(externalSignerId, externalDocumentId, documentName, file);
+       try {
+           final var response = processDocumentUpload(externalSignerId, externalDocumentId, documentName, file);
+           return Try.success(response);
+       } catch (final SignerNotFoundException | DocumentUploadException e) {
+           return Try.error(e);
+       }
     }
 
     private UploadDocumentResponse processDocumentUpload(

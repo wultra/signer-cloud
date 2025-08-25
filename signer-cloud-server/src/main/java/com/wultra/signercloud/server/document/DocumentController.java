@@ -47,7 +47,12 @@ public class DocumentController {
             @RequestParam("externalId") final String externalDocumentId,
             @RequestParam("name") final String documentName,
             @RequestParam("content") final MultipartFile fileContent
-    ) throws IOException, NoSuchAlgorithmException {
-        return documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, fileContent);
+    ) throws Throwable {
+        final var result = documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, fileContent);
+        if (result.isSuccess()) {
+            return result.getResponse();
+        } else {
+            throw result.getError();
+        }
     }
 }
