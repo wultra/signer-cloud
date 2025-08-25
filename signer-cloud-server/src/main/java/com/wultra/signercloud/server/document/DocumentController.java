@@ -25,9 +25,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-
 /**
  * Controller for {@link Document} operations.
  *
@@ -48,10 +45,14 @@ public class DocumentController {
             @RequestParam("name") final String documentName,
             @RequestParam("content") final MultipartFile fileContent
     ) throws Throwable {
+        logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, externalDocumentId: {}", externalDocumentId, externalDocumentId);
         final var result = documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, fileContent);
         if (result.isSuccess()) {
-            return result.getResponse();
+            final var response = result.getResponse();
+            logger.info("action: uploadDocument, state: succeeded, documentId: {}, hash: {}", response.documentId(), response.hash());
+            return response;
         } else {
+            logger.error("action: uploadDocument, state: failed, errorMessage: {}", result.getError().getMessage());
             throw result.getError();
         }
     }

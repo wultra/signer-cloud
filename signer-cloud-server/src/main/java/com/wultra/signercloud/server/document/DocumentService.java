@@ -111,7 +111,7 @@ class DocumentService {
             final String externalDocumentId,
             final String documentName,
             final MultipartFile file
-    ) {
+    ) throws NoSuchAlgorithmException {
        try {
            final var response = processDocumentUpload(externalSignerId, externalDocumentId, documentName, file);
            return Try.success(response);
@@ -125,7 +125,7 @@ class DocumentService {
             final String externalDocumentId,
             final String documentName,
             final MultipartFile file
-    ) {
+    ) throws NoSuchAlgorithmException {
         final var contentType = file.getContentType();
         if (!ContentType.APPLICATION_PDF.getMimeType().equals(contentType)) {
             throw new DocumentUploadException("Unsupported content type: " + contentType);
@@ -187,13 +187,14 @@ class DocumentService {
         }
     }
 
-    private String computeHash(final byte[] content) {
+    private String computeHash(final byte[] content) throws NoSuchAlgorithmException {
         try {
             final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
             final var hashBytes = digest.digest(content);
             return HexFormat.of().formatHex(hashBytes);
         } catch (final NoSuchAlgorithmException e) {
-            throw new DocumentUploadException("Failed to compute hash: " + e.getMessage());
+            logger.error("Hash algorithm not found: {}", HASH_ALGORITHM, e);
+            throw e;
         }
     }
 
