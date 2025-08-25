@@ -15,26 +15,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.restapi;
+
+package com.wultra.signercloud.server.callback;
 
 /**
- * Error codes for {@link ErrorResponse}.
+ * Possible states of a {@link CallbackEvent}.
  *
- * @author Michal Rozehnal, michal.rozehnal@wultra.com
+ * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public enum ErrorCode {
-    /**
-     * HTTP 400, Issue with a request format or issue of the business logic.
-     */
-    ERROR_GENERIC,
+public enum CallbackEventStatus {
 
     /**
-     * HTTP 401, Unauthorized request.
+     * Status of a Callback URL Event that is currently being dispatched.
      */
-    ERROR_UNAUTHORIZED,
+    PROCESSING,
 
     /**
-     * HTTP 404, Resource is not found.
+     * Status of a newly created Callback URL Event that is waiting to be
+     * processed by the scheduled task.
      */
-    ERROR_RESOURCE_NOT_FOUND
+    PENDING,
+
+    /**
+     * State of a Callback URL Event that failed during previous processing.
+     */
+    FAILED,
+
+    /**
+     * Final state of a Callback Event that was successfully delivered.
+     */
+    COMPLETED
 }

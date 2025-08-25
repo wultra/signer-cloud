@@ -41,6 +41,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
@@ -68,7 +69,7 @@ class SignerControllerIntTest {
     private static final Instant DUMMY_TIMESTAMP_CREATED = Instant.now().minusSeconds(120);
 
     private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/api/signers";
-    private static final String UPDATE_SIGNER_STATUS_ENDPOINT = "/api/signers/{externalSignerId}";
+    private static final String SIGNER_ENDPOINT_WITH_ID = "/api/signers/{externalSignerId}";
 
     @Autowired
     private MockMvc mockMvc;
@@ -250,7 +251,7 @@ class SignerControllerIntTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
 
         // when
-        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT, DUMMY_EXTERNAL_SIGNER_ID)
+        final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, DUMMY_EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -269,7 +270,7 @@ class SignerControllerIntTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.ACTIVE);
 
         // when
-        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT, DUMMY_EXTERNAL_SIGNER_ID)
+        final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, DUMMY_EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -288,7 +289,7 @@ class SignerControllerIntTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
 
         // when
-        final var mvcResult = mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT, DUMMY_EXTERNAL_SIGNER_ID)
+        final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, DUMMY_EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
@@ -307,7 +308,7 @@ class SignerControllerIntTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
 
         // when
-        mockMvc.perform(put(UPDATE_SIGNER_STATUS_ENDPOINT, DUMMY_EXTERNAL_SIGNER_ID)
+        mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, DUMMY_EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk());
@@ -316,6 +317,35 @@ class SignerControllerIntTest {
         final var signer = signerRepository.findAll().iterator().next();
         assertSigner(signer, DUMMY_TIMESTAMP_CREATED, SignerStatus.BLOCKED);
         assertEquals(Instant.now().toEpochMilli(), signer.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
+    }
+
+    @Test
+    void testGetDetailWhenSignerIsNotFoundThen404NotFoundResponseIsReturned() throws Exception {
+        // given
+        // -
+
+        // when
+        final var call = mockMvc.perform(get(SIGNER_ENDPOINT_WITH_ID, DUMMY_EXTERNAL_SIGNER_ID)
+                        .contentType(MediaType.APPLICATION_JSON));
+
+        // then
+        call.andExpect(status().isNotFound());
+    }
+
+    @Test
+    void testGetDetailWhenSignerIsFoundThenResponseWithCorrectValuesIsReturned() throws Exception {
+        // given
+        createSigner(SignerStatus.ACTIVE);
+
+        // when
+        final var mvcResult = mockMvc.perform(get(SIGNER_ENDPOINT_WITH_ID, DUMMY_EXTERNAL_SIGNER_ID)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerDetailResponse.class);
+        assertSignerDetailResponse(responseBody);
     }
 
     private void assertSigner(final Signer signer, final Instant expectedTimestampCreated, final SignerStatus expectedStatus) {
@@ -340,5 +370,11 @@ class SignerControllerIntTest {
                 .status(status)
                 .build();
         signerRepository.save(signer);
+    }
+
+    private void assertSignerDetailResponse(final SignerDetailResponse response) {
+        assertEquals(DUMMY_EXTERNAL_SIGNER_ID, response.externalSignerId());
+        assertEquals(DUMMY_USER_ID, response.userId());
+        assertEquals(SignerStatus.ACTIVE, response.signerStatus());
     }
 }

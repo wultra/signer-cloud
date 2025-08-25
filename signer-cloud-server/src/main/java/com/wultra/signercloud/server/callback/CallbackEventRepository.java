@@ -15,23 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
+package com.wultra.signercloud.server.callback;
+
+import org.springframework.data.repository.CrudRepository;
 
 /**
- * Test for context loading.
+ * Repository for  {@link CallbackEvent}.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@SpringBootTest
-@ActiveProfiles("test")
-class SignerCloudServerApplicationTest {
-
-    @Test
-    void contextLoads() {
-        // TODO (racansky, 2025-08-01) temporary for context loading until proper tests introduced
-    }
+interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
 }

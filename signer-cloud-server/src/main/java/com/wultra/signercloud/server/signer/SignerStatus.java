@@ -41,5 +41,10 @@ public enum SignerStatus {
     /**
      * Signer cannot sign documents and certificate is immediately revoked.
      */
-    REVOKED
+    REVOKED,
+
+    /**
+     * Signer cannot sign documents.
+     */
+    EXPIRED
 }

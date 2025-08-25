@@ -15,26 +15,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.restapi;
+package com.wultra.signercloud.server.signer;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Error codes for {@link ErrorResponse}.
+ * Signer configuration properties.
  *
- * @author Michal Rozehnal, michal.rozehnal@wultra.com
+ * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public enum ErrorCode {
-    /**
-     * HTTP 400, Issue with a request format or issue of the business logic.
-     */
-    ERROR_GENERIC,
+@ConfigurationProperties(prefix = "signer-cloud.server.signer")
+@Getter
+@Setter
+class SignerConfigurationProperties {
 
-    /**
-     * HTTP 401, Unauthorized request.
-     */
-    ERROR_UNAUTHORIZED,
+    private Expiration expiration = new Expiration(new Callback(false, null), new Job(1000));
 
-    /**
-     * HTTP 404, Resource is not found.
-     */
-    ERROR_RESOURCE_NOT_FOUND
+    record Job(int limit) {
+    }
+
+    record Expiration(Callback callback, Job job) {
+    }
+
+    record Callback(boolean enabled, String url) {
+    }
+
 }

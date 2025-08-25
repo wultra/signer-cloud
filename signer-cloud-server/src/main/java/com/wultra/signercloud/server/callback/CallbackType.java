@@ -15,26 +15,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.restapi;
+
+package com.wultra.signercloud.server.callback;
 
 /**
- * Error codes for {@link ErrorResponse}.
+ * Possible types of a {@link CallbackEvent}.
  *
- * @author Michal Rozehnal, michal.rozehnal@wultra.com
+ * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public enum ErrorCode {
-    /**
-     * HTTP 400, Issue with a request format or issue of the business logic.
-     */
-    ERROR_GENERIC,
+public enum CallbackType {
 
     /**
-     * HTTP 401, Unauthorized request.
+     * A callback when the certificate expired.
      */
-    ERROR_UNAUTHORIZED,
+    EXPIRED,
 
     /**
-     * HTTP 404, Resource is not found.
+     * A callback when the certificate was renewed.
      */
-    ERROR_RESOURCE_NOT_FOUND
+    RENEWED
 }

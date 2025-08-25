@@ -15,26 +15,29 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.restapi;
+
+package com.wultra.signercloud.server.callback;
+
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Error codes for {@link ErrorResponse}.
- *
- * @author Michal Rozehnal, michal.rozehnal@wultra.com
+ * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public enum ErrorCode {
-    /**
-     * HTTP 400, Issue with a request format or issue of the business logic.
-     */
-    ERROR_GENERIC,
+@Service
+@Transactional
+@AllArgsConstructor
+public class CallbackService {
+
+    private final CallbackEventRepository callbackEventRepository;
 
     /**
-     * HTTP 401, Unauthorized request.
+     * Saves a new {@link CallbackEvent}s to the repository.
+     *
+     * @param events the events to save
      */
-    ERROR_UNAUTHORIZED,
-
-    /**
-     * HTTP 404, Resource is not found.
-     */
-    ERROR_RESOURCE_NOT_FOUND
+    public void save(final Iterable<CallbackEvent> events) {
+        callbackEventRepository.saveAll(events);
+    }
 }
