@@ -17,14 +17,24 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.restapi.Try;
+import com.wultra.signercloud.server.signer.SignerNotFoundException;
+import com.wultra.signercloud.server.signer.SignerRepository;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.core5.http.ContentType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HexFormat;
 import java.util.function.Consumer;
 
 /**
@@ -38,9 +48,13 @@ import java.util.function.Consumer;
 @Transactional
 class DocumentService {
 
+    private static final String HASH_ALGORITHM = "SHA-256";
+
     private final DocumentConfigurationProperties configurationProperties;
 
     private final DocumentRepository documentRepository;
+    private final DocumentContentRepository documentContentRepository;
+    private final SignerRepository signerRepository;
 
     /**
      * Cleanup documents.
@@ -83,6 +97,77 @@ class DocumentService {
         } else {
             resultConsumer.accept("disabled");
         }
+    }
+
+    /**
+     * Stores the {@link Document} for signing and calculates its SHA-256 hash.
+     *
+     * @param externalSignerId {@link com.wultra.signercloud.server.signer.Signer#externalSignerId}
+     * @param externalDocumentId unique identifier of the document in the external system
+     * @param documentName name of the document
+     * @param file the PDF document to be stored for signing
+     * @return response as a {@link UploadDocumentResponse} object
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    UploadDocumentResponse uploadDocument(
+            final String externalSignerId,
+            final String externalDocumentId,
+            final String documentName,
+            final MultipartFile file
+    ) throws IOException, NoSuchAlgorithmException {
+        if (!"application/pdf".equals(file.getContentType())) {
+            throw new IllegalArgumentException("Only PDF documents are supported");
+        }
+
+        final var signer = signerRepository.findByExternalSignerId(externalSignerId)
+                .orElseThrow(() -> new SignerNotFoundException(externalSignerId));
+
+        final var fileName = file.getOriginalFilename();
+        final var fileSize = file.getSize();
+        if (fileSize > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("File is too large");
+        }
+
+        final var fileContent = file.getBytes();
+        final var hash = computeHash(fileContent);
+
+        final var documentContent = DocumentContent.builder()
+                .content(fileContent)
+                .build();
+
+        final var savedDocumentContent = documentContentRepository.save(documentContent);
+
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentId(externalSignerId)
+                //.externalId(externalSignerId)
+                .signerId(signer.getId())
+                .documentName(documentName)
+                .fileName(fileName)
+                .fileSize((int) fileSize)
+                .documentContentId(savedDocumentContent.getId())
+                .hash(hash)
+                .status(DocumentStatus.WAITING)
+                .build();
+
+        documentRepository.save(document);
+
+        return UploadDocumentResponse.builder()
+                .documentId(String.valueOf(document.getId()))
+                .signerId(externalSignerId)
+                .externalId(externalDocumentId)
+                .name(documentName)
+                .fileName(fileName)
+                .size((int) fileSize)
+                .hash(hash)
+                .build();
+    }
+
+    private String computeHash(final byte[] content) throws NoSuchAlgorithmException {
+        final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
+        final var hashBytes = digest.digest(content);
+        return HexFormat.of().formatHex(hashBytes);
     }
 
     @Builder
