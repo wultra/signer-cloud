@@ -34,6 +34,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HexFormat;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -147,8 +148,8 @@ class DocumentService {
 
         final var document = Document.builder()
                 .timestampCreated(Instant.now())
-                .documentId(externalSignerId)
-                //.externalId(externalSignerId)
+                .documentId(UUID.randomUUID().toString())
+                .externalId(externalDocumentId)
                 .signerId(signer.getId())
                 .documentName(documentName)
                 .fileName(fileName)
@@ -161,8 +162,8 @@ class DocumentService {
         documentRepository.save(document);
 
         return UploadDocumentResponse.builder()
-                .documentId(String.valueOf(document.getId()))
-                .signerId(externalSignerId)
+                .documentId(document.getDocumentId())
+                .signerId(signer.getExternalSignerId())
                 .externalId(externalDocumentId)
                 .name(documentName)
                 .fileName(fileName)

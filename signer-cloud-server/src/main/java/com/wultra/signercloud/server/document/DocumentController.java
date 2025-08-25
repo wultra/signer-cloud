@@ -43,10 +43,10 @@ public class DocumentController {
             @RequestParam("signerId") final String externalSignerId,
             @RequestParam("externalId") final String externalDocumentId,
             @RequestParam("name") final String documentName,
-            @RequestParam("content") final MultipartFile fileContent
+            @RequestParam("content") final MultipartFile file
     ) throws Throwable {
         logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, externalDocumentId: {}", externalDocumentId, externalDocumentId);
-        final var result = documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, fileContent);
+        final var result = documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, file);
         if (result.isSuccess()) {
             final var response = result.getResponse();
             logger.info("action: uploadDocument, state: succeeded, documentId: {}, hash: {}", response.documentId(), response.hash());
