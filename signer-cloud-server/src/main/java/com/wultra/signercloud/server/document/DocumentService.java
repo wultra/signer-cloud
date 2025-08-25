@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ContentType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -47,7 +46,6 @@ import java.util.function.Consumer;
 @Slf4j
 @Transactional
 class DocumentService {
-
     private static final String HASH_ALGORITHM = "SHA-256";
 
     private final DocumentConfigurationProperties configurationProperties;
@@ -106,30 +104,34 @@ class DocumentService {
      * @param externalDocumentId unique identifier of the document in the external system
      * @param documentName name of the document
      * @param file the PDF document to be stored for signing
-     * @return response as a {@link UploadDocumentResponse} object
-     * @throws IOException
-     * @throws NoSuchAlgorithmException
+     * @return response as a {@link Try}
      */
     UploadDocumentResponse uploadDocument(
             final String externalSignerId,
             final String externalDocumentId,
             final String documentName,
             final MultipartFile file
-    ) throws IOException, NoSuchAlgorithmException {
-        if (!"application/pdf".equals(file.getContentType())) {
-            throw new IllegalArgumentException("Only PDF documents are supported");
+    ) {
+        return processDocumentUpload(externalSignerId, externalDocumentId, documentName, file);
+    }
+
+    private UploadDocumentResponse processDocumentUpload(
+            final String externalSignerId,
+            final String externalDocumentId,
+            final String documentName,
+            final MultipartFile file
+    ) {
+        final var contentType = file.getContentType();
+        if (!ContentType.APPLICATION_PDF.getMimeType().equals(contentType)) {
+            throw new DocumentUploadException("Unsupported content type: " + contentType);
         }
 
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
-                .orElseThrow(() -> new SignerNotFoundException(externalSignerId));
+                .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
 
         final var fileName = file.getOriginalFilename();
-        final var fileSize = file.getSize();
-        if (fileSize > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException("File is too large");
-        }
-
-        final var fileContent = file.getBytes();
+        final var fileSize = getFileSize(file);
+        final var fileContent = getFileBytes(file);
         final var hash = computeHash(fileContent);
 
         final var documentContent = DocumentContent.builder()
@@ -145,7 +147,7 @@ class DocumentService {
                 .signerId(signer.getId())
                 .documentName(documentName)
                 .fileName(fileName)
-                .fileSize((int) fileSize)
+                .fileSize(fileSize)
                 .documentContentId(savedDocumentContent.getId())
                 .hash(hash)
                 .status(DocumentStatus.WAITING)
@@ -159,15 +161,35 @@ class DocumentService {
                 .externalId(externalDocumentId)
                 .name(documentName)
                 .fileName(fileName)
-                .size((int) fileSize)
+                .size(fileSize)
                 .hash(hash)
                 .build();
     }
 
-    private String computeHash(final byte[] content) throws NoSuchAlgorithmException {
-        final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
-        final var hashBytes = digest.digest(content);
-        return HexFormat.of().formatHex(hashBytes);
+    private int getFileSize(final MultipartFile file) {
+        final var size = file.getSize();
+        if (size > Integer.MAX_VALUE) {
+            throw new DocumentUploadException("File is too large. Size: " + size);
+        }
+        return (int) size;
+    }
+
+    private byte[] getFileBytes(final MultipartFile file) {
+        try {
+            return file.getBytes();
+        } catch (final IOException e) {
+            throw new DocumentUploadException("Failed to read file: " + e.getMessage());
+        }
+    }
+
+    private String computeHash(final byte[] content) {
+        try {
+            final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
+            final var hashBytes = digest.digest(content);
+            return HexFormat.of().formatHex(hashBytes);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new DocumentUploadException("Failed to compute hash: " + e.getMessage());
+        }
     }
 
     @Builder
