@@ -23,7 +23,7 @@
 
         <bouncycastle.version>1.81</bouncycastle.version>
         <dss.version>6.3</dss.version>
-        <shedlock.version>6.9.2</shedlock.version>
+        <shedlock.version>6.10.0</shedlock.version>
 
         <logstash.version>8.1</logstash.version>
 
