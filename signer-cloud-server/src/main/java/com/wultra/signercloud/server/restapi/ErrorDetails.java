@@ -18,8 +18,8 @@
 package com.wultra.signercloud.server.restapi;
 
 /**
- * Response for HTTP error.
+ * Details for {@link ErrorResponse}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record ErrorResponse(String status, ErrorDetails responseObject) {}
+public record ErrorDetails(ErrorCode code, String message) {}

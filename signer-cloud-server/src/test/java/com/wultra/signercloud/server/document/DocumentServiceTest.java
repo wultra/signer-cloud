@@ -17,53 +17,180 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.restapi.Try;
+import com.wultra.signercloud.server.signer.Signer;
+import com.wultra.signercloud.server.signer.SignerRepository;
+import org.apache.hc.core5.http.ContentType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.transaction.annotation.Transactional;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.util.Optional;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 /**
- * Test for {@link DocumentService}.
+ * Unit tests for {@link DocumentService}.
  *
- * @author Lubos Racansky, lubos.racansky@wultra.com
+ * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@SpringBootTest(properties = {
-        "signer-cloud.server.document.waiting.retention-period=1d",
-        "signer-cloud.server.document.rejected.retention-period=0",
-        "signer-cloud.server.document.signed.retention-period="
-})
-@ActiveProfiles("test")
-@Transactional
-@Sql
+@ExtendWith(MockitoExtension.class)
 class DocumentServiceTest {
 
-    private static final long ID_WAITING_1 = 1;
-    private static final long ID_WAITING_2 = 4;
-    private static final long ID_REJECTED = 2;
-    private static final long ID_SIGNED = 3;
+    private static final long DUMMY_SIGNER_ID = 1L;
+    private static final String DUMMY_EXTERNAL_SIGNER_ID = "dummyExternalSignerId";
 
-    @Autowired
+    private static final String DUMMY_EXTERNAL_DOCUMENT_ID = "dummyExternalDocumentId";
+    private static final String DUMMY_DOCUMENT_NAME = "dummyDocumentName";
+    private static final String DUMMY_FILE_NAME = "dummyFileName.pdf";
+    private static final String DUMMY_DOCUMENT_CONTENT = "dummyDocumentContent";
+    private static final String MULTIPART_FILE_FIELD_NAME = "content";
+
+    private static final String EXPECTED_HASH = "e5416a420beede017508e5c172f13ed9344e9a3ac89e3ae9d49c559f3f97b6d5";
+
+    private Signer signer;
+
+    @Mock
+    private SignerRepository signerRepository;
+
+    @Mock
     private DocumentRepository documentRepository;
 
-    @Autowired
-    private DocumentService tested;
+    @Mock
+    private DocumentContentRepository documentContentRepository;
+
+    @InjectMocks
+    private DocumentService documentService;
+
+    @BeforeEach
+    void setUp() {
+        signer = Signer.builder()
+                .id(DUMMY_SIGNER_ID)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .build();
+    }
 
     @Test
-    void testCleanup() {
-        assertTrue(documentRepository.existsById(ID_WAITING_1));
-        assertTrue(documentRepository.existsById(ID_WAITING_2));
-        assertTrue(documentRepository.existsById(ID_REJECTED));
-        assertTrue(documentRepository.existsById(ID_SIGNED));
+    void testUploadDocumentWhenUnsupportedFileTypeIsReceivedThenFailResultWithCorrectMessageIsReturned() throws NoSuchAlgorithmException {
+        // given
+        final var file = new MockMultipartFile(
+                MULTIPART_FILE_FIELD_NAME,
+                DUMMY_FILE_NAME,
+                ContentType.IMAGE_JPEG.getMimeType(),
+                DUMMY_DOCUMENT_CONTENT.getBytes()
+        );
 
-        tested.cleanupDocuments();
+        // when
+        final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
 
-        assertFalse(documentRepository.existsById(ID_WAITING_1));
-        assertTrue(documentRepository.existsById(ID_WAITING_2));
-        assertFalse(documentRepository.existsById(ID_REJECTED));
-        assertTrue(documentRepository.existsById(ID_SIGNED));
+        // then
+        assertFailResult(result, "Unsupported content type: image/jpeg");
+    }
+
+    @Test
+    void testUploadDocumentWhenSignerIsNotFoundThenFailResultWithCorrectMessageIsReturned() throws NoSuchAlgorithmException {
+        // given
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
+
+        final var file = new MockMultipartFile(
+                MULTIPART_FILE_FIELD_NAME,
+                DUMMY_FILE_NAME,
+                ContentType.APPLICATION_PDF.getMimeType(),
+                DUMMY_DOCUMENT_CONTENT.getBytes()
+        );
+
+        // when
+        final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
+
+        // then
+        assertFailResult(result, "Signer not found for external signer ID: dummyExternalSignerId");
+    }
+
+    @Test
+    void testUploadDocumentWhenFileIsTooLargeThenFailResultWithCorrectMessageIsReturned() throws NoSuchAlgorithmException {
+        // given
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        final var file = Mockito.mock(MultipartFile.class);
+        when(file.getContentType()).thenReturn(ContentType.APPLICATION_PDF.getMimeType());
+        when(file.getSize()).thenReturn(1L + Integer.MAX_VALUE);
+
+        // when
+        final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
+
+        // then
+        assertFailResult(result, "File is too large. Size: 2147483648");
+    }
+
+    @Test
+    void testUploadDocumentWhenFileContentCanNotBeReadThenFailResultWithCorrectMessageIsReturned() throws NoSuchAlgorithmException, IOException {
+        // given
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        final var file = Mockito.mock(MultipartFile.class);
+        when(file.getContentType()).thenReturn(ContentType.APPLICATION_PDF.getMimeType());
+        when(file.getSize()).thenReturn(Long.valueOf(DUMMY_DOCUMENT_CONTENT.length()));
+        when(file.getBytes()).thenThrow(new IOException("Test IO exception"));
+
+        // when
+        final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
+
+        // then
+        assertFailResult(result, "Failed to read file: Test IO exception");
+    }
+
+    @Test
+    void testUploadDocumentWhenFileIsUploadedWhenSuccessResultWithCorrectResponseIsReturned() throws NoSuchAlgorithmException {
+        // given
+        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        final var documentContent = DocumentContent.builder()
+                .id(1L)
+                .content(DUMMY_DOCUMENT_CONTENT.getBytes())
+                .build();
+
+        when(documentContentRepository.save(any(DocumentContent.class))).thenReturn(documentContent);
+
+        final var file = new MockMultipartFile(
+                MULTIPART_FILE_FIELD_NAME,
+                DUMMY_FILE_NAME,
+                ContentType.APPLICATION_PDF.getMimeType(),
+                DUMMY_DOCUMENT_CONTENT.getBytes()
+        );
+
+        // when
+        final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
+
+        // then
+        assertSuccessResult(result);
+    }
+
+    private void assertFailResult(final Try<UploadDocumentResponse> result, final String expectedMessage) {
+        assertFalse(result.isSuccess());
+        assertEquals(expectedMessage, result.getError().getMessage());
+    }
+
+    private void assertSuccessResult(final Try<UploadDocumentResponse> result) {
+        assertTrue(result.isSuccess());
+
+        final var response = result.getResponse();
+        assertDoesNotThrow(() -> UUID.fromString(response.documentId()));
+        assertEquals(DUMMY_EXTERNAL_SIGNER_ID, response.signerId());
+        assertEquals(DUMMY_EXTERNAL_DOCUMENT_ID, response.externalId());
+        assertEquals(DUMMY_DOCUMENT_NAME, response.name());
+        assertEquals(DUMMY_FILE_NAME, response.fileName());
+        assertEquals(DUMMY_DOCUMENT_CONTENT.length(), response.size());
+        assertEquals(EXPECTED_HASH, response.hash());
     }
 }
