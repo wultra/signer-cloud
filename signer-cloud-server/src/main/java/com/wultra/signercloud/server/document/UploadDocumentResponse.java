@@ -15,11 +15,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.restapi;
+package com.wultra.signercloud.server.document;
+
+import lombok.Builder;
 
 /**
- * Response for HTTP error.
+ * REST API response for {@link Document} upload operation.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record ErrorResponse(String status, ErrorDetails responseObject) {}
+@Builder
+record UploadDocumentResponse(
+        String documentId,
+        String signerId,
+        String externalId,
+        String name,
+        String fileName,
+        int size,
+        String hash
+) {
+}

@@ -17,14 +17,24 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.restapi.Try;
+import com.wultra.signercloud.server.signer.SignerNotFoundException;
+import com.wultra.signercloud.server.signer.SignerRepository;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.hc.core5.http.ContentType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HexFormat;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
@@ -37,10 +47,13 @@ import java.util.function.Consumer;
 @Slf4j
 @Transactional
 class DocumentService {
+    private static final String HASH_ALGORITHM = "SHA-256";
 
     private final DocumentConfigurationProperties configurationProperties;
 
     private final DocumentRepository documentRepository;
+    private final DocumentContentRepository documentContentRepository;
+    private final SignerRepository signerRepository;
 
     /**
      * Cleanup documents.
@@ -82,6 +95,107 @@ class DocumentService {
             resultConsumer.accept(String.valueOf(deletedCount));
         } else {
             resultConsumer.accept("disabled");
+        }
+    }
+
+    /**
+     * Stores the {@link Document} for signing and calculates its SHA-256 hash.
+     *
+     * @param externalSignerId {@link com.wultra.signercloud.server.signer.Signer#externalSignerId}
+     * @param externalDocumentId unique identifier of the document in the external system
+     * @param documentName name of the document
+     * @param file the PDF document to be stored for signing
+     * @return response as a {@link Try}
+     */
+    Try<UploadDocumentResponse> uploadDocument(
+            final String externalSignerId,
+            final String externalDocumentId,
+            final String documentName,
+            final MultipartFile file
+    ) throws NoSuchAlgorithmException {
+       try {
+           final var response = processDocumentUpload(externalSignerId, externalDocumentId, documentName, file);
+           return Try.success(response);
+       } catch (final SignerNotFoundException | DocumentUploadException e) {
+           return Try.error(e);
+       }
+    }
+
+    private UploadDocumentResponse processDocumentUpload(
+            final String externalSignerId,
+            final String externalDocumentId,
+            final String documentName,
+            final MultipartFile file
+    ) throws NoSuchAlgorithmException {
+        final var contentType = file.getContentType();
+        if (!ContentType.APPLICATION_PDF.getMimeType().equals(contentType)) {
+            throw new DocumentUploadException("Unsupported content type: " + contentType);
+        }
+
+        final var signer = signerRepository.findByExternalSignerId(externalSignerId)
+                .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
+
+        final var fileName = file.getOriginalFilename();
+        final var fileSize = getFileSize(file);
+        final var fileContent = getFileBytes(file);
+        final var hash = computeHash(fileContent);
+
+        final var documentContent = DocumentContent.builder()
+                .content(fileContent)
+                .build();
+
+        final var savedDocumentContent = documentContentRepository.save(documentContent);
+
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentId(UUID.randomUUID().toString())
+                .externalId(externalDocumentId)
+                .signerId(signer.getId())
+                .documentName(documentName)
+                .fileName(fileName)
+                .fileSize(fileSize)
+                .documentContentId(savedDocumentContent.getId())
+                .hash(hash)
+                .status(DocumentStatus.WAITING)
+                .build();
+
+        documentRepository.save(document);
+
+        return UploadDocumentResponse.builder()
+                .documentId(document.getDocumentId())
+                .signerId(signer.getExternalSignerId())
+                .externalId(externalDocumentId)
+                .name(documentName)
+                .fileName(fileName)
+                .size(fileSize)
+                .hash(hash)
+                .build();
+    }
+
+    private static int getFileSize(final MultipartFile file) {
+        final var size = file.getSize();
+        if (size > Integer.MAX_VALUE) {
+            throw new DocumentUploadException("File is too large. Size: " + size);
+        }
+        return (int) size;
+    }
+
+    private static byte[] getFileBytes(final MultipartFile file) {
+        try {
+            return file.getBytes();
+        } catch (final IOException e) {
+            throw new DocumentUploadException("Failed to read file: " + e.getMessage());
+        }
+    }
+
+    private static String computeHash(final byte[] content) throws NoSuchAlgorithmException {
+        try {
+            final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
+            final var hashBytes = digest.digest(content);
+            return HexFormat.of().formatHex(hashBytes);
+        } catch (final NoSuchAlgorithmException e) {
+            logger.error("Hash algorithm not found: {}", HASH_ALGORITHM, e);
+            throw e;
         }
     }
 

@@ -15,11 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.restapi;
+package com.wultra.signercloud.server.document;
 
 /**
- * Response for HTTP error.
+ * Exception thrown when {@link Document} upload fails.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record ErrorResponse(String status, ErrorDetails responseObject) {}
+public class DocumentUploadException extends RuntimeException {
+    public DocumentUploadException(final String message) {
+        super(message);
+    }
+}

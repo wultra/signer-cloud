@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import com.wultra.signercloud.server.document.DocumentUploadException;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -98,6 +99,18 @@ class RestExceptionHandlerTest {
 
         // Then
         assertErrorResponse(response.getBody(), message, ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    void testHandleDocumentUploadExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Unsupported content type: image/jpeg";
+
+        // When
+        final var response = restExceptionHandler.handleDocumentUploadException(new DocumentUploadException(message));
+
+        // Then
+        assertErrorResponse(response.getBody(), message, ErrorCode.ERROR_GENERIC);
     }
 
     private void assertErrorResponse(final ErrorResponse errorResponse, final String expectedMessage, final ErrorCode expectedCode) {
