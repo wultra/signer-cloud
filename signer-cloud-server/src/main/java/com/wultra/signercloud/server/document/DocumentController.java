@@ -17,6 +17,10 @@
  */
 package com.wultra.signercloud.server.document;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -38,6 +42,25 @@ public class DocumentController {
 
     private final DocumentService documentService;
 
+    @Operation(
+            summary = "Uploads a document for signing",
+            description = "Uploads a document to be signed. It is stored in the database with calculated SHA-256 hash and linked to the Signer.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Successful upload",
+                            content = @Content(schema = @Schema(implementation = UploadDocumentResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input data"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Signer not found"
+                    )
+            }
+    )
     @PostMapping
     UploadDocumentResponse upload(
             @RequestParam("signerId") final String externalSignerId,
