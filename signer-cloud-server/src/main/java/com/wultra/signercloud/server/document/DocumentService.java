@@ -172,7 +172,7 @@ class DocumentService {
                 .build();
     }
 
-    private int getFileSize(final MultipartFile file) {
+    private static int getFileSize(final MultipartFile file) {
         final var size = file.getSize();
         if (size > Integer.MAX_VALUE) {
             throw new DocumentUploadException("File is too large. Size: " + size);
@@ -180,7 +180,7 @@ class DocumentService {
         return (int) size;
     }
 
-    private byte[] getFileBytes(final MultipartFile file) {
+    private static byte[] getFileBytes(final MultipartFile file) {
         try {
             return file.getBytes();
         } catch (final IOException e) {
@@ -188,7 +188,7 @@ class DocumentService {
         }
     }
 
-    private String computeHash(final byte[] content) throws NoSuchAlgorithmException {
+    private static String computeHash(final byte[] content) throws NoSuchAlgorithmException {
         try {
             final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
             final var hashBytes = digest.digest(content);
