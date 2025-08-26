@@ -183,7 +183,7 @@ class DocumentControllerIntTest {
 
     private MockMultipartFile loadFile(final String contentType) throws IOException {
         return new MockMultipartFile(
-                "content",
+                "file",
                 FILENAME,
                 contentType,
                 Files.readAllBytes(FILE_PATH)

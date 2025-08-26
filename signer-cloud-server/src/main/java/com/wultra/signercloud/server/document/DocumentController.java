@@ -66,7 +66,7 @@ public class DocumentController {
             @RequestParam("signerId") final String externalSignerId,
             @RequestParam("externalId") final String externalDocumentId,
             @RequestParam("name") final String documentName,
-            @RequestParam("content") final MultipartFile file
+            @RequestParam("file") final MultipartFile file
     ) throws Throwable {
         logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, externalDocumentId: {}", externalSignerId, externalDocumentId);
         final var result = documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, file);
