@@ -25,7 +25,7 @@ import lombok.Builder;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Builder
-public record UploadDocumentResponse(
+record UploadDocumentResponse(
         String documentId,
         String signerId,
         String externalId,
