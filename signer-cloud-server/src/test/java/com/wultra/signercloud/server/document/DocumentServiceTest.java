@@ -19,9 +19,11 @@ package com.wultra.signercloud.server.document;
 
 import com.wultra.signercloud.server.restapi.Try;
 import com.wultra.signercloud.server.signer.Signer;
+import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import com.wultra.signercloud.server.signer.SignerRepository;
+import com.wultra.signercloud.server.signer.SignerStatus;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import org.apache.hc.core5.http.ContentType;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,6 +35,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Base64;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,18 +53,25 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class DocumentServiceTest {
 
-    private static final long DUMMY_SIGNER_ID = 1L;
+    private static final long SIGNER_ID = 1L;
     private static final String DUMMY_EXTERNAL_SIGNER_ID = "dummyExternalSignerId";
+    private static final String CERTIFICATE = "MIICFDCCAZugAwIBAgIUC0O75BZKicH8bDlRUBgC8h7bTdgwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MDgyNzA3NTUyOVoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzB2MBAGByqGSM49AgEGBSuBBAAiA2IABENmfWbIOOXtmGfPQdN7oY8+y0pF7rliVvg709N7X3Q/uW5g7rTO7JWc4BPX8+rGjbkaAU7tO6nt0JCaBtYlwzmGLkwywafNd4iTsFaZRbFLNdZue/c0poVN9RmwLTOH/6OBizCBiDAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFJ0dk1DJP8vLqD/Dx15EMOEpmqkOMCgGA1UdJQQhMB8GCCsGAQUFBwMCBggrBgEFBQcDBAYJKoZIhvcvAQEFMB0GA1UdDgQWBBT9ooCMF8fza6pXM3q4FQrfJ0nkhjAOBgNVHQ8BAf8EBAMCBeAwCgYIKoZIzj0EAwMDZwAwZAIwaeS/siF1g5vbaNXrnQM9xJOQmUG92HyNOCTKh/x1PA9b/VwtpodSjkIOiOxJQ56aAjBQit9XczUVNp5qGdrLO3Ac730VokRvphNBtupJbdnkpywejktZi00LM8MsuZA7Piw=";
 
     private static final String DUMMY_EXTERNAL_DOCUMENT_ID = "dummyExternalDocumentId";
     private static final String DUMMY_DOCUMENT_NAME = "dummyDocumentName";
     private static final String DUMMY_FILE_NAME = "dummyFileName.pdf";
-    private static final String DUMMY_DOCUMENT_CONTENT = "dummyDocumentContent";
+    private static final String DOCUMENT_HASH = "x/PQFGarKCBiFs2lzQkH4QDtxBqR+6e6YQSomQEWv+U=";
+    private static final String SIGNATURE = "MGUCMAsFMLMgPLrn5e4BFS1UeFgMy/6hrSvsamClvy6cfuC1oUTc8Zecz9i0pkgor4o7vQIxAIcJ+/d+Vcbh1DCpp15xsAtA3lOXY/KLVp0CVypNtBS/+6W0XxSP3s08y/Y+uCJvSw==";
+    private static final String DOCUMENT_UUID = UUID.randomUUID().toString();
+
+    private static final long DOCUMENT_CONTENT_ID = 2L;
+    private static final byte[] DOCUMENT_CONTENT = Base64.getDecoder().decode("JVBERi0xLjEKMSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlIC9QYWdlcyAvS2lkcyBbMyAwIFJdIC9Db3VudCAxID4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAxMCAxMF0gPj4KZW5kb2JqCnRyYWlsZXIKPDwvUm9vdCAxIDAgUiA+PnN0YXJ0eHJlZjoxMjMKJSVFT0YK");
+
     private static final String MULTIPART_FILE_FIELD_NAME = "content";
 
-    private static final String EXPECTED_HASH = "e5416a420beede017508e5c172f13ed9344e9a3ac89e3ae9d49c559f3f97b6d5";
-
-    private Signer signer;
+    private static final String HASH_ALGORITHM = "SHA-256";
+    private static final Duration WAITING_TIMEOUT = Duration.ofSeconds(60);
+    private static final String DOWNLOAD_HOSTNAME = "signercloud.example.com";
 
     @Mock
     private SignerRepository signerRepository;
@@ -70,16 +82,11 @@ class DocumentServiceTest {
     @Mock
     private DocumentContentRepository documentContentRepository;
 
+    @Mock
+    private DocumentConfigurationProperties documentConfigurationProperties;
+
     @InjectMocks
     private DocumentService documentService;
-
-    @BeforeEach
-    void setUp() {
-        signer = Signer.builder()
-                .id(DUMMY_SIGNER_ID)
-                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
-                .build();
-    }
 
     @Test
     void testUploadDocumentWhenUnsupportedFileTypeIsReceivedThenFailResultWithCorrectMessageIsReturned() throws NoSuchAlgorithmException {
@@ -88,14 +95,14 @@ class DocumentServiceTest {
                 MULTIPART_FILE_FIELD_NAME,
                 DUMMY_FILE_NAME,
                 ContentType.IMAGE_JPEG.getMimeType(),
-                DUMMY_DOCUMENT_CONTENT.getBytes()
+                DOCUMENT_CONTENT
         );
 
         // when
         final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
 
         // then
-        assertFailResult(result, "Unsupported content type: image/jpeg");
+        assertFailResult(result, DocumentUploadException.class, "Unsupported content type: image/jpeg");
     }
 
     @Test
@@ -107,19 +114,20 @@ class DocumentServiceTest {
                 MULTIPART_FILE_FIELD_NAME,
                 DUMMY_FILE_NAME,
                 ContentType.APPLICATION_PDF.getMimeType(),
-                DUMMY_DOCUMENT_CONTENT.getBytes()
+                DOCUMENT_CONTENT
         );
 
         // when
         final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
 
         // then
-        assertFailResult(result, "Signer not found for external signer ID: dummyExternalSignerId");
+        assertFailResult(result, SignerNotFoundException.class, "Signer not found for external signer ID: dummyExternalSignerId");
     }
 
     @Test
     void testUploadDocumentWhenFileIsTooLargeThenFailResultWithCorrectMessageIsReturned() throws NoSuchAlgorithmException {
         // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         final var file = Mockito.mock(MultipartFile.class);
@@ -130,34 +138,37 @@ class DocumentServiceTest {
         final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
 
         // then
-        assertFailResult(result, "File is too large. Size: 2147483648");
+        assertFailResult(result, DocumentUploadException.class, "File is too large. Size: 2147483648");
     }
 
     @Test
     void testUploadDocumentWhenFileContentCanNotBeReadThenFailResultWithCorrectMessageIsReturned() throws NoSuchAlgorithmException, IOException {
         // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         final var file = Mockito.mock(MultipartFile.class);
         when(file.getContentType()).thenReturn(ContentType.APPLICATION_PDF.getMimeType());
-        when(file.getSize()).thenReturn(Long.valueOf(DUMMY_DOCUMENT_CONTENT.length()));
+        when(file.getSize()).thenReturn(Long.valueOf(DOCUMENT_CONTENT.length));
         when(file.getBytes()).thenThrow(new IOException("Test IO exception"));
 
         // when
         final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
 
         // then
-        assertFailResult(result, "Failed to read file: Test IO exception");
+        assertFailResult(result, DocumentUploadException.class, "Failed to read file: Test IO exception");
     }
 
     @Test
     void testUploadDocumentWhenFileIsUploadedWhenSuccessResultWithCorrectResponseIsReturned() throws NoSuchAlgorithmException {
         // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(HASH_ALGORITHM);
 
         final var documentContent = DocumentContent.builder()
                 .id(1L)
-                .content(DUMMY_DOCUMENT_CONTENT.getBytes())
+                .content(DOCUMENT_CONTENT)
                 .build();
 
         when(documentContentRepository.save(any(DocumentContent.class))).thenReturn(documentContent);
@@ -166,22 +177,243 @@ class DocumentServiceTest {
                 MULTIPART_FILE_FIELD_NAME,
                 DUMMY_FILE_NAME,
                 ContentType.APPLICATION_PDF.getMimeType(),
-                DUMMY_DOCUMENT_CONTENT.getBytes()
+                DOCUMENT_CONTENT
         );
 
         // when
         final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
 
         // then
-        assertSuccessResult(result);
+        assertSuccessUploadResult(result);
     }
 
-    private void assertFailResult(final Try<UploadDocumentResponse> result, final String expectedMessage) {
+    @Test
+    void testSignDocumentWhenDocumentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
+
+        final var request = new SignDocumentRequest(SIGNATURE);
+
+        // when
+        final var result = documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        final var expectedMessage = "Document not found for document ID: " + DOCUMENT_UUID;
+
+        assertFailResult(result, DocumentNotFoundException.class, expectedMessage);
+    }
+
+    @Test
+    void testSignDocumentWhenDocumentContentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.empty());
+
+        final var request = new SignDocumentRequest(SIGNATURE);
+
+        // when
+        final var result = documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        final var expectedMessage = "Document content not found for document ID: " + DOCUMENT_UUID;
+
+        assertFailResult(result, DocumentNotFoundException.class, expectedMessage);
+    }
+
+    @Test
+    void testSignDocumentWhenSignerIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .signerId(SIGNER_ID)
+                .build();
+
+        final var documentContent = DocumentContent.builder().build();
+
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.empty());
+
+        final var request = new SignDocumentRequest(SIGNATURE);
+
+        // when
+        final var result = documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        final var expectedMessage = "Signer not found for document ID: " + DOCUMENT_UUID;
+
+        assertFailResult(result, SignerNotFoundException.class, expectedMessage);
+    }
+
+    @Test
+    void testSignDocumentWhenSignerIsNotActiveThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .signerId(SIGNER_ID)
+                .build();
+
+        final var documentContent = DocumentContent.builder().build();
+
+        final var signer = createSigner(SignerStatus.BLOCKED);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        final var request = new SignDocumentRequest(SIGNATURE);
+
+        // when
+        final var result = documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        final var expectedMessage = "Signer is not active. Signer: " + DUMMY_EXTERNAL_SIGNER_ID;
+
+        assertFailResult(result, SignDocumentException.class, expectedMessage);
+    }
+
+    @Test
+    void testSignDocumentWhenDocumentHasNotWaitingStatusThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .signerId(SIGNER_ID)
+                .status(DocumentStatus.REJECTED)
+                .build();
+
+        final var documentContent = DocumentContent.builder().build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        final var request = new SignDocumentRequest(SIGNATURE);
+
+        // when
+        final var result = documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        assertFailResult(result, SignDocumentException.class, "Document is not in state when it can be signed");
+    }
+
+    @Test
+    void testSignDocumentWhenDocumentSignAttemptIsAfterDeadlineThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .timestampCreated(Instant.now().minusSeconds(120))
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .signerId(SIGNER_ID)
+                .status(DocumentStatus.WAITING)
+                .build();
+
+        final var documentContent = DocumentContent.builder().build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
+        waitingDuration.setRetentionPeriod(WAITING_TIMEOUT);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
+
+        final var request = new SignDocumentRequest(SIGNATURE);
+
+        // when
+        final var result = documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        assertFailResult(result, SignDocumentException.class, "Document signing timeout exceeded");
+    }
+
+    @Test
+    void testSignDocumentWhenSignatureIsNotValidThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .signerId(SIGNER_ID)
+                .status(DocumentStatus.WAITING)
+                .hash(DOCUMENT_HASH)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(DOCUMENT_CONTENT)
+                .build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
+        waitingDuration.setRetentionPeriod(WAITING_TIMEOUT);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
+        when(documentConfigurationProperties.getSignatureAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
+
+        final var request = new SignDocumentRequest("invalidSignature");
+
+        // when
+        final var result = documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        assertFailResult(result, SignDocumentException.class, "Invalid signature");
+    }
+
+    @Test
+    void testSignDocumentWhenSignatureIsValidThenSuccessResultWithCorrectResponseIsReturned() {
+        // given
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .signerId(SIGNER_ID)
+                .status(DocumentStatus.WAITING)
+                .hash(DOCUMENT_HASH)
+                .documentId(DOCUMENT_UUID)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(DOCUMENT_CONTENT)
+                .build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
+        waitingDuration.setRetentionPeriod(WAITING_TIMEOUT);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
+        when(documentConfigurationProperties.getSignatureAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
+        when(documentConfigurationProperties.getDownloadHostname()).thenReturn(DOWNLOAD_HOSTNAME);
+
+        final var request = new SignDocumentRequest(SIGNATURE);
+
+        // when
+        final var result = documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        assertSuccessSignResult(result);
+    }
+
+    private void assertFailResult(final Try<?> result, final Class<? extends Throwable> exceptionType, final String expectedMessage) {
         assertFalse(result.isSuccess());
-        assertEquals(expectedMessage, result.getError().getMessage());
+
+        final var error = result.getError();
+        assertEquals(exceptionType, error.getClass());
+        assertEquals(expectedMessage, error.getMessage());
     }
 
-    private void assertSuccessResult(final Try<UploadDocumentResponse> result) {
+    private void assertSuccessUploadResult(final Try<UploadDocumentResponse> result) {
         assertTrue(result.isSuccess());
 
         final var response = result.getResponse();
@@ -190,7 +422,28 @@ class DocumentServiceTest {
         assertEquals(DUMMY_EXTERNAL_DOCUMENT_ID, response.externalId());
         assertEquals(DUMMY_DOCUMENT_NAME, response.name());
         assertEquals(DUMMY_FILE_NAME, response.fileName());
-        assertEquals(DUMMY_DOCUMENT_CONTENT.length(), response.size());
-        assertEquals(EXPECTED_HASH, response.hash());
+        assertEquals(DOCUMENT_CONTENT.length, response.size());
+        assertEquals(DOCUMENT_HASH, response.hash());
+    }
+
+    private void assertSuccessSignResult(final Try<SignDocumentResponse> result) {
+        assertTrue(result.isSuccess());
+
+        final var response = result.getResponse();
+        assertEquals(DOCUMENT_UUID, response.documentId());
+
+        final var expectedUri = String.format("https://%s/api/v1/documents/%s/download",
+                DOWNLOAD_HOSTNAME,
+                DOCUMENT_UUID);
+        assertEquals(expectedUri, response.uri());
+    }
+
+    private static Signer createSigner(final SignerStatus status) {
+        return Signer.builder()
+                .id(SIGNER_ID)
+                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .certificate(CERTIFICATE)
+                .status(status)
+                .build();
     }
 }

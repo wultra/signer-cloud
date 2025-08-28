@@ -17,7 +17,9 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import com.wultra.signercloud.server.document.DocumentNotFoundException;
 import com.wultra.signercloud.server.document.DocumentUploadException;
+import com.wultra.signercloud.server.document.SignDocumentException;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -108,6 +110,30 @@ class RestExceptionHandlerTest {
 
         // When
         final var response = restExceptionHandler.handleDocumentUploadException(new DocumentUploadException(message));
+
+        // Then
+        assertErrorResponse(response.getBody(), message, ErrorCode.ERROR_GENERIC);
+    }
+
+    @Test
+    void testHandleDocumentNotFoundExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Document not found for document ID: 123";
+
+        // When
+        final var response = restExceptionHandler.handleDocumentNotFoundException(new DocumentNotFoundException(message));
+
+        // Then
+        assertErrorResponse(response.getBody(), message, ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    void testHandleSignDocumentExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Document signing timeout exceeded";
+
+        // When
+        final var response = restExceptionHandler.handleSignDocumentException(new SignDocumentException(message));
 
         // Then
         assertErrorResponse(response.getBody(), message, ErrorCode.ERROR_GENERIC);

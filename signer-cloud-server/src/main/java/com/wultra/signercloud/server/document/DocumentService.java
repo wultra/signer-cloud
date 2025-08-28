@@ -23,7 +23,6 @@ import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
@@ -225,7 +224,7 @@ class DocumentService {
         }
     }
 
-    SignDocumentResponse processSignDocument(final String documentId, final SignDocumentRequest requestBody) throws CertificateException {
+    private SignDocumentResponse processSignDocument(final String documentId, final SignDocumentRequest requestBody) throws CertificateException {
 
         final var document = documentRepository.findByDocumentId(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
@@ -234,7 +233,7 @@ class DocumentService {
                 .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentId));
 
         final var signer = signerRepository.findById(document.getSignerId())
-                .orElseThrow(() -> new SignerNotFoundException("Signer not found for signer ID: " + document.getSignerId()));
+                .orElseThrow(() -> new SignerNotFoundException("Signer not found for document ID: " + documentId));
 
         verifyDocumentCanBeSigned(signer, document);
 
