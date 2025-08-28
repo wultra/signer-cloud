@@ -77,13 +77,35 @@ public class DocumentController {
         }
     }
 
+    @Operation(
+            summary = "Signs an uploaded document",
+            description = "Verifies whether the document can be signed, if so, verifies the {@code signature} and creates a signed document.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Document signed successfully",
+                            content = @Content(schema = @Schema(implementation = SignDocumentResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid document state or invalid signature"
+                    ),
+                    @ApiResponse(
+                            responseCode = "404",
+                            description = "Signer or document not found"
+                    )
+            }
+    )
     @PostMapping("/{documentId}/signature")
     SignDocumentResponse sign(@PathVariable final String documentId, @RequestBody final SignDocumentRequest requestBody) throws Throwable {
+        logger.error("action: signDocument, state: initiated, documentId: {}", documentId);
         final var result = documentService.signDocument(documentId, requestBody);
 
         if (result.isSuccess()) {
+            logger.error("action: signDocument, state: succeeded");
             return result.getResponse();
         } else {
+            logger.error("action: signDocument, state: failed, errorMessage: {}", result.getError().getMessage());
             throw result.getError();
         }
     }
