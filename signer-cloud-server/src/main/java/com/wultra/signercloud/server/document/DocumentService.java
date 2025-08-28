@@ -18,8 +18,21 @@
 package com.wultra.signercloud.server.document;
 
 import com.wultra.signercloud.server.restapi.Try;
+import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import com.wultra.signercloud.server.signer.SignerRepository;
+import com.wultra.signercloud.server.signer.SignerStatus;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
+import eu.europa.esig.dss.model.DSSDocument;
+import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -28,12 +41,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.security.*;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HexFormat;
+import java.util.Base64;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -48,9 +64,9 @@ import java.util.function.Consumer;
 @Transactional
 class DocumentService {
     private static final String HASH_ALGORITHM = "SHA-256";
+    private static final String CERTIFICATE_TYPE = "X.509";
 
     private final DocumentConfigurationProperties configurationProperties;
-
     private final DocumentRepository documentRepository;
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
@@ -192,10 +208,120 @@ class DocumentService {
         try {
             final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
             final var hashBytes = digest.digest(content);
-            return HexFormat.of().formatHex(hashBytes);
+            return Base64.getEncoder().encodeToString(hashBytes);
         } catch (final NoSuchAlgorithmException e) {
             logger.error("Hash algorithm not found: {}", HASH_ALGORITHM, e);
             throw e;
+        }
+    }
+
+    Try<SignDocumentResponse> signDocument(final String documentId, final SignDocumentRequest requestBody) {
+        try {
+            final var response = processSignDocument(documentId, requestBody);
+            return Try.success(response);
+        } catch (final CertificateException | DocumentNotFoundException | SignerNotFoundException | SignDocumentException e) {
+            return Try.error(e);
+        }
+    }
+
+    SignDocumentResponse processSignDocument(final String documentId, final SignDocumentRequest requestBody) throws CertificateException {
+
+        final var document = documentRepository.findByDocumentId(documentId)
+                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
+
+        final var documentContent = documentContentRepository.findById(document.getDocumentContentId())
+                .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentId));
+
+        final var signer = signerRepository.findById(document.getSignerId())
+                .orElseThrow(() -> new SignerNotFoundException("Signer not found for signer ID: " + document.getSignerId()));
+
+        verifyDocumentCanBeSigned(signer, document);
+
+        final var signedDocumentBytes = verifySignatureAndSignDocument(signer.getCertificate(),
+                                                                    document.getHash(),
+                                                                    requestBody.signature(),
+                                                                    documentContent.getContent());
+
+        final var updatedDocumentContent = documentContent.toBuilder()
+                .content(signedDocumentBytes)
+                .build();
+
+        documentContentRepository.save(updatedDocumentContent);
+
+        final var updatedDocument = document.toBuilder()
+                .build();
+
+        documentRepository.save(updatedDocument);
+
+        return new SignDocumentResponse(documentId, "TODO");
+    }
+
+    private void verifyDocumentCanBeSigned(final Signer signer, final Document document) {
+        if (!SignerStatus.ACTIVE.equals(signer.getStatus())) {
+            throw new SignDocumentException("Signer is not active. Signer: " + signer.getExternalSignerId());
+        }
+
+        final var waitingTimeout = configurationProperties.getWaiting().getRetentionPeriod();
+        if (waitingTimeout != null) {
+            final var documentSigningDeadline = document.getTimestampCreated().plus(waitingTimeout);
+            if (Instant.now().isAfter(documentSigningDeadline)) {
+                throw new SignDocumentException("Document signing timeout exceeded");
+            }
+        }
+    }
+
+    private static byte[] verifySignatureAndSignDocument(final String certificateBase64,
+                                                         final String hashBase64,
+                                                         final String hashSignatureBase64,
+                                                         final byte[] documentBytes) throws CertificateException {
+        final var padesService = new PAdESService(new CommonCertificateVerifier());
+
+        final var certificateToken = getCertificateToken(certificateBase64);
+
+        final var hashBytes = Base64.getDecoder().decode(hashBase64);
+        final var hash = new ToBeSigned(hashBytes);
+
+        final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
+        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, signatureBytes);
+
+        final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificateToken);
+        if (!isSignatureValid) {
+            throw new SignDocumentException("Invalid signature");
+        }
+
+        final var unsignedDocument = new InMemoryDocument(documentBytes);
+        final var signatureParams = getSignatureParameters(certificateToken);
+        final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
+
+        return getSignedDocumentBytes(signedDocument);
+    }
+
+    private static CertificateToken getCertificateToken(final String certificateBase64) throws CertificateException {
+        try {
+            final var certificateBytes = Base64.getDecoder().decode(certificateBase64);
+            final var x509Certificate = (X509Certificate) CertificateFactory.getInstance(CERTIFICATE_TYPE)
+                    .generateCertificate(new ByteArrayInputStream(certificateBytes));
+            return new CertificateToken(x509Certificate);
+        } catch (final CertificateException e) {
+            logger.error("Exception when parsing certificate of type: {}", CERTIFICATE_TYPE, e);
+            throw e;
+        }
+    }
+
+    private static PAdESSignatureParameters getSignatureParameters(final CertificateToken certificateToken) {
+        final var params = new PAdESSignatureParameters();
+        params.setDigestAlgorithm(DigestAlgorithm.SHA256);
+        params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        params.setSigningCertificate(certificateToken);
+
+        return params;
+    }
+
+    private static byte[] getSignedDocumentBytes(final DSSDocument signedDocument) {
+        try (final var stream = signedDocument.openStream()) {
+            return stream.readAllBytes();
+        } catch (final IOException e) {
+            throw new SignDocumentException("Failed to read signed document: " + e.getMessage());
         }
     }
 

@@ -17,17 +17,12 @@
  */
 package com.wultra.signercloud.server.document;
 
-import org.springframework.data.repository.CrudRepository;
-
-import java.time.Instant;
-import java.util.Optional;
+import lombok.Builder;
 
 /**
- * Repository for accessing a {@link Document}.
+ * REST API response for {@link Document} signing operation.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface DocumentRepository extends CrudRepository<Document, Long> {
-    long deleteByStatusAndTimestampCreatedBefore(DocumentStatus status, Instant timestampCreated);
-    Optional<Document> findByDocumentId(String documentId);
-}
+@Builder
+record SignDocumentResponse(String documentId, String uri) {}

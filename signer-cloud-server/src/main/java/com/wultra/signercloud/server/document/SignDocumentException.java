@@ -17,17 +17,13 @@
  */
 package com.wultra.signercloud.server.document;
 
-import org.springframework.data.repository.CrudRepository;
-
-import java.time.Instant;
-import java.util.Optional;
-
 /**
- * Repository for accessing a {@link Document}.
+ * Exception thrown when document signing fails.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface DocumentRepository extends CrudRepository<Document, Long> {
-    long deleteByStatusAndTimestampCreatedBefore(DocumentStatus status, Instant timestampCreated);
-    Optional<Document> findByDocumentId(String documentId);
+public class SignDocumentException extends RuntimeException {
+    public SignDocumentException(final String message) {
+        super(message);
+    }
 }

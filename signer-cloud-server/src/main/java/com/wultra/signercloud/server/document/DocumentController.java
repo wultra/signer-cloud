@@ -23,10 +23,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -76,6 +73,17 @@ public class DocumentController {
             return response;
         } else {
             logger.error("action: uploadDocument, state: failed, errorMessage: {}", result.getError().getMessage());
+            throw result.getError();
+        }
+    }
+
+    @PostMapping("/{documentId}/signature")
+    SignDocumentResponse sign(@PathVariable final String documentId, @RequestBody final SignDocumentRequest requestBody) throws Throwable {
+        final var result = documentService.signDocument(documentId, requestBody);
+
+        if (result.isSuccess()) {
+            return result.getResponse();
+        } else {
             throw result.getError();
         }
     }

@@ -29,7 +29,7 @@ import org.springframework.data.relational.core.mapping.Table;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @Table("sc_document_content")
 public class DocumentContent {
 
