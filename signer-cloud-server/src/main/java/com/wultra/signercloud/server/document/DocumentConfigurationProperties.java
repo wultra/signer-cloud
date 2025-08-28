@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -39,7 +40,9 @@ class DocumentConfigurationProperties {
 
     private DocumentConfiguration signed = new DocumentConfiguration();
 
-    private String documentDownloadHostname;
+    private String downloadHostname;
+    private String hashAlgorithm;
+    private DigestAlgorithm signatureAlgorithm;
 
     @Getter
     @Setter

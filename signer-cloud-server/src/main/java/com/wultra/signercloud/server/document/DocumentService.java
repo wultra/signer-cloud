@@ -64,7 +64,6 @@ import java.util.function.Consumer;
 @Slf4j
 @Transactional
 class DocumentService {
-    private static final String HASH_ALGORITHM = "SHA-256";
     private static final String CERTIFICATE_TYPE = "X.509";
     private static final String DOCUMENT_DOWNLOAD_PATH = "/api/v1/documents/{documentId}/download";
 
@@ -156,7 +155,7 @@ class DocumentService {
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = computeHash(fileContent);
+        final var hash = computeHash(fileContent, configurationProperties.getHashAlgorithm());
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)
@@ -206,13 +205,13 @@ class DocumentService {
         }
     }
 
-    private static String computeHash(final byte[] content) throws NoSuchAlgorithmException {
+    private static String computeHash(final byte[] content, final String hashAlgorithm) throws NoSuchAlgorithmException {
         try {
-            final var digest = MessageDigest.getInstance(HASH_ALGORITHM);
+            final var digest = MessageDigest.getInstance(hashAlgorithm);
             final var hashBytes = digest.digest(content);
             return Base64.getEncoder().encodeToString(hashBytes);
         } catch (final NoSuchAlgorithmException e) {
-            logger.error("Hash algorithm not found: {}", HASH_ALGORITHM, e);
+            logger.error("Hash algorithm not found: {}", hashAlgorithm, e);
             throw e;
         }
     }
@@ -243,7 +242,8 @@ class DocumentService {
         final var signedDocumentBytes = verifySignatureAndSignDocument(signer.getCertificate(),
                 document.getHash(),
                 signature,
-                documentContent.getContent());
+                documentContent.getContent(),
+                configurationProperties.getSignatureAlgorithm());
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -285,16 +285,18 @@ class DocumentService {
     private static byte[] verifySignatureAndSignDocument(final String certificateBase64,
                                                          final String hashBase64,
                                                          final String hashSignatureBase64,
-                                                         final byte[] documentBytes) throws CertificateException {
+                                                         final byte[] documentBytes,
+                                                         final DigestAlgorithm signatureAlgorithm) throws CertificateException {
         final var padesService = new PAdESService(new CommonCertificateVerifier());
 
         final var certificateToken = getCertificateToken(certificateBase64);
+        final var signatureParams = getSignatureParameters(certificateToken, signatureAlgorithm);
 
         final var hashBytes = Base64.getDecoder().decode(hashBase64);
         final var hash = new ToBeSigned(hashBytes);
 
         final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
-        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, signatureBytes);
+        final var signatureValue = new SignatureValue(signatureParams.getSignatureAlgorithm(), signatureBytes);
 
         final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificateToken);
         if (!isSignatureValid) {
@@ -302,7 +304,6 @@ class DocumentService {
         }
 
         final var unsignedDocument = new InMemoryDocument(documentBytes);
-        final var signatureParams = getSignatureParameters(certificateToken);
         final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
 
         return getSignedDocumentBytes(signedDocument);
@@ -320,9 +321,9 @@ class DocumentService {
         }
     }
 
-    private static PAdESSignatureParameters getSignatureParameters(final CertificateToken certificateToken) {
+    private static PAdESSignatureParameters getSignatureParameters(final CertificateToken certificateToken, final DigestAlgorithm algorithm) {
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(DigestAlgorithm.SHA256);
+        params.setDigestAlgorithm(algorithm);
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         params.setSigningCertificate(certificateToken);
 
@@ -340,7 +341,7 @@ class DocumentService {
     private String buildDocumentDownloadUri(final String documentId) {
         return UriComponentsBuilder.newInstance()
                 .scheme("https")
-                .host(configurationProperties.getDocumentDownloadHostname())
+                .host(configurationProperties.getDownloadHostname())
                 .path(DOCUMENT_DOWNLOAD_PATH)
                 .buildAndExpand(documentId)
                 .toUriString();
