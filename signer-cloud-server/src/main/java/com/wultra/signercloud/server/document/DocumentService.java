@@ -40,10 +40,12 @@ import org.apache.hc.core5.http.ContentType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.*;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -52,7 +54,6 @@ import java.time.Instant;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.function.Consumer;
-
 /**
  * Document service.
  *
@@ -65,6 +66,7 @@ import java.util.function.Consumer;
 class DocumentService {
     private static final String HASH_ALGORITHM = "SHA-256";
     private static final String CERTIFICATE_TYPE = "X.509";
+    private static final String DOCUMENT_DOWNLOAD_PATH = "/api/v1/documents/{documentId}/download";
 
     private final DocumentConfigurationProperties configurationProperties;
     private final DocumentRepository documentRepository;
@@ -253,7 +255,8 @@ class DocumentService {
 
         documentRepository.save(updatedDocument);
 
-        return new SignDocumentResponse(documentId, "TODO");
+        final var downloadUrl = buildDocumentDownloadUri(documentId);
+        return new SignDocumentResponse(documentId, downloadUrl);
     }
 
     private void verifyDocumentCanBeSigned(final Signer signer, final Document document) {
@@ -323,6 +326,15 @@ class DocumentService {
         } catch (final IOException e) {
             throw new SignDocumentException("Failed to read signed document: " + e.getMessage());
         }
+    }
+
+    private String buildDocumentDownloadUri(final String documentId) {
+        return UriComponentsBuilder.newInstance()
+                .scheme("https")
+                .host(configurationProperties.getDocumentDownloadHostname())
+                .path(DOCUMENT_DOWNLOAD_PATH)
+                .buildAndExpand(documentId)
+                .toUriString();
     }
 
     @Builder

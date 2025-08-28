@@ -39,6 +39,8 @@ class DocumentConfigurationProperties {
 
     private DocumentConfiguration signed = new DocumentConfiguration();
 
+    private String documentDownloadHostname;
+
     @Getter
     @Setter
     static class DocumentConfiguration {
