@@ -239,10 +239,11 @@ class DocumentService {
 
         verifyDocumentCanBeSigned(signer, document);
 
+        final var signature = requestBody.signature();
         final var signedDocumentBytes = verifySignatureAndSignDocument(signer.getCertificate(),
-                                                                    document.getHash(),
-                                                                    requestBody.signature(),
-                                                                    documentContent.getContent());
+                document.getHash(),
+                signature,
+                documentContent.getContent());
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -251,6 +252,10 @@ class DocumentService {
         documentContentRepository.save(updatedDocumentContent);
 
         final var updatedDocument = document.toBuilder()
+                .timestampLastUpdated(Instant.now())
+                .fileSize(signedDocumentBytes.length)
+                .status(DocumentStatus.SIGNED)
+                .signature(signature)
                 .build();
 
         documentRepository.save(updatedDocument);
@@ -262,6 +267,10 @@ class DocumentService {
     private void verifyDocumentCanBeSigned(final Signer signer, final Document document) {
         if (!SignerStatus.ACTIVE.equals(signer.getStatus())) {
             throw new SignDocumentException("Signer is not active. Signer: " + signer.getExternalSignerId());
+        }
+
+        if (!DocumentStatus.WAITING.equals(document.getStatus())) {
+            throw new SignDocumentException("Document is not in state when it can be signed");
         }
 
         final var waitingTimeout = configurationProperties.getWaiting().getRetentionPeriod();
