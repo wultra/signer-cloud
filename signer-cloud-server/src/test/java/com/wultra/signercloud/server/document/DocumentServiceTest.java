@@ -317,7 +317,7 @@ class DocumentServiceTest {
         final var signer = createSigner(SignerStatus.ACTIVE);
 
         final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
-        waitingDuration.setRetentionPeriod(WAITING_TIMEOUT);
+        waitingDuration.setTimeout(WAITING_TIMEOUT);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
@@ -351,7 +351,7 @@ class DocumentServiceTest {
         final var signer = createSigner(SignerStatus.ACTIVE);
 
         final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
-        waitingDuration.setRetentionPeriod(WAITING_TIMEOUT);
+        waitingDuration.setTimeout(WAITING_TIMEOUT);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
@@ -387,7 +387,7 @@ class DocumentServiceTest {
         final var signer = createSigner(SignerStatus.ACTIVE);
 
         final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
-        waitingDuration.setRetentionPeriod(WAITING_TIMEOUT);
+        waitingDuration.setTimeout(WAITING_TIMEOUT);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));

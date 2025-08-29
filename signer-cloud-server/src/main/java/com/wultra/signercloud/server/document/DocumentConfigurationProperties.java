@@ -52,6 +52,11 @@ class DocumentConfigurationProperties {
          * Retention period for documents. Empty value means no retention period is used, value 0 means documents will be deleted immediately.
          */
         private Duration retentionPeriod;
+
+        /**
+         * Maximum timeout threshold for signing the document after upload. It is applicable only for {@link DocumentConfigurationProperties#waiting}.
+         */
+        private Duration timeout;
     }
 
 }

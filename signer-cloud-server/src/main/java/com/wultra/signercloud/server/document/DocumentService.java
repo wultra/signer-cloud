@@ -272,7 +272,7 @@ class DocumentService {
             throw new SignDocumentException("Document is not in state when it can be signed");
         }
 
-        final var waitingTimeout = configurationProperties.getWaiting().getRetentionPeriod();
+        final var waitingTimeout = configurationProperties.getWaiting().getTimeout();
         if (waitingTimeout != null) {
             final var documentSigningDeadline = document.getTimestampCreated().plus(waitingTimeout);
             if (Instant.now().isAfter(documentSigningDeadline)) {
