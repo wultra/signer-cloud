@@ -99,14 +99,14 @@ public class DocumentController {
     )
     @PostMapping("/{documentId}/signature")
     SignDocumentResponse sign(@PathVariable final String documentId, @Valid @RequestBody final SignDocumentRequest requestBody) throws Throwable {
-        logger.error("action: signDocument, state: initiated, documentId: {}", documentId);
+        logger.info("action: signDocument, state: initiated, documentId: {}", documentId);
         final var result = documentService.signDocument(documentId, requestBody);
 
         if (result.isSuccess()) {
-            logger.error("action: signDocument, state: succeeded");
+            logger.info("action: signDocument, state: succeeded");
             return result.getResponse();
         } else {
-            logger.error("action: signDocument, state: failed, errorMessage: {}", result.getError().getMessage());
+            logger.info("action: signDocument, state: failed, errorMessage: {}", result.getError().getMessage());
             throw result.getError();
         }
     }
