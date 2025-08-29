@@ -440,7 +440,7 @@ class DocumentControllerIntTest {
     private void assetSignResponse(final SignDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://localhost:8090/api/v1/documents/%s/download", DOCUMENT_UUID);
+        final var expectedUri = String.format("https://localhost:8080/api/v1/documents/%s/download", DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }
 
