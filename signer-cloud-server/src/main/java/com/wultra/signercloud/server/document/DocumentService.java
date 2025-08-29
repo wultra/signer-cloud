@@ -215,6 +215,22 @@ class DocumentService {
         }
     }
 
+    /**
+     * Signs the {@link Document} identified by {@code documentId} if it is in the correct state and signature is valid.
+     *
+     * The document is in correct state if:
+     * <ul>
+     *  <li> linked {@link Signer} is in {@link SignerStatus#ACTIVE} status </li>
+     *  <li> the{@link Document} status is {@link DocumentStatus#WAITING} </li>
+     *  <li> attempt to sign the document is within the configured waiting timeout (if configured) </li>
+     * </ul>
+     * Successful signing updates the {@link Document} status to {@link DocumentStatus#SIGNED} and stores the signed PDF document
+     * into {@link DocumentContent} (It overrides the original unsigned PDF content with the signed one.).
+     *
+     * @param documentId identifier of the document to be signed
+     * @param requestBody request body containing the signature
+     * @return response as a {@link Try}
+     */
     Try<SignDocumentResponse> signDocument(final String documentId, final SignDocumentRequest requestBody) {
         try {
             final var response = processSignDocument(documentId, requestBody);
