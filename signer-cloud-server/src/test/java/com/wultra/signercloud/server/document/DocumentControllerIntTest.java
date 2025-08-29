@@ -72,6 +72,8 @@ class DocumentControllerIntTest {
 
     // Signer
     private static final String EXTERNAL_SIGNER_ID_PARAM = "signerId";
+
+    // keytool -certreq -alias myAlias -keystore keystore-ecdsa.p12 -storetype PKCS12 -file myrequest.csr -dname "CN=John Doe, O=ExampleCorp, C=US"
     private static final String CSR = "MIIBXTCB5QIBADA2MQswCQYDVQQGEwJVUzEUMBIGA1UEChMLRXhhbXBsZUNvcnAxETAPBgNVBAMTCEpvaG4gRG9lMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEQ2Z9Zsg45e2YZ89B03uhjz7LSkXuuWJW+DvT03tfdD+5bmDutM7slZzgE9fz6saNuRoBTu07qe3QkJoG1iXDOYYuTDLBp813iJOwVplFsUs11m579zSmhU31GbAtM4f/oDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQU/aKAjBfH82uqVzN6uBUK3ydJ5IYwCgYIKoZIzj0EAwMDZwAwZAIwQ8qfBDToBmyFgu+6/QUdEBHP7y6MjkNiy4KiDgGl/CNSksWarK/v6U37t6jMq1X6AjAEdYVXpTQkOOLPhJc0HE3ZpG2w14YqV1zXtTu+nfjZ4kIwfHBRL7rS+/93XPA1Hok=";
     private static final String CERTIFICATE = "MIICFDCCAZugAwIBAgIUC0O75BZKicH8bDlRUBgC8h7bTdgwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MDgyNzA3NTUyOVoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzB2MBAGByqGSM49AgEGBSuBBAAiA2IABENmfWbIOOXtmGfPQdN7oY8+y0pF7rliVvg709N7X3Q/uW5g7rTO7JWc4BPX8+rGjbkaAU7tO6nt0JCaBtYlwzmGLkwywafNd4iTsFaZRbFLNdZue/c0poVN9RmwLTOH/6OBizCBiDAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFJ0dk1DJP8vLqD/Dx15EMOEpmqkOMCgGA1UdJQQhMB8GCCsGAQUFBwMCBggrBgEFBQcDBAYJKoZIhvcvAQEFMB0GA1UdDgQWBBT9ooCMF8fza6pXM3q4FQrfJ0nkhjAOBgNVHQ8BAf8EBAMCBeAwCgYIKoZIzj0EAwMDZwAwZAIwaeS/siF1g5vbaNXrnQM9xJOQmUG92HyNOCTKh/x1PA9b/VwtpodSjkIOiOxJQ56aAjBQit9XczUVNp5qGdrLO3Ac730VokRvphNBtupJbdnkpywejktZi00LM8MsuZA7Piw=";
 
@@ -80,7 +82,14 @@ class DocumentControllerIntTest {
     private static final String DUMMY_EXTERNAL_SIGNER_ID = "dummyExternalSignerId";
     private static final String DUMMY_EXTERNAL_DOCUMENT_ID = "dummyExternalDocumentId";
     private static final String DUMMY_DOCUMENT_NAME = "dummyDocumentName";
+
+    // shasum -a 256 input.pdf | awk '{print $1}' | xxd -r -p | base64
     private static final String HASH = "j0LPvNkxjaHXp4rdyChWunro9pIdThrlTyDbMKIdnfk=";
+
+    // echo "value_of_hash" | base64 --decode > hash.bin
+    // openssl pkcs12 -in keystore-ecdsa.p12 -nocerts -nodes -out mykey.pem
+    // openssl dgst -sha384 -sign mykey.pem -out signature.bin hash.bin
+    // base64 < signature.bin
     private static final String SIGNATURE = "MGQCMBawZBUmDeQOFGo9AiruqAN8NAH7apayQoPVEgCvOpYcfkArSehUL8EHs8iFVmn3ZAIwZOcJgEbrwpGCBl05hR0DeBtaJLTTIaYNae70csEku+AUgr9AUyWqjGaB/Vvbt+RQ";
     private static final String FILENAME = "input.pdf";
     private static final int UPLOADED_FILE_SIZE = 7757;
