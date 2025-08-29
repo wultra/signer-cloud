@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -97,7 +98,7 @@ public class DocumentController {
             }
     )
     @PostMapping("/{documentId}/signature")
-    SignDocumentResponse sign(@PathVariable final String documentId, @RequestBody final SignDocumentRequest requestBody) throws Throwable {
+    SignDocumentResponse sign(@PathVariable final String documentId, @Valid @RequestBody final SignDocumentRequest requestBody) throws Throwable {
         logger.error("action: signDocument, state: initiated, documentId: {}", documentId);
         final var result = documentService.signDocument(documentId, requestBody);
 

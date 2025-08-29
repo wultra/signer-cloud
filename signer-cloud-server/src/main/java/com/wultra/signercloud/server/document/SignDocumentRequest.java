@@ -17,9 +17,11 @@
  */
 package com.wultra.signercloud.server.document;
 
+import jakarta.validation.constraints.NotEmpty;
+
 /**
  * REST API request for signing the {@link Document}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-record SignDocumentRequest(String signature) {}
+record SignDocumentRequest(@NotEmpty String signature) {}
