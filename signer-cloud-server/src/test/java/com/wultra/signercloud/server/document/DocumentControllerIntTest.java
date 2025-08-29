@@ -328,7 +328,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), SignDocumentResponse.class);
 
-        assetSignResponse(responseBody);
+        assertSignResponse(responseBody);
     }
 
     @Test
@@ -437,7 +437,7 @@ class DocumentControllerIntTest {
         assertArrayEquals(Files.readAllBytes(FILE_PATH), documentContent.getContent());
     }
 
-    private void assetSignResponse(final SignDocumentResponse response) {
+    private void assertSignResponse(final SignDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
 
         final var expectedUri = String.format("https://localhost:8080/api/v1/documents/%s/download", DOCUMENT_UUID);
