@@ -24,10 +24,12 @@ import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -36,8 +38,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -65,7 +65,6 @@ class DocumentControllerIntTest {
     private static final String CONTENT_TYPE = "application/pdf";
     private static final String DOCUMENT_NAME_PARAM = "name";
     private static final String EXTERNAL_DOCUMENT_ID_PARAM = "externalId";
-    private static final Path FILE_PATH = Path.of("./src/test/resources/input.pdf");
 
     private static final long MILLISECONDS_DELTA = 1_000;
     private static final String ERROR_STATUS = "ERROR";
@@ -112,6 +111,13 @@ class DocumentControllerIntTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    private byte[] fileContent;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        fileContent = new ClassPathResource("input.pdf").getContentAsByteArray();
+    }
 
     @AfterEach
     void tearDown() {
@@ -356,7 +362,7 @@ class DocumentControllerIntTest {
                 "file",
                 FILENAME,
                 contentType,
-                Files.readAllBytes(FILE_PATH)
+                fileContent
         );
     }
 
@@ -385,7 +391,7 @@ class DocumentControllerIntTest {
 
     private long createDocumentContentInDatabase() throws IOException {
         final var documentContent = DocumentContent.builder()
-                .content(Files.readAllBytes(FILE_PATH))
+                .content(fileContent)
                 .build();
 
         final var savedDocumentContent = documentContentRepository.save(documentContent);
@@ -434,7 +440,7 @@ class DocumentControllerIntTest {
         assertNull(document.getSignature());
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContentId()).orElseThrow();
-        assertArrayEquals(Files.readAllBytes(FILE_PATH), documentContent.getContent());
+        assertArrayEquals(fileContent, documentContent.getContent());
     }
 
     private void assertSignResponse(final SignDocumentResponse response) {
