@@ -280,11 +280,11 @@ class DocumentService {
     }
 
     private void verifyDocumentCanBeSigned(final Signer signer, final Document document) {
-        if (!SignerStatus.ACTIVE.equals(signer.getStatus())) {
+        if (SignerStatus.ACTIVE != signer.getStatus()) {
             throw new SignDocumentException("Signer is not active. Signer: " + signer.getExternalSignerId());
         }
 
-        if (!DocumentStatus.WAITING.equals(document.getStatus())) {
+        if (DocumentStatus.WAITING != document.getStatus()) {
             throw new SignDocumentException("Document is not in state when it can be signed");
         }
 
