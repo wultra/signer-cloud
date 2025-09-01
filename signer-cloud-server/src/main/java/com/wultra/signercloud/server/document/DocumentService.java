@@ -36,12 +36,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ContentType;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -360,6 +362,58 @@ class DocumentService {
                 .path(DOCUMENT_DOWNLOAD_PATH)
                 .buildAndExpand(documentId)
                 .toUriString();
+    }
+
+    Try<ResponseEntity<byte[]>> downloadDocument(final String documentUuid, final String rangeHeader) {
+        try {
+            final var response = processDownloadDocument(documentUuid, rangeHeader);
+            return Try.success(response);
+        } catch (final IOException | DocumentNotFoundException | DownloadDocumentException e) {
+            return Try.error(e);
+        }
+    }
+
+    ResponseEntity<byte[]> processDownloadDocument(final String documentUuid, final String rangeHeader) throws IOException {
+        final var document = documentRepository.findByDocumentId(documentUuid)
+                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
+
+        final var documentContent = documentContentRepository.findById(document.getDocumentContentId())
+                .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentUuid));
+
+        final var contentBytes = documentContent.getContent();
+        final var length = contentBytes.length;
+
+        if (rangeHeader == null) {
+            return ResponseEntity.status(HttpStatus.OK)
+                    .contentLength(length)
+                    .contentType(MediaType.APPLICATION_PDF)
+                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                    .body(contentBytes);
+        } else {
+            // TODO: Add validation and merge for ranges
+            final var ranges = HttpRange.parseRanges(rangeHeader);
+
+            final var boundary = "MULTIPART_BYTERANGES_" + Instant.now().toEpochMilli();
+            final var out = new ByteArrayOutputStream();
+
+            for (final var range : ranges) {
+                final var start = (int) range.getRangeStart(length);
+                final var end = (int) range.getRangeEnd(length);
+
+                out.write(("--" + boundary + "\r\n").getBytes());
+                out.write(("Content-Type: application/pdf\r\n").getBytes());
+                out.write(("Content-Range: bytes " + start + "-" + end + "/" + length + "\r\n\r\n").getBytes());
+                out.write(contentBytes, start, end - start + 1);
+                out.write("\r\n".getBytes());
+            }
+            out.write(("--" + boundary + "--\r\n").getBytes());
+
+            final var contentBytesWithBoundaries = out.toByteArray();
+            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+                    .header(HttpHeaders.CONTENT_TYPE, "multipart/byteranges; boundary=" + boundary)
+                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                    .body(contentBytesWithBoundaries);
+        }
     }
 
     @Builder

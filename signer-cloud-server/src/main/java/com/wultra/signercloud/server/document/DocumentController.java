@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -107,6 +108,16 @@ public class DocumentController {
             return result.getResponse();
         } else {
             logger.info("action: signDocument, state: failed, errorMessage: {}", result.getError().getMessage());
+            throw result.getError();
+        }
+    }
+
+    @GetMapping("/{documentId}/file")
+    ResponseEntity<byte[]> download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
+        final var result = documentService.downloadDocument(documentId, rangeHeader);
+        if (result.isSuccess()) {
+            return result.getResponse();
+        } else {
             throw result.getError();
         }
     }
