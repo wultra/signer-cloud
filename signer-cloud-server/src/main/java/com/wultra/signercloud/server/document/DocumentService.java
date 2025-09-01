@@ -349,6 +349,7 @@ class DocumentService {
         try (final var stream = signedDocument.openStream()) {
             return stream.readAllBytes();
         } catch (final IOException e) {
+            logger.error("Exception when reading bytes of signed document", e);
             throw new SignDocumentException("Failed to read signed document: " + e.getMessage());
         }
     }
