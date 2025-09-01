@@ -72,6 +72,7 @@ class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
+    private final DocumentPartsService documentPartsService;
 
     /**
      * Cleanup documents.
@@ -390,15 +391,14 @@ class DocumentService {
                     .header(HttpHeaders.ACCEPT_RANGES, "bytes")
                     .body(contentBytes);
         } else {
-            // TODO: Add validation and merge for ranges
-            final var ranges = HttpRange.parseRanges(rangeHeader);
+            final var ranges = documentPartsService.getParts(rangeHeader, length);
 
             final var boundary = "MULTIPART_BYTERANGES_" + Instant.now().toEpochMilli();
             final var out = new ByteArrayOutputStream();
 
             for (final var range : ranges) {
-                final var start = (int) range.getRangeStart(length);
-                final var end = (int) range.getRangeEnd(length);
+                final var start = (int) range.start();
+                final var end = (int) range.end();
 
                 out.write(("--" + boundary + "\r\n").getBytes());
                 out.write(("Content-Type: application/pdf\r\n").getBytes());
