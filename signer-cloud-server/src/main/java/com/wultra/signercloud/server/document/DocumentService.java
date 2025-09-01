@@ -31,7 +31,6 @@ import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -304,8 +303,8 @@ class DocumentService {
                                                          final byte[] documentBytes,
                                                          final DigestAlgorithm signatureAlgorithm) throws CertificateException {
 
-        final var certificateToken = getCertificateToken(certificateBase64);
-        final var signatureParams = getSignatureParameters(certificateToken, signatureAlgorithm);
+        final var certificateToken = createCertificateToken(certificateBase64);
+        final var signatureParams = createSignatureParameters(certificateToken, signatureAlgorithm);
 
         final var hashBytes = Base64.getDecoder().decode(hashBase64);
         final var hash = new ToBeSigned(hashBytes);
@@ -321,10 +320,10 @@ class DocumentService {
         final var unsignedDocument = new InMemoryDocument(documentBytes);
         final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
 
-        return getSignedDocumentBytes(signedDocument);
+        return readSignedDocumentBytes(signedDocument);
     }
 
-    private static CertificateToken getCertificateToken(final String certificateBase64) throws CertificateException {
+    private static CertificateToken createCertificateToken(final String certificateBase64) throws CertificateException {
         try {
             final var certificateBytes = Base64.getDecoder().decode(certificateBase64);
             final var x509Certificate = (X509Certificate) CertificateFactory.getInstance(CERTIFICATE_TYPE)
@@ -336,7 +335,7 @@ class DocumentService {
         }
     }
 
-    private static PAdESSignatureParameters getSignatureParameters(final CertificateToken certificateToken, final DigestAlgorithm algorithm) {
+    private static PAdESSignatureParameters createSignatureParameters(final CertificateToken certificateToken, final DigestAlgorithm algorithm) {
         final var params = new PAdESSignatureParameters();
         params.setDigestAlgorithm(algorithm);
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
@@ -345,7 +344,7 @@ class DocumentService {
         return params;
     }
 
-    private static byte[] getSignedDocumentBytes(final DSSDocument signedDocument) {
+    private static byte[] readSignedDocumentBytes(final DSSDocument signedDocument) {
         try (final var stream = signedDocument.openStream()) {
             return stream.readAllBytes();
         } catch (final IOException e) {
