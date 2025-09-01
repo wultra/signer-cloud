@@ -70,6 +70,7 @@ class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
+    private final PAdESService padesService;
 
     /**
      * Cleanup documents.
@@ -297,12 +298,11 @@ class DocumentService {
         }
     }
 
-    private static byte[] verifySignatureAndSignDocument(final String certificateBase64,
+    private byte[] verifySignatureAndSignDocument(final String certificateBase64,
                                                          final String hashBase64,
                                                          final String hashSignatureBase64,
                                                          final byte[] documentBytes,
                                                          final DigestAlgorithm signatureAlgorithm) throws CertificateException {
-        final var padesService = new PAdESService(new CommonCertificateVerifier());
 
         final var certificateToken = getCertificateToken(certificateBase64);
         final var signatureParams = getSignatureParameters(certificateToken, signatureAlgorithm);

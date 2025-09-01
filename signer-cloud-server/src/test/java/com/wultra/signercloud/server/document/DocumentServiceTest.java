@@ -23,7 +23,14 @@ import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.SignatureValue;
+import eu.europa.esig.dss.model.ToBeSigned;
+import eu.europa.esig.dss.model.x509.CertificateToken;
+import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.signature.PAdESService;
 import org.apache.hc.core5.http.ContentType;
+import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -65,7 +72,8 @@ class DocumentServiceTest {
     private static final String DOCUMENT_UUID = UUID.randomUUID().toString();
 
     private static final long DOCUMENT_CONTENT_ID = 2L;
-    private static final byte[] DOCUMENT_CONTENT = Base64.getDecoder().decode("JVBERi0xLjEKMSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlIC9QYWdlcyAvS2lkcyBbMyAwIFJdIC9Db3VudCAxID4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAxMCAxMF0gPj4KZW5kb2JqCnRyYWlsZXIKPDwvUm9vdCAxIDAgUiA+PnN0YXJ0eHJlZjoxMjMKJSVFT0YK");
+    private static final byte[] UPLOADED_DOCUMENT_CONTENT = Base64.getDecoder().decode("JVBERi0xLjEKMSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlIC9QYWdlcyAvS2lkcyBbMyAwIFJdIC9Db3VudCAxID4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAxMCAxMF0gPj4KZW5kb2JqCnRyYWlsZXIKPDwvUm9vdCAxIDAgUiA+PnN0YXJ0eHJlZjoxMjMKJSVFT0YK");
+    private static final byte[] SIGNED_DOCUMENT_CONTENT = Arrays.concatenate(UPLOADED_DOCUMENT_CONTENT, "SIGNED".getBytes());
 
     private static final String MULTIPART_FILE_FIELD_NAME = "content";
 
@@ -85,6 +93,9 @@ class DocumentServiceTest {
     @Mock
     private DocumentConfigurationProperties documentConfigurationProperties;
 
+    @Mock
+    private PAdESService pAdESService;
+
     @InjectMocks
     private DocumentService documentService;
 
@@ -95,7 +106,7 @@ class DocumentServiceTest {
                 MULTIPART_FILE_FIELD_NAME,
                 DUMMY_FILE_NAME,
                 ContentType.IMAGE_JPEG.getMimeType(),
-                DOCUMENT_CONTENT
+                UPLOADED_DOCUMENT_CONTENT
         );
 
         // when
@@ -114,7 +125,7 @@ class DocumentServiceTest {
                 MULTIPART_FILE_FIELD_NAME,
                 DUMMY_FILE_NAME,
                 ContentType.APPLICATION_PDF.getMimeType(),
-                DOCUMENT_CONTENT
+                UPLOADED_DOCUMENT_CONTENT
         );
 
         // when
@@ -149,7 +160,7 @@ class DocumentServiceTest {
 
         final var file = Mockito.mock(MultipartFile.class);
         when(file.getContentType()).thenReturn(ContentType.APPLICATION_PDF.getMimeType());
-        when(file.getSize()).thenReturn(Long.valueOf(DOCUMENT_CONTENT.length));
+        when(file.getSize()).thenReturn(Long.valueOf(UPLOADED_DOCUMENT_CONTENT.length));
         when(file.getBytes()).thenThrow(new IOException("Test IO exception"));
 
         // when
@@ -168,7 +179,7 @@ class DocumentServiceTest {
 
         final var documentContent = DocumentContent.builder()
                 .id(1L)
-                .content(DOCUMENT_CONTENT)
+                .content(UPLOADED_DOCUMENT_CONTENT)
                 .build();
 
         when(documentContentRepository.save(any(DocumentContent.class))).thenReturn(documentContent);
@@ -177,7 +188,7 @@ class DocumentServiceTest {
                 MULTIPART_FILE_FIELD_NAME,
                 DUMMY_FILE_NAME,
                 ContentType.APPLICATION_PDF.getMimeType(),
-                DOCUMENT_CONTENT
+                UPLOADED_DOCUMENT_CONTENT
         );
 
         // when
@@ -345,7 +356,7 @@ class DocumentServiceTest {
                 .build();
 
         final var documentContent = DocumentContent.builder()
-                .content(DOCUMENT_CONTENT)
+                .content(UPLOADED_DOCUMENT_CONTENT)
                 .build();
 
         final var signer = createSigner(SignerStatus.ACTIVE);
@@ -353,13 +364,13 @@ class DocumentServiceTest {
         final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
         waitingDuration.setTimeout(WAITING_TIMEOUT);
 
+        final var request = new SignDocumentRequest("invalidSignature");
+
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
         when(documentConfigurationProperties.getSignatureAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
-
-        final var request = new SignDocumentRequest("invalidSignature");
 
         // when
         final var result = documentService.signDocument(DOCUMENT_UUID, request);
@@ -381,7 +392,7 @@ class DocumentServiceTest {
                 .build();
 
         final var documentContent = DocumentContent.builder()
-                .content(DOCUMENT_CONTENT)
+                .content(UPLOADED_DOCUMENT_CONTENT)
                 .build();
 
         final var signer = createSigner(SignerStatus.ACTIVE);
@@ -395,6 +406,10 @@ class DocumentServiceTest {
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
         when(documentConfigurationProperties.getSignatureAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
         when(documentConfigurationProperties.getDownloadHostname()).thenReturn(DOWNLOAD_HOSTNAME);
+        when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
+                .thenReturn(true);
+        when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
+                .thenReturn(new InMemoryDocument(SIGNED_DOCUMENT_CONTENT));
 
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -422,7 +437,7 @@ class DocumentServiceTest {
         assertEquals(DUMMY_EXTERNAL_DOCUMENT_ID, response.externalId());
         assertEquals(DUMMY_DOCUMENT_NAME, response.name());
         assertEquals(DUMMY_FILE_NAME, response.fileName());
-        assertEquals(DOCUMENT_CONTENT.length, response.size());
+        assertEquals(UPLOADED_DOCUMENT_CONTENT.length, response.size());
         assertEquals(DOCUMENT_HASH, response.hash());
     }
 
