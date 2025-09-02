@@ -296,11 +296,12 @@ class DocumentService {
         }
     }
 
-    private byte[] verifySignatureAndSignDocument(final String certificateBase64,
-                                                         final String hashBase64,
-                                                         final String hashSignatureBase64,
-                                                         final byte[] documentBytes,
-                                                         final DigestAlgorithm signatureAlgorithm) throws CertificateException {
+    private byte[] verifySignatureAndSignDocument(
+            final String certificateBase64,
+            final String hashBase64,
+            final String hashSignatureBase64,
+            final byte[] documentBytes,
+            final DigestAlgorithm signatureAlgorithm) throws CertificateException {
 
         final var certificateToken = createCertificateToken(certificateBase64);
         final var signatureParams = createSignatureParameters(certificateToken, signatureAlgorithm);
