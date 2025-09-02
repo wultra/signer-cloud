@@ -340,6 +340,7 @@ class DocumentService {
         params.setDigestAlgorithm(algorithm);
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         params.setSigningCertificate(certificateToken);
+        //TODO (michalrozehnal, 02.09.2025): add setCertificateChain(...), make it configurable and set it by default
 
         return params;
     }
