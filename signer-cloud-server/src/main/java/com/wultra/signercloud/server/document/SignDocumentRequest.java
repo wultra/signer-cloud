@@ -17,17 +17,11 @@
  */
 package com.wultra.signercloud.server.document;
 
-import org.springframework.data.repository.CrudRepository;
-
-import java.time.Instant;
-import java.util.Optional;
+import jakarta.validation.constraints.NotEmpty;
 
 /**
- * Repository for accessing a {@link Document}.
+ * REST API request for signing the {@link Document}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface DocumentRepository extends CrudRepository<Document, Long> {
-    long deleteByStatusAndTimestampCreatedBefore(DocumentStatus status, Instant timestampCreated);
-    Optional<Document> findByDocumentId(String documentId);
-}
+record SignDocumentRequest(@NotEmpty String signature) {}

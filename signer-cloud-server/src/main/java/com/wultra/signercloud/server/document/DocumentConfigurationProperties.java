@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -39,6 +40,9 @@ class DocumentConfigurationProperties {
 
     private DocumentConfiguration signed = new DocumentConfiguration();
 
+    private DigestAlgorithm contentHashAlgorithm;
+    private DigestAlgorithm signatureHashAlgorithm;
+
     @Getter
     @Setter
     static class DocumentConfiguration {
@@ -47,6 +51,11 @@ class DocumentConfigurationProperties {
          * Retention period for documents. Empty value means no retention period is used, value 0 means documents will be deleted immediately.
          */
         private Duration retentionPeriod;
+
+        /**
+         * Maximum timeout threshold for signing the document after upload. It is applicable only for {@link DocumentConfigurationProperties#waiting}.
+         */
+        private Duration timeout;
     }
 
 }

@@ -15,19 +15,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.document;
+package com.wultra.signercloud.server.configuration;
 
-import org.springframework.data.repository.CrudRepository;
-
-import java.time.Instant;
-import java.util.Optional;
+import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * Repository for accessing a {@link Document}.
+ * Configuration for {@link PAdESService}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface DocumentRepository extends CrudRepository<Document, Long> {
-    long deleteByStatusAndTimestampCreatedBefore(DocumentStatus status, Instant timestampCreated);
-    Optional<Document> findByDocumentId(String documentId);
+@Configuration
+class PAdESServiceConfig {
+
+    @Bean
+    public PAdESService padesService() {
+        return new PAdESService(new CommonCertificateVerifier());
+    }
+
 }

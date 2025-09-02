@@ -17,7 +17,9 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import com.wultra.signercloud.server.document.DocumentNotFoundException;
 import com.wultra.signercloud.server.document.DocumentUploadException;
+import com.wultra.signercloud.server.document.SignDocumentException;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +27,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
@@ -74,7 +78,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleValidationException(exception);
 
         // Then
-        assertErrorResponse(response.getBody(), EXPECTED_SPECIFIC_MESSAGE, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, EXPECTED_SPECIFIC_MESSAGE, ErrorCode.ERROR_GENERIC);
     }
 
     @Test
@@ -86,7 +90,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleValidationException(exception);
 
         // Then
-        assertErrorResponse(response.getBody(), EXPECTED_GENERIC_MESSAGE, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, EXPECTED_GENERIC_MESSAGE, ErrorCode.ERROR_GENERIC);
     }
 
     @Test
@@ -98,7 +102,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleSignerNotFoundException(new SignerNotFoundException(message));
 
         // Then
-        assertErrorResponse(response.getBody(), message, ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+        assertErrorResponse(response, message, ErrorCode.ERROR_RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -110,13 +114,44 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleDocumentUploadException(new DocumentUploadException(message));
 
         // Then
-        assertErrorResponse(response.getBody(), message, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
     }
 
-    private void assertErrorResponse(final ErrorResponse errorResponse, final String expectedMessage, final ErrorCode expectedCode) {
-        assertEquals(ERROR_STATUS, errorResponse.status());
+    @Test
+    void testHandleDocumentNotFoundExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Document not found for document ID: 123";
 
-        final var responseObject = errorResponse.responseObject();
+        // When
+        final var response = restExceptionHandler.handleDocumentNotFoundException(new DocumentNotFoundException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    void testHandleSignDocumentExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Document signing timeout exceeded";
+
+        // When
+        final var response = restExceptionHandler.handleSignDocumentException(new SignDocumentException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
+    }
+
+    private void assertErrorResponse(
+            final ResponseEntity<ErrorResponse> responseEntity,
+            final String expectedMessage,
+            final ErrorCode expectedCode
+    ) {
+        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+
+        final var body = responseEntity.getBody();
+        assertEquals(ERROR_STATUS, body.status());
+
+        final var responseObject = body.responseObject();
         assertEquals(expectedCode, responseObject.code());
         assertEquals(expectedMessage, responseObject.message());
     }

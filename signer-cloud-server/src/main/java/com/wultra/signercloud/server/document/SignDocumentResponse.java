@@ -17,17 +17,21 @@
  */
 package com.wultra.signercloud.server.document;
 
-import org.springframework.data.repository.CrudRepository;
-
-import java.time.Instant;
-import java.util.Optional;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.Builder;
 
 /**
- * Repository for accessing a {@link Document}.
+ * REST API response for {@link Document} signing operation.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public interface DocumentRepository extends CrudRepository<Document, Long> {
-    long deleteByStatusAndTimestampCreatedBefore(DocumentStatus status, Instant timestampCreated);
-    Optional<Document> findByDocumentId(String documentId);
-}
+@Schema(description = "Response for document signing operation")
+@Builder
+record SignDocumentResponse(
+        @Schema(description = "Identifier of the signed document as UUID", example = "3f5e8c7a-2d91-4f9b-bc3e-1a7d2f8e6c42")
+        String documentId,
+
+        @Schema(description = "URI to access the signed document. It uses X-Forwarded* headers from request for building the URI.",
+                example = "https://signercloud.com:8080/api/v1/documents/3f5e8c7a-2d91-4f9b-bc3e-1a7d2f8e6c42/download")
+        String uri
+) {}

@@ -17,7 +17,9 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import com.wultra.signercloud.server.document.DocumentNotFoundException;
 import com.wultra.signercloud.server.document.DocumentUploadException;
+import com.wultra.signercloud.server.document.SignDocumentException;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -56,19 +58,14 @@ public class RestExceptionHandler {
     }
 
     /**
-     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#NOT_FOUND} response.
+     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
-        final var responseBody = new ErrorResponse(
-                ERROR_STATUS,
-                new ErrorDetails(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage())
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
+        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
@@ -79,9 +76,35 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentUploadException(final DocumentUploadException ex) {
+        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link DocumentNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleDocumentNotFoundException(final DocumentNotFoundException ex) {
+        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link SignDocumentException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignDocumentException(final SignDocumentException ex) {
+        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+    }
+
+    private static ResponseEntity<ErrorResponse> produceBadRequest(final ErrorCode errorCode, final String message) {
         final var responseBody = new ErrorResponse(
                 ERROR_STATUS,
-                new ErrorDetails(ErrorCode.ERROR_GENERIC, ex.getMessage())
+                new ErrorDetails(errorCode, message)
         );
 
         return ResponseEntity.badRequest().body(responseBody);

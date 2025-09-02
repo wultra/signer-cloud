@@ -21,12 +21,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -44,7 +42,7 @@ public class DocumentController {
 
     @Operation(
             summary = "Uploads a document for signing",
-            description = "Uploads a document to be signed. It is stored in the database with calculated SHA-256 hash and linked to the Signer.",
+            description = "Stores document in the database with its hash (calculated using the configured algorithm) and associates it with the Signer.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -53,11 +51,7 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid input data"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Signer not found"
+                            description = "Invalid input data or Signer not found"
                     )
             }
     )
@@ -76,6 +70,35 @@ public class DocumentController {
             return response;
         } else {
             logger.error("action: uploadDocument, state: failed, errorMessage: {}", result.getError().getMessage());
+            throw result.getError();
+        }
+    }
+
+    @Operation(
+            summary = "Signs an uploaded document",
+            description = "Verifies whether the document can be signed, if so, verifies the {@code signature} and creates a signed document.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Document signed successfully",
+                            content = @Content(schema = @Schema(implementation = SignDocumentResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Signer or document not found, invalid document state or invalid signature"
+                    )
+            }
+    )
+    @PostMapping("/{documentId}/signature")
+    SignDocumentResponse sign(@PathVariable final String documentId, @Valid @RequestBody final SignDocumentRequest requestBody) throws Throwable {
+        logger.info("action: signDocument, state: initiated, documentId: {}", documentId);
+        final var result = documentService.signDocument(documentId, requestBody);
+
+        if (result.isSuccess()) {
+            logger.info("action: signDocument, state: succeeded");
+            return result.getResponse();
+        } else {
+            logger.info("action: signDocument, state: failed, errorMessage: {}", result.getError().getMessage());
             throw result.getError();
         }
     }
