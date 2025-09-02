@@ -42,7 +42,7 @@ public class DocumentController {
 
     @Operation(
             summary = "Uploads a document for signing",
-            description = "Uploads a document to be signed. It is stored in the database with calculated SHA-256 hash and linked to the Signer.",
+            description = "Stores document in the database with its hash (calculated using the configured algorithm) and associates it with the Signer.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -51,11 +51,7 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid input data"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Signer not found"
+                            description = "Invalid input data or Signer not found"
                     )
             }
     )
@@ -89,11 +85,7 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid document state or invalid signature"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Signer or document not found"
+                            description = "Signer or document not found, invalid document state or invalid signature"
                     )
             }
     )

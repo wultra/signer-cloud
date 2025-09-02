@@ -18,23 +18,24 @@
 package com.wultra.signercloud.server.restapi;
 
 /**
- * Error codes for {@link ErrorResponse}.
+ * Error codes for {@link ErrorResponse} that extend HTTP status codes, representing more detailed
+ * subcategories or specific reasons for the error.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public enum ErrorCode {
     /**
-     * HTTP 400, Issue with a request format or issue of the business logic.
+     * Issue with a request format or issue of the business logic.
      */
     ERROR_GENERIC,
 
     /**
-     * HTTP 401, Unauthorized request.
+     * Unauthorized request.
      */
     ERROR_UNAUTHORIZED,
 
     /**
-     * HTTP 404, Resource is not found.
+     * Resource is not found.
      */
     ERROR_RESOURCE_NOT_FOUND
 }

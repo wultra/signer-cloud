@@ -110,7 +110,7 @@ class SignerController {
                             content = @Content(schema = @Schema(implementation = SignerDetailResponse.class))
                     ),
                     @ApiResponse(
-                            responseCode = "404",
+                            responseCode = "400",
                             description = "Signer for given {@code externalSignerId} not found"
                     )
             }

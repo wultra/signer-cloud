@@ -146,7 +146,7 @@ class DocumentControllerIntTest {
     }
 
     @Test
-    void testUploadWhenSignerIsNotFoundThen404WithCorrectResponseIsReturned() throws Exception {
+    void testUploadWhenSignerIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
         // given
         final var file = loadFile(CONTENT_TYPE);
 
@@ -156,7 +156,7 @@ class DocumentControllerIntTest {
                         .param(EXTERNAL_SIGNER_ID_PARAM, DUMMY_EXTERNAL_SIGNER_ID)
                         .param(EXTERNAL_DOCUMENT_ID_PARAM, DUMMY_EXTERNAL_DOCUMENT_ID)
                         .param(DOCUMENT_NAME_PARAM, DUMMY_DOCUMENT_NAME))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
         // when
@@ -209,7 +209,7 @@ class DocumentControllerIntTest {
     }
 
     @Test
-    void testSignWhenDocumentIsNotFoundThen404WithCorrectResponseIsReturned() throws Exception {
+    void testSignWhenDocumentIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
         // given
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -217,7 +217,7 @@ class DocumentControllerIntTest {
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
         // then
