@@ -327,6 +327,9 @@ class DocumentControllerIntTest {
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Forwarded-Host", "signercloud.wultra.com")
+                        .header("X-Forwarded-Proto", "https")
+                        .header("X-Forwarded-Port", "8080")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -446,7 +449,7 @@ class DocumentControllerIntTest {
     private void assertSignResponse(final SignDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://localhost:8080/api/v1/documents/%s/download", DOCUMENT_UUID);
+        final var expectedUri = String.format("https://signercloud.wultra.com:8080/api/v1/documents/%s/download", DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }
 

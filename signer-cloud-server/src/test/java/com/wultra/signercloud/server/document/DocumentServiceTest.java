@@ -37,7 +37,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -78,7 +81,6 @@ class DocumentServiceTest {
     private static final String MULTIPART_FILE_FIELD_NAME = "content";
 
     private static final Duration WAITING_TIMEOUT = Duration.ofSeconds(60);
-    private static final String DOWNLOAD_HOSTNAME = "signercloud.example.com";
 
     @Mock
     private SignerRepository signerRepository;
@@ -404,12 +406,12 @@ class DocumentServiceTest {
         when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
         when(documentConfigurationProperties.getSignatureHashAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
-        when(documentConfigurationProperties.getDownloadHostname()).thenReturn(DOWNLOAD_HOSTNAME);
         when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
                 .thenReturn(true);
         when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
                 .thenReturn(new InMemoryDocument(SIGNED_DOCUMENT_CONTENT));
 
+        setRequestContext();
         final var request = new SignDocumentRequest(SIGNATURE);
 
         // when
@@ -446,8 +448,7 @@ class DocumentServiceTest {
         final var response = result.getResponse();
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://%s/api/v1/documents/%s/download",
-                DOWNLOAD_HOSTNAME,
+        final var expectedUri = String.format("https://signercloud.wultra.com:8080/api/v1/documents/%s/download",
                 DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }
@@ -459,5 +460,14 @@ class DocumentServiceTest {
                 .certificate(CERTIFICATE)
                 .status(status)
                 .build();
+    }
+
+    private void setRequestContext() {
+        final var request = new MockHttpServletRequest();
+        request.setScheme("https");
+        request.setServerName("signercloud.wultra.com");
+        request.setServerPort(8080);
+
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 }

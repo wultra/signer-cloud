@@ -40,7 +40,6 @@ class DocumentConfigurationProperties {
 
     private DocumentConfiguration signed = new DocumentConfiguration();
 
-    private String downloadHostname;
     private DigestAlgorithm contentHashAlgorithm;
     private DigestAlgorithm signatureHashAlgorithm;
 
