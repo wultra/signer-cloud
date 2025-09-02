@@ -77,7 +77,6 @@ class DocumentServiceTest {
 
     private static final String MULTIPART_FILE_FIELD_NAME = "content";
 
-    private static final String HASH_ALGORITHM = "SHA-256";
     private static final Duration WAITING_TIMEOUT = Duration.ofSeconds(60);
     private static final String DOWNLOAD_HOSTNAME = "signercloud.example.com";
 
@@ -175,7 +174,7 @@ class DocumentServiceTest {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(HASH_ALGORITHM);
+        when(documentConfigurationProperties.getContentHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
 
         final var documentContent = DocumentContent.builder()
                 .id(1L)
@@ -370,7 +369,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
-        when(documentConfigurationProperties.getSignatureAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
+        when(documentConfigurationProperties.getSignatureHashAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
 
         // when
         final var result = documentService.signDocument(DOCUMENT_UUID, request);
@@ -404,7 +403,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
-        when(documentConfigurationProperties.getSignatureAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
+        when(documentConfigurationProperties.getSignatureHashAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
         when(documentConfigurationProperties.getDownloadHostname()).thenReturn(DOWNLOAD_HOSTNAME);
         when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
                 .thenReturn(true);

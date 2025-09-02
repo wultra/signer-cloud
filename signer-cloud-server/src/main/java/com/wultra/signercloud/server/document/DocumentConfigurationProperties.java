@@ -41,8 +41,8 @@ class DocumentConfigurationProperties {
     private DocumentConfiguration signed = new DocumentConfiguration();
 
     private String downloadHostname;
-    private String hashAlgorithm;
-    private DigestAlgorithm signatureAlgorithm;
+    private DigestAlgorithm contentHashAlgorithm;
+    private DigestAlgorithm signatureHashAlgorithm;
 
     @Getter
     @Setter

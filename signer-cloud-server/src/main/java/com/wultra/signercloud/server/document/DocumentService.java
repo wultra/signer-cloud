@@ -42,7 +42,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -154,7 +153,7 @@ class DocumentService {
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = computeHash(fileContent, configurationProperties.getHashAlgorithm());
+        final var hash = computeHash(fileContent, configurationProperties.getContentHashAlgorithm());
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)
@@ -204,9 +203,9 @@ class DocumentService {
         }
     }
 
-    private static String computeHash(final byte[] content, final String hashAlgorithm) throws NoSuchAlgorithmException {
+    private static String computeHash(final byte[] content, final DigestAlgorithm hashAlgorithm) throws NoSuchAlgorithmException {
         try {
-            final var digest = MessageDigest.getInstance(hashAlgorithm);
+            final var digest = hashAlgorithm.getMessageDigest();
             final var hashBytes = digest.digest(content);
             return Base64.getEncoder().encodeToString(hashBytes);
         } catch (final NoSuchAlgorithmException e) {
@@ -258,7 +257,7 @@ class DocumentService {
                 document.getHash(),
                 signature,
                 documentContent.getContent(),
-                configurationProperties.getSignatureAlgorithm());
+                configurationProperties.getSignatureHashAlgorithm());
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
