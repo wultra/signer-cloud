@@ -411,7 +411,7 @@ class DocumentServiceTest {
         when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
                 .thenReturn(new InMemoryDocument(SIGNED_DOCUMENT_CONTENT));
 
-        setRequestContext();
+        prepareRequestContext();
         final var request = new SignDocumentRequest(SIGNATURE);
 
         // when
@@ -462,7 +462,7 @@ class DocumentServiceTest {
                 .build();
     }
 
-    private void setRequestContext() {
+    private void prepareRequestContext() {
         final var request = new MockHttpServletRequest();
         request.setScheme("https");
         request.setServerName("signercloud.wultra.com");
