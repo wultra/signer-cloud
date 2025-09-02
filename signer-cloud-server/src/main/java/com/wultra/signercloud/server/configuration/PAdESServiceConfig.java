@@ -15,27 +15,24 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.restapi;
+package com.wultra.signercloud.server.configuration;
+
+import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
 /**
- * Error codes for {@link ErrorResponse} that extend HTTP status codes, representing more detailed
- * subcategories or specific reasons for the error.
+ * Configuration for {@link PAdESService}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public enum ErrorCode {
-    /**
-     * Issue with a request format or issue of the business logic.
-     */
-    ERROR_GENERIC,
+@Configuration
+class PAdESServiceConfig {
 
-    /**
-     * Unauthorized request.
-     */
-    ERROR_UNAUTHORIZED,
+    @Bean
+    public PAdESService padesService() {
+        return new PAdESService(new CommonCertificateVerifier());
+    }
 
-    /**
-     * Resource is not found.
-     */
-    ERROR_RESOURCE_NOT_FOUND
 }

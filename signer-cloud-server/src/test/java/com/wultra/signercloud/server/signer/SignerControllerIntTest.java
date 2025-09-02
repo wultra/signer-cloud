@@ -320,7 +320,7 @@ class SignerControllerIntTest {
     }
 
     @Test
-    void testGetDetailWhenSignerIsNotFoundThen404NotFoundResponseIsReturned() throws Exception {
+    void testGetDetailWhenSignerIsNotFoundThen400BadRequestResponseIsReturned() throws Exception {
         // given
         // -
 
@@ -329,7 +329,7 @@ class SignerControllerIntTest {
                         .contentType(MediaType.APPLICATION_JSON));
 
         // then
-        call.andExpect(status().isNotFound());
+        call.andExpect(status().isBadRequest());
     }
 
     @Test

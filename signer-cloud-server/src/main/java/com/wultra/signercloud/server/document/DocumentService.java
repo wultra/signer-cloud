@@ -31,21 +31,17 @@ import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ContentType;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -72,7 +68,7 @@ class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
-    private final DocumentPartsService documentPartsService;
+    private final PAdESService padesService;
 
     /**
      * Cleanup documents.
@@ -157,7 +153,7 @@ class DocumentService {
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = computeHash(fileContent, configurationProperties.getHashAlgorithm());
+        final var hash = computeHash(fileContent, configurationProperties.getContentHashAlgorithm());
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)
@@ -207,9 +203,9 @@ class DocumentService {
         }
     }
 
-    private static String computeHash(final byte[] content, final String hashAlgorithm) throws NoSuchAlgorithmException {
+    private static String computeHash(final byte[] content, final DigestAlgorithm hashAlgorithm) throws NoSuchAlgorithmException {
         try {
-            final var digest = MessageDigest.getInstance(hashAlgorithm);
+            final var digest = hashAlgorithm.getMessageDigest();
             final var hashBytes = digest.digest(content);
             return Base64.getEncoder().encodeToString(hashBytes);
         } catch (final NoSuchAlgorithmException e) {
@@ -261,7 +257,7 @@ class DocumentService {
                 document.getHash(),
                 signature,
                 documentContent.getContent(),
-                configurationProperties.getSignatureAlgorithm());
+                configurationProperties.getSignatureHashAlgorithm());
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -283,11 +279,11 @@ class DocumentService {
     }
 
     private void verifyDocumentCanBeSigned(final Signer signer, final Document document) {
-        if (SignerStatus.ACTIVE != signer.getStatus()) {
+        if (signer.getStatus() != SignerStatus.ACTIVE) {
             throw new SignDocumentException("Signer is not active. Signer: " + signer.getExternalSignerId());
         }
 
-        if (DocumentStatus.WAITING != document.getStatus()) {
+        if (document.getStatus() != DocumentStatus.WAITING) {
             throw new SignDocumentException("Document is not in state when it can be signed");
         }
 
@@ -300,15 +296,15 @@ class DocumentService {
         }
     }
 
-    private static byte[] verifySignatureAndSignDocument(final String certificateBase64,
-                                                         final String hashBase64,
-                                                         final String hashSignatureBase64,
-                                                         final byte[] documentBytes,
-                                                         final DigestAlgorithm signatureAlgorithm) throws CertificateException {
-        final var padesService = new PAdESService(new CommonCertificateVerifier());
+    private byte[] verifySignatureAndSignDocument(
+            final String certificateBase64,
+            final String hashBase64,
+            final String hashSignatureBase64,
+            final byte[] documentBytes,
+            final DigestAlgorithm signatureAlgorithm) throws CertificateException {
 
-        final var certificateToken = getCertificateToken(certificateBase64);
-        final var signatureParams = getSignatureParameters(certificateToken, signatureAlgorithm);
+        final var certificateToken = createCertificateToken(certificateBase64);
+        final var signatureParams = createSignatureParameters(certificateToken, signatureAlgorithm);
 
         final var hashBytes = Base64.getDecoder().decode(hashBase64);
         final var hash = new ToBeSigned(hashBytes);
@@ -324,10 +320,10 @@ class DocumentService {
         final var unsignedDocument = new InMemoryDocument(documentBytes);
         final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
 
-        return getSignedDocumentBytes(signedDocument);
+        return readSignedDocumentBytes(signedDocument);
     }
 
-    private static CertificateToken getCertificateToken(final String certificateBase64) throws CertificateException {
+    private static CertificateToken createCertificateToken(final String certificateBase64) throws CertificateException {
         try {
             final var certificateBytes = Base64.getDecoder().decode(certificateBase64);
             final var x509Certificate = (X509Certificate) CertificateFactory.getInstance(CERTIFICATE_TYPE)
@@ -339,81 +335,30 @@ class DocumentService {
         }
     }
 
-    private static PAdESSignatureParameters getSignatureParameters(final CertificateToken certificateToken, final DigestAlgorithm algorithm) {
+    private static PAdESSignatureParameters createSignatureParameters(final CertificateToken certificateToken, final DigestAlgorithm algorithm) {
         final var params = new PAdESSignatureParameters();
         params.setDigestAlgorithm(algorithm);
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         params.setSigningCertificate(certificateToken);
+        //TODO (michalrozehnal, 02.09.2025): add setCertificateChain(...), make it configurable and set it by default
 
         return params;
     }
 
-    private static byte[] getSignedDocumentBytes(final DSSDocument signedDocument) {
+    private static byte[] readSignedDocumentBytes(final DSSDocument signedDocument) {
         try (final var stream = signedDocument.openStream()) {
             return stream.readAllBytes();
         } catch (final IOException e) {
+            logger.error("Exception when reading bytes of signed document", e);
             throw new SignDocumentException("Failed to read signed document: " + e.getMessage());
         }
     }
 
     private String buildDocumentDownloadUri(final String documentId) {
-        return UriComponentsBuilder.newInstance()
-                .scheme("https")
-                .host(configurationProperties.getDownloadHostname())
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path(DOCUMENT_DOWNLOAD_PATH)
                 .buildAndExpand(documentId)
                 .toUriString();
-    }
-
-    Try<ResponseEntity<byte[]>> downloadDocument(final String documentUuid, final String rangeHeader) {
-        try {
-            final var response = processDownloadDocument(documentUuid, rangeHeader);
-            return Try.success(response);
-        } catch (final IOException | DocumentNotFoundException | DownloadDocumentException e) {
-            return Try.error(e);
-        }
-    }
-
-    ResponseEntity<byte[]> processDownloadDocument(final String documentUuid, final String rangeHeader) throws IOException {
-        final var document = documentRepository.findByDocumentId(documentUuid)
-                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
-
-        final var documentContent = documentContentRepository.findById(document.getDocumentContentId())
-                .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentUuid));
-
-        final var contentBytes = documentContent.getContent();
-        final var length = contentBytes.length;
-
-        if (rangeHeader == null) {
-            return ResponseEntity.status(HttpStatus.OK)
-                    .contentLength(length)
-                    .contentType(MediaType.APPLICATION_PDF)
-                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                    .body(contentBytes);
-        } else {
-            final var ranges = documentPartsService.getParts(rangeHeader, length);
-
-            final var boundary = "MULTIPART_BYTERANGES_" + Instant.now().toEpochMilli();
-            final var out = new ByteArrayOutputStream();
-
-            for (final var range : ranges) {
-                final var start = (int) range.start();
-                final var end = (int) range.end();
-
-                out.write(("--" + boundary + "\r\n").getBytes());
-                out.write(("Content-Type: application/pdf\r\n").getBytes());
-                out.write(("Content-Range: bytes " + start + "-" + end + "/" + length + "\r\n\r\n").getBytes());
-                out.write(contentBytes, start, end - start + 1);
-                out.write("\r\n".getBytes());
-            }
-            out.write(("--" + boundary + "--\r\n").getBytes());
-
-            final var contentBytesWithBoundaries = out.toByteArray();
-            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-                    .header(HttpHeaders.CONTENT_TYPE, "multipart/byteranges; boundary=" + boundary)
-                    .header(HttpHeaders.ACCEPT_RANGES, "bytes")
-                    .body(contentBytesWithBoundaries);
-        }
     }
 
     @Builder

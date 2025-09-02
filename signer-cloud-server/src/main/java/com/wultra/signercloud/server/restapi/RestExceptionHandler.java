@@ -58,14 +58,14 @@ public class RestExceptionHandler {
     }
 
     /**
-     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#NOT_FOUND} response.
+     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
-        return handleResourceNotFound(ex.getMessage());
+        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
@@ -76,18 +76,18 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentUploadException(final DocumentUploadException ex) {
-        return handleGenericError(ex.getMessage());
+        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
     }
 
     /**
-     * Handler for {@link DocumentNotFoundException} producing {@link HttpStatus#NOT_FOUND} response.
+     * Handler for {@link DocumentNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentNotFoundException(final DocumentNotFoundException ex) {
-        return handleResourceNotFound(ex.getMessage());
+        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
@@ -98,22 +98,13 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignDocumentException(final SignDocumentException ex) {
-        return handleGenericError(ex.getMessage());
+        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
     }
 
-    private static ResponseEntity<ErrorResponse> handleResourceNotFound(final String message) {
+    private static ResponseEntity<ErrorResponse> produceBadRequest(final ErrorCode errorCode, final String message) {
         final var responseBody = new ErrorResponse(
                 ERROR_STATUS,
-                new ErrorDetails(ErrorCode.ERROR_RESOURCE_NOT_FOUND, message)
-        );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(responseBody);
-    }
-
-    private static ResponseEntity<ErrorResponse> handleGenericError(final String message) {
-        final var responseBody = new ErrorResponse(
-                ERROR_STATUS,
-                new ErrorDetails(ErrorCode.ERROR_GENERIC, message)
+                new ErrorDetails(errorCode, message)
         );
 
         return ResponseEntity.badRequest().body(responseBody);

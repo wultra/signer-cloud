@@ -24,7 +24,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -43,7 +42,7 @@ public class DocumentController {
 
     @Operation(
             summary = "Uploads a document for signing",
-            description = "Uploads a document to be signed. It is stored in the database with calculated SHA-256 hash and linked to the Signer.",
+            description = "Stores document in the database with its hash (calculated using the configured algorithm) and associates it with the Signer.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -52,11 +51,7 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid input data"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Signer not found"
+                            description = "Invalid input data or Signer not found"
                     )
             }
     )
@@ -90,11 +85,7 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid document state or invalid signature"
-                    ),
-                    @ApiResponse(
-                            responseCode = "404",
-                            description = "Signer or document not found"
+                            description = "Signer or document not found, invalid document state or invalid signature"
                     )
             }
     )
@@ -108,16 +99,6 @@ public class DocumentController {
             return result.getResponse();
         } else {
             logger.info("action: signDocument, state: failed, errorMessage: {}", result.getError().getMessage());
-            throw result.getError();
-        }
-    }
-
-    @GetMapping("/{documentId}/file")
-    ResponseEntity<byte[]> download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
-        final var result = documentService.downloadDocument(documentId, rangeHeader);
-        if (result.isSuccess()) {
-            return result.getResponse();
-        } else {
             throw result.getError();
         }
     }

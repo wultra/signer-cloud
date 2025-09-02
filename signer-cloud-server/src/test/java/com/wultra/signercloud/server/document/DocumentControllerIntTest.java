@@ -24,10 +24,12 @@ import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -36,8 +38,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -65,7 +65,6 @@ class DocumentControllerIntTest {
     private static final String CONTENT_TYPE = "application/pdf";
     private static final String DOCUMENT_NAME_PARAM = "name";
     private static final String EXTERNAL_DOCUMENT_ID_PARAM = "externalId";
-    private static final Path FILE_PATH = Path.of("./src/test/resources/input.pdf");
 
     private static final long MILLISECONDS_DELTA = 1_000;
     private static final String ERROR_STATUS = "ERROR";
@@ -113,6 +112,13 @@ class DocumentControllerIntTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private byte[] fileContent;
+
+    @BeforeEach
+    void setUp() throws IOException {
+        fileContent = new ClassPathResource("input.pdf").getContentAsByteArray();
+    }
+
     @AfterEach
     void tearDown() {
         documentRepository.deleteAll();
@@ -140,7 +146,7 @@ class DocumentControllerIntTest {
     }
 
     @Test
-    void testUploadWhenSignerIsNotFoundThen404WithCorrectResponseIsReturned() throws Exception {
+    void testUploadWhenSignerIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
         // given
         final var file = loadFile(CONTENT_TYPE);
 
@@ -150,7 +156,7 @@ class DocumentControllerIntTest {
                         .param(EXTERNAL_SIGNER_ID_PARAM, DUMMY_EXTERNAL_SIGNER_ID)
                         .param(EXTERNAL_DOCUMENT_ID_PARAM, DUMMY_EXTERNAL_DOCUMENT_ID)
                         .param(DOCUMENT_NAME_PARAM, DUMMY_DOCUMENT_NAME))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
         // when
@@ -203,7 +209,7 @@ class DocumentControllerIntTest {
     }
 
     @Test
-    void testSignWhenDocumentIsNotFoundThen404WithCorrectResponseIsReturned() throws Exception {
+    void testSignWhenDocumentIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
         // given
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -211,7 +217,7 @@ class DocumentControllerIntTest {
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isNotFound())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
         // then
@@ -321,6 +327,9 @@ class DocumentControllerIntTest {
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
                         .contentType(MediaType.APPLICATION_JSON)
+                        .header("X-Forwarded-Host", "signercloud.wultra.com")
+                        .header("X-Forwarded-Proto", "https")
+                        .header("X-Forwarded-Port", "8080")
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -356,7 +365,7 @@ class DocumentControllerIntTest {
                 "file",
                 FILENAME,
                 contentType,
-                Files.readAllBytes(FILE_PATH)
+                fileContent
         );
     }
 
@@ -385,7 +394,7 @@ class DocumentControllerIntTest {
 
     private long createDocumentContentInDatabase() throws IOException {
         final var documentContent = DocumentContent.builder()
-                .content(Files.readAllBytes(FILE_PATH))
+                .content(fileContent)
                 .build();
 
         final var savedDocumentContent = documentContentRepository.save(documentContent);
@@ -434,13 +443,13 @@ class DocumentControllerIntTest {
         assertNull(document.getSignature());
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContentId()).orElseThrow();
-        assertArrayEquals(Files.readAllBytes(FILE_PATH), documentContent.getContent());
+        assertArrayEquals(fileContent, documentContent.getContent());
     }
 
     private void assertSignResponse(final SignDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://localhost:8080/api/v1/documents/%s/download", DOCUMENT_UUID);
+        final var expectedUri = String.format("https://signercloud.wultra.com:8080/api/v1/documents/%s/download", DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }
 
