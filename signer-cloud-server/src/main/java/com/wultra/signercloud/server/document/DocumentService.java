@@ -424,7 +424,7 @@ class DocumentService {
 
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
-                .header(HttpHeaders.CONTENT_RANGE, String.format("%s-%s/%s", range.start(), range.end(), contentBytes.length))
+                .header(HttpHeaders.CONTENT_RANGE, String.format("bytes %s-%s/%s", range.start(), range.end(), contentBytes.length))
                 .header(HttpHeaders.ACCEPT_RANGES, ACCEPT_RANGES_BYTES)
                 .contentLength(singlePartContent.length)
                 .body(singlePartContent);
