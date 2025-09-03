@@ -121,7 +121,8 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Document not found or any other error (see the error message for details)"
+                            description = "Document not found, not signed yet or request is invalid (malformed value of {@code Range} header for example). " +
+                                    "See the error message for details"
                     )
             }
     )

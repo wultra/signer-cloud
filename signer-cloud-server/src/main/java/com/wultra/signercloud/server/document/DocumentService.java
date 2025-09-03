@@ -395,6 +395,10 @@ class DocumentService {
         final var documentContent = documentContentRepository.findById(document.getDocumentContentId())
                 .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentUuid));
 
+        if (document.getStatus() != DocumentStatus.SIGNED) {
+            throw new DownloadDocumentException("Document is not signed yet");
+        }
+
         final var contentBytes = documentContent.getContent();
         final var ranges = documentRangesService.getParts(rangeHeader, contentBytes.length);
 
