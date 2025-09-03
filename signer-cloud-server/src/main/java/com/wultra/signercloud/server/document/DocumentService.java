@@ -420,7 +420,7 @@ class DocumentService {
     }
 
     private ResponseEntity<byte[]> createSinglePartResponse(final byte[] contentBytes, final DocumentRangesService.DocumentPart range) {
-        final var singlePartContent = Arrays.copyOfRange(contentBytes, range.start(), range.end());
+        final var singlePartContent = Arrays.copyOfRange(contentBytes, range.start(), range.end() + 1);
 
         return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                 .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
