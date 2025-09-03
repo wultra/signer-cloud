@@ -127,11 +127,16 @@ public class DocumentController {
     )
     @GetMapping("/{documentId}/file")
     ResponseEntity<byte[]> download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
+        logger.info("action: downloadDocument, state: initiated, documentId: {}, ranges: {}", documentId, rangeHeader);
         final var result = documentService.downloadDocument(documentId, rangeHeader);
+
         if (result.isSuccess()) {
+            logger.info("action: downloadDocument, state: succeeded");
             return result.getResponse();
         } else {
-            throw result.getError();
+            final var error = result.getError();
+            logger.info("action: downloadDocument, state: failed, errorMessage: {}", error.getMessage());
+            throw error;
         }
     }
 }
