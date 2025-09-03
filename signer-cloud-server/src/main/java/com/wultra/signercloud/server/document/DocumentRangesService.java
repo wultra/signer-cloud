@@ -48,8 +48,8 @@ class DocumentRangesService {
 
         for (int i = 0; i < parsedRanges.size(); i++) {
             final var parsedRange = parsedRanges.get(i);
-            final var start = (int) parsedRange.getRangeStart(fileSize);
-            final var end = (int) parsedRange.getRangeEnd(fileSize);
+            final var start = Math.toIntExact(parsedRange.getRangeStart(fileSize));
+            final var end = Math.toIntExact(parsedRange.getRangeEnd(fileSize));
 
             parts.add(new DocumentPart(start, end, i));
         }
