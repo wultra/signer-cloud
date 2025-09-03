@@ -18,7 +18,13 @@
 
 package com.wultra.signercloud.server.callback;
 
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jdbc.repository.query.Modifying;
+import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
+
+import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Repository for  {@link CallbackEvent}.
@@ -26,4 +32,31 @@ import org.springframework.data.repository.CrudRepository;
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
+
+    @Query("""
+            SELECT c FROM sc_callback_event c
+            WHERE c.status = 'PENDING'
+            AND c.timestamp_next_call < :timestamp
+            ORDER BY c.timestamp_next_call DESC
+            """)
+    List<CallbackEvent> findPending(LocalDateTime timestamp, Pageable pageable);
+
+    @Modifying
+    @Query("""
+            DELETE FROM sc_callback_event c
+            WHERE c.status = 'COMPLETED'
+            AND c.timestamp_delete_after < :timestamp
+            """)
+    void deleteCompletedAfterRetentionPeriod(LocalDateTime timestamp);
+
+    @Modifying
+    @Query("""
+            UPDATE sc_callback_event c
+            SET status = 'PENDING',
+                timestamp_next_call = c.timestamp_last_call,
+                timestamp_rerun_after = null
+            WHERE c.status = 'PROCESSING'
+            AND c.timestamp_rerun_after < :timestamp
+            """)
+    int updateStaleEventsToPendingState(LocalDateTime timestamp);
 }
