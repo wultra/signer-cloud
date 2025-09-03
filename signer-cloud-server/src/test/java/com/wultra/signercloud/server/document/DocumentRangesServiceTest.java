@@ -31,7 +31,7 @@ import static com.wultra.signercloud.server.document.DocumentRangesService.Docum
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * TODO description
+ * Unit tests for {@link DocumentRangesService}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */

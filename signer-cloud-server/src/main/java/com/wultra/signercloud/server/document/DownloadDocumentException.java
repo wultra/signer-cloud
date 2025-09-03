@@ -18,7 +18,7 @@
 package com.wultra.signercloud.server.document;
 
 /**
- * TODO description
+ * Exception thrown when {@link Document} download fails.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */

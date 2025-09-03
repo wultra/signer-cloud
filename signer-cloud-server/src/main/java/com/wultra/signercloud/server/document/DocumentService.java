@@ -371,16 +371,24 @@ class DocumentService {
                 .toUriString();
     }
 
+    /**
+     * Downloads the content of the {@link Document} (full or partial) identified by {@code documentUuid}.
+     *
+     * @param documentUuid identifier of the document to be downloaded
+     * @param rangeHeader optional value of the HTTP {@code Range} header.
+     *                    If provided, only the specified byte ranges are returned, otherwise the full content is returned.
+     * @return response as a {@link Try}
+     */
     Try<ResponseEntity<byte[]>> downloadDocument(final String documentUuid, final String rangeHeader) {
         try {
             final var response = processDownloadDocument(documentUuid, rangeHeader);
             return Try.success(response);
-        } catch (final IOException | DocumentNotFoundException | DownloadDocumentException e) {
+        } catch (final DocumentNotFoundException | DownloadDocumentException e) {
             return Try.error(e);
         }
     }
 
-    ResponseEntity<byte[]> processDownloadDocument(final String documentUuid, final String rangeHeader) throws IOException {
+    private ResponseEntity<byte[]> processDownloadDocument(final String documentUuid, final String rangeHeader) {
         final var document = documentRepository.findByDocumentId(documentUuid)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
 
@@ -421,30 +429,36 @@ class DocumentService {
     private ResponseEntity<byte[]> createMultiPartResponse(
             final List<DocumentRangesService.DocumentPart> ranges,
             final byte[] contentBytes
-    ) throws IOException {
-        final var totalLength = contentBytes.length;
-        final var boundary = "MULTIPART_BYTERANGES_" + Instant.now().toEpochMilli();
-        final var out = new ByteArrayOutputStream();
+    ) {
+        try {
+            final var totalLength = contentBytes.length;
+            final var boundary = "MULTIPART_BYTERANGES_" + Instant.now().toEpochMilli();
+            final var out = new ByteArrayOutputStream();
 
-        for (final var range : ranges) {
-            final var start = range.start();
-            final var end = range.end();
+            for (final var range : ranges) {
+                final var start = range.start();
+                final var end = range.end();
 
-            out.write(String.format("--%s%n", boundary).getBytes());
-            out.write(String.format("Content-Type: %s%n", MediaType.APPLICATION_PDF_VALUE).getBytes());
-            out.write(String.format("Content-Range: bytes %s-%s/%s%n%n", start, end, totalLength).getBytes());
-            out.write(contentBytes, start, end - start + 1);
-            out.write(String.format("%n").getBytes());
+                out.write(String.format("--%s%n", boundary).getBytes());
+                out.write(String.format("Content-Type: %s%n", MediaType.APPLICATION_PDF_VALUE).getBytes());
+                out.write(String.format("Content-Range: bytes %s-%s/%s%n%n", start, end, totalLength).getBytes());
+                out.write(contentBytes, start, end - start + 1);
+                out.write(String.format("%n").getBytes());
+            }
+
+            out.write(String.format("--%s--%n", boundary).getBytes());
+
+            final var multiPartContent = out.toByteArray();
+
+            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
+                    .header(HttpHeaders.CONTENT_TYPE, "multipart/byteranges; boundary=" + boundary)
+                    .header(HttpHeaders.ACCEPT_RANGES, ACCEPT_RANGES_BYTES)
+                    .body(multiPartContent);
+
+        } catch (final IOException e) {
+            logger.error("Exception when creating multi-part response body", e);
+            throw new DownloadDocumentException("Error when producing multi-part response: " + e.getMessage());
         }
-
-        out.write(String.format("--%s--%n", boundary).getBytes());
-
-        final var multiPartContent = out.toByteArray();
-
-        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-                .header(HttpHeaders.CONTENT_TYPE, "multipart/byteranges; boundary=" + boundary)
-                .header(HttpHeaders.ACCEPT_RANGES, ACCEPT_RANGES_BYTES)
-                .body(multiPartContent);
     }
 
     @Builder

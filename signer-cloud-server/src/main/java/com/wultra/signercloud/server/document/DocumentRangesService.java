@@ -32,6 +32,15 @@ import java.util.List;
 @Service
 class DocumentRangesService {
 
+    /**
+     * Parse HTTP {@code Range} header from String to {@link  List<DocumentPart>}.
+     *
+     * Parts are merged if they overlap or are adjacent. They are returned in the same order as they were specified in the input.
+     *
+     * @param ranges ranges header value
+     * @param fileSize size of the file to which the ranges apply
+     * @return list of ranges
+     */
     List<DocumentPart> getParts(final String ranges, final long fileSize) {
         final var parsedRanges = parseRanges(ranges);
 

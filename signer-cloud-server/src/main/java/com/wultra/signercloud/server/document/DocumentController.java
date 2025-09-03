@@ -104,6 +104,27 @@ public class DocumentController {
         }
     }
 
+    @Operation(
+            summary = "Downloads signed document",
+            description = "Downloads full or partial (if the {@code Range} header is provided) content of the signed document." +
+                    "If multiple ranges are requested, they are merged if they overlap or are adjacent.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Full document content",
+                            content = @Content(schema = @Schema(implementation = byte[].class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "206",
+                            description = "Partial document content according to the {@code Range} header. Overlapping or are adjacent ranges are merged.",
+                            content = @Content(schema = @Schema(implementation = byte[].class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Document not found or any other error (see the error message for details)"
+                    )
+            }
+    )
     @GetMapping("/{documentId}/file")
     ResponseEntity<byte[]> download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
         final var result = documentService.downloadDocument(documentId, rangeHeader);
