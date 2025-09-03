@@ -25,23 +25,24 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * TODO description
+ * Service for parsing HTTP {@code Range} header and merging overlapping ranges.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Service
-class DocumentPartsService {
+class DocumentRangesService {
 
     List<DocumentPart> getParts(final String ranges, final long fileSize) {
         final var parsedRanges = parseRanges(ranges);
 
         final var parts = new ArrayList<DocumentPart>(parsedRanges.size());
 
-        for (final var parsedRange : parsedRanges) {
-            final var start = parsedRange.getRangeStart(fileSize);
-            final var end = parsedRange.getRangeEnd(fileSize);
+        for (int i = 0; i < parsedRanges.size(); i++) {
+            final var parsedRange = parsedRanges.get(i);
+            final var start = (int) parsedRange.getRangeStart(fileSize);
+            final var end = (int) parsedRange.getRangeEnd(fileSize);
 
-            parts.add(new DocumentPart(start, end));
+            parts.add(new DocumentPart(start, end, i));
         }
 
         return mergeParts(parts);
@@ -63,26 +64,29 @@ class DocumentPartsService {
             return parts;
         }
 
-        final var sortedParts = parts.stream()
-                .sorted(Comparator.comparingLong(DocumentPart::start))
+        final var partsSortedByStart = parts.stream()
+                .sorted(Comparator.comparingInt(DocumentPart::start))
                 .toList();
 
         final var mergedParts = new ArrayList<DocumentPart>(size);
 
-        var currentPart = sortedParts.get(0);
+        var currentPart = partsSortedByStart.get(0);
         for (int i = 1; i < size; i++) {
-            final var nextPart = parts.get(i);
+            final var nextPart = partsSortedByStart.get(i);
             if (currentPart.end + 1 >= nextPart.start) {
                 // Merge parts
-                currentPart = new DocumentPart(currentPart.start, Math.max(currentPart.end, nextPart.end));
+                currentPart = new DocumentPart(currentPart.start, Math.max(currentPart.end, nextPart.end), currentPart.order);
             } else {
                 mergedParts.add(currentPart);
                 currentPart = nextPart;
             }
         }
         mergedParts.add(currentPart);
-        return mergedParts;
+
+        return mergedParts.stream()
+                .sorted(Comparator.comparingInt(DocumentPart::order))
+                .toList();
     }
 
-    record DocumentPart(long start, long end) {};
+    record DocumentPart(int start, int end, int order) {};
 }

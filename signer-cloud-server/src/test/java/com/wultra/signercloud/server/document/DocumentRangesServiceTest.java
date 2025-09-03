@@ -21,12 +21,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.stream.Stream;
 
-import static com.wultra.signercloud.server.document.DocumentPartsService.DocumentPart;
+import static com.wultra.signercloud.server.document.DocumentRangesService.DocumentPart;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -35,20 +36,24 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @ExtendWith(MockitoExtension.class)
-class DocumentPartsServiceTest {
+class DocumentRangesServiceTest {
     private static final long FILE_SIZE = 100L;
+
+    @InjectMocks
+    private DocumentRangesService documentRangesService;
 
     private static Stream<Arguments> validRanges() {
         return Stream.of(
-                Arguments.of("bytes=0-9", List.of(new DocumentPart(0, 9))),
-                Arguments.of("bytes=0-9,20-29", List.of(new DocumentPart(0, 9), new DocumentPart(20, 29))),
-                Arguments.of("bytes=0-9,5-14", List.of(new DocumentPart(0, 14))),
-                Arguments.of("bytes=0-9,10-19", List.of(new DocumentPart(0, 19))),
-                Arguments.of("bytes=-10", List.of(new DocumentPart(90, 99))),
-                Arguments.of("bytes=95-", List.of(new DocumentPart(95, 99))),
+                Arguments.of("bytes=0-9", List.of(new DocumentPart(0, 9, 0))),
+                Arguments.of("bytes=0-9,20-29", List.of(new DocumentPart(0, 9, 0), new DocumentPart(20, 29, 1))),
+                Arguments.of("bytes=0-9,5-14", List.of(new DocumentPart(0, 14, 0))),
+                Arguments.of("bytes=0-9,10-19", List.of(new DocumentPart(0, 19, 0))),
+                Arguments.of("bytes=-10", List.of(new DocumentPart(90, 99, 0))),
+                Arguments.of("bytes=95-", List.of(new DocumentPart(95, 99, 0))),
                 Arguments.of("", List.of()),
-                Arguments.of("bytes=0-9,0-9,5-15", List.of(new DocumentPart(0, 15))),
-                Arguments.of("bytes=90-150", List.of(new DocumentPart(90, 99)))
+                Arguments.of("bytes=0-9,0-9,5-15", List.of(new DocumentPart(0, 15, 0))),
+                Arguments.of("bytes=90-150", List.of(new DocumentPart(90, 99, 0))),
+                Arguments.of("bytes=20-29,10-15", List.of(new DocumentPart(20, 29, 0), new DocumentPart(10, 15, 1)))
         );
     }
 
@@ -68,7 +73,7 @@ class DocumentPartsServiceTest {
         // -
 
         // when
-        final var parts = DocumentPartsService.getParts(header, FILE_SIZE);
+        final var parts = documentRangesService.getParts(header, FILE_SIZE);
 
         // then
         assertArrayEquals(expected.toArray(), parts.toArray());
@@ -80,7 +85,7 @@ class DocumentPartsServiceTest {
         // given
 
         // when
-        final var exception = assertThrows(DownloadDocumentException.class, () -> DocumentPartsService.getParts(header, FILE_SIZE));
+        final var exception = assertThrows(DownloadDocumentException.class, () -> documentRangesService.getParts(header, FILE_SIZE));
 
         // then
         assertEquals(expectedMessage, exception.getMessage());
