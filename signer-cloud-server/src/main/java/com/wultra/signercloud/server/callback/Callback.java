@@ -18,11 +18,14 @@
 
 package com.wultra.signercloud.server.callback;
 
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
@@ -30,36 +33,47 @@ import java.time.LocalDateTime;
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@Table("sc_callback_event")
+@Table("sc_callback")
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @ToString
-public class CallbackEvent {
+class Callback {
 
     @Id
-    @Sequence("sc_callback_event_seq")
+    @Sequence("sc_callback_seq")
     private long id;
 
+    private CallbackType callbackType;
+
+    private String callbackUrl;
+
     /**
-     * {@link Callback#getId()}
+     * Callback request authentication. May be encrypted, configured by {@link #encryptionMode}.
      */
-    private long callbackId;
+    @Builder.Default
+    private String authentication = "{}";
 
-    private String callbackData;
+    /**
+     * Encryption mode of {@link #authentication}.
+     */
+    private EncryptionMode encryptionMode;
 
-    private CallbackEventStatus status;
+    /**
+     * Maximum number of attempts to send the callback.
+     */
+    private Integer maxAttempts;
+
+    /**
+     * Initial backoff before the next sending attempt.
+     */
+    private Duration initialBackoff;
+
+    /**
+     * Duration for which the callback event is stored.
+     */
+    private Duration retentionPeriod;
 
     private LocalDateTime timestampCreated;
 
-    private LocalDateTime timestampLastCall;
-
-    private LocalDateTime timestampNextCall;
-
-    private LocalDateTime timestampDeleteAfter;
-
-    private LocalDateTime timestampRerunAfter;
-
-    private int attempts;
-
-    private String idempotencyKey;
+    private LocalDateTime timestampLastUpdated;
 }

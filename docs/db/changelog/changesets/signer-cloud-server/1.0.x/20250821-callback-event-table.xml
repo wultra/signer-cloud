@@ -85,4 +85,14 @@
         <createSequence sequenceName="sc_callback_event_seq" startValue="1" incrementBy="1" cacheSize="50"/>
     </changeSet>
 
+    <changeSet id="6" logicalFilePath="signer-cloud-server/1.0.x/20250821-callback-event-table.xml" author="Lubos Racansky">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <columnExists tableName="sc_callback_event" columnName="type" />
+            </not>
+        </preConditions>
+        <comment>Drop the column pa_application_callback</comment>
+        <dropColumn tableName="sc_callback_event" columnName="callback_type" />
+    </changeSet>
+
 </databaseChangeLog>

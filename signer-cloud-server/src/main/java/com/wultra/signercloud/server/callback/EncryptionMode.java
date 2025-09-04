@@ -15,51 +15,22 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.wultra.signercloud.server.callback;
 
-import lombok.*;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.relational.core.mapping.Sequence;
-import org.springframework.data.relational.core.mapping.Table;
-
-import java.time.LocalDateTime;
-
 /**
- * Callback event data access object.
+ * Enum representing encryption modes.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@Table("sc_callback_event")
-@Getter
-@Builder
-@ToString
-public class CallbackEvent {
-
-    @Id
-    @Sequence("sc_callback_event_seq")
-    private long id;
+public enum EncryptionMode {
 
     /**
-     * {@link Callback#getId()}
+     * No encryption.
      */
-    private long callbackId;
+    NO_ENCRYPTION,
 
-    private String callbackData;
-
-    private CallbackEventStatus status;
-
-    private LocalDateTime timestampCreated;
-
-    private LocalDateTime timestampLastCall;
-
-    private LocalDateTime timestampNextCall;
-
-    private LocalDateTime timestampDeleteAfter;
-
-    private LocalDateTime timestampRerunAfter;
-
-    private int attempts;
-
-    private String idempotencyKey;
+    /**
+     * AES encryption with HMAC-based index.
+     */
+    AES_HMAC
 }

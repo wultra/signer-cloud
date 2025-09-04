@@ -19,19 +19,19 @@ package com.wultra.signercloud.server.callback;
 
 import lombok.Builder;
 
-import java.util.Map;
+import java.time.Duration;
 
 /**
- * Data class holding Callback Event details.
+ * Data class holding config of a Callback Event.
  *
- * @param id ID of {@link CallbackEvent}
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 @Builder
-record CallbackEventData(
-        Long id,
-        Map<String, Object> callbackData,
-        CallbackEventStatus status,
-        String idempotencyKey,
-        CallbackData callbackConfig
-) { }
+record CallbackData(
+        String entityId,
+        String url,
+        Duration retentionPeriod,
+        Duration initialBackoff,
+        Integer maxAttempts
+) {
+}

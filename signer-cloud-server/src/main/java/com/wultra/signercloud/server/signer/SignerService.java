@@ -21,7 +21,6 @@ import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.signercloud.server.callback.CallbackEvent;
 import com.wultra.signercloud.server.callback.CallbackEventStatus;
 import com.wultra.signercloud.server.callback.CallbackService;
-import com.wultra.signercloud.server.callback.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
@@ -35,8 +34,6 @@ import java.security.cert.CertificateException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Service for {@link Signer} operations.
@@ -98,16 +95,17 @@ class SignerService {
         logger.info("Creating {} expiration callbacks.", signers.size());
         final LocalDateTime now = LocalDateTime.now();
         final List<CallbackEvent> callbackEvents = signers.stream()
-                .map(signer -> createCallback(signer, now))
+                .map(signer -> createCallbackEvent(signer, now))
                 .toList();
         callbackService.save(callbackEvents);
     }
 
-    private static CallbackEvent createCallback(final Signer signer, final LocalDateTime now) {
+    private CallbackEvent createCallbackEvent(final Signer signer, final LocalDateTime now) {
+
         return CallbackEvent.builder()
                 .status(CallbackEventStatus.PENDING)
                 .callbackData(createCallbackData(signer))
-                .callbackType(CallbackType.EXPIRED)
+                .callbackId(1) // TODO Lubos load one or more callbacks
                 .timestampCreated(now)
                 .idempotencyKey(UUID.randomUUID().toString())
                 .build();

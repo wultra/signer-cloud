@@ -1,7 +1,6 @@
 package com.wultra.signercloud.server.signer;
 
 import com.wultra.signercloud.server.callback.CallbackEventStatus;
-import com.wultra.signercloud.server.callback.CallbackType;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +39,7 @@ class SignerServiceIntegrationTest {
 
         final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM sc_callback_event ORDER BY timestamp_created DESC LIMIT 1");
         assertNotNull(callbackEvent);
-        assertEquals(CallbackType.EXPIRED.toString(), callbackEvent.get("CALLBACK_TYPE"));
+        assertEquals(1L, callbackEvent.get("CALLBACK_ID"));
         assertEquals(CallbackEventStatus.PENDING.toString(), callbackEvent.get("STATUS"));
         assertEquals("{\"externalSignerId\": \"signer1\", \"userId\": \"user1\"}", callbackEvent.get("CALLBACK_DATA"));
         assertNotNull(callbackEvent.get("IDEMPOTENCY_KEY"));

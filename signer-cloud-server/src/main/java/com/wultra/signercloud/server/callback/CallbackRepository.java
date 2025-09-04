@@ -15,23 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+
 package com.wultra.signercloud.server.callback;
 
-import lombok.Builder;
-
-import java.time.Duration;
+import org.springframework.data.repository.CrudRepository;
 
 /**
- * Data class holding config of a Callback Event.
+ * Repository for  {@link Callback}.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@Builder
-record CallbackConfigData(
-        String entityId,
-        String url,
-        Duration retentionPeriod,
-        Duration initialBackoff,
-        Integer maxAttempts
-) {
+interface CallbackRepository extends CrudRepository<Callback, Long>  {
 }
