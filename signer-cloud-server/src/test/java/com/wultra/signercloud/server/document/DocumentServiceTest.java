@@ -29,14 +29,18 @@ import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
+import org.apache.commons.text.StringSubstitutor;
 import org.apache.hc.core5.http.ContentType;
-import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -47,9 +51,8 @@ import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,9 +79,10 @@ class DocumentServiceTest {
 
     private static final long DOCUMENT_CONTENT_ID = 2L;
     private static final byte[] UPLOADED_DOCUMENT_CONTENT = Base64.getDecoder().decode("JVBERi0xLjEKMSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlIC9QYWdlcyAvS2lkcyBbMyAwIFJdIC9Db3VudCAxID4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAxMCAxMF0gPj4KZW5kb2JqCnRyYWlsZXIKPDwvUm9vdCAxIDAgUiA+PnN0YXJ0eHJlZjoxMjMKJSVFT0YK");
-    private static final byte[] SIGNED_DOCUMENT_CONTENT = Arrays.concatenate(UPLOADED_DOCUMENT_CONTENT, "SIGNED".getBytes());
+    private static final byte[] SIGNED_DOCUMENT_CONTENT = org.bouncycastle.util.Arrays.concatenate(UPLOADED_DOCUMENT_CONTENT, "SIGNED".getBytes());
 
     private static final String MULTIPART_FILE_FIELD_NAME = "content";
+    private static final String ACCEPT_RANGES_BYTES = "bytes";
 
     private static final Duration WAITING_TIMEOUT = Duration.ofSeconds(60);
 
@@ -96,6 +100,9 @@ class DocumentServiceTest {
 
     @Mock
     private PAdESService pAdESService;
+
+    @Mock
+    private DocumentRangesService documentRangesService;
 
     @InjectMocks
     private DocumentService documentService;
@@ -421,6 +428,159 @@ class DocumentServiceTest {
         assertSuccessSignResult(result);
     }
 
+    @Test
+    void testDownloadDocumentWhenDocumentIsNotFoundThenThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID, null);
+
+        // then
+        assertFailResult(result, DocumentNotFoundException.class, "Document not found for document ID: " + DOCUMENT_UUID);
+    }
+
+    @Test
+    void testDownloadDocumentWhenDocumentContentIsNotFoundThenThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.empty());
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID, null);
+
+        // then
+        assertFailResult(result, DocumentNotFoundException.class, "Document content not found for document ID: " + DOCUMENT_UUID);
+    }
+
+    @Test
+    void testDownloadDocumentWhenDocumentIsNotSignedYetThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .status(DocumentStatus.WAITING)
+                .build();
+
+        final var documentContent = DocumentContent.builder().build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID, null);
+
+        // then
+        assertFailResult(result, DownloadDocumentException.class, "Document is not signed yet");
+    }
+
+    @Test
+    void testDownloadDocumentWhenRangeHeaderIsInvalidThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .status(DocumentStatus.SIGNED)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(SIGNED_DOCUMENT_CONTENT)
+                .build();
+
+        final var rangeHeader = "bytes=abc";
+        final var rangeExceptionMessage = "Invalid range header: %s Reason: Value can't be parsed to number".formatted(rangeHeader);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(documentRangesService.getParts(rangeHeader, SIGNED_DOCUMENT_CONTENT.length)).thenThrow(new DownloadDocumentException(rangeExceptionMessage));
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID, "bytes=abc");
+
+        // then
+        assertFailResult(result, DownloadDocumentException.class, rangeExceptionMessage);
+    }
+
+    @Test
+    void testDownloadDocumentWhenRangeHeaderIsNotProvidedThenSuccessResultWithCorrectResponseIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .status(DocumentStatus.SIGNED)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(SIGNED_DOCUMENT_CONTENT)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(documentRangesService.getParts(null, SIGNED_DOCUMENT_CONTENT.length)).thenReturn(Collections.emptyList());
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID, null);
+
+        // then
+        assertSuccessFullDownloadResult(result);
+    }
+
+    @Test
+    void testDownloadDocumentWhenHeaderWithSingleRangeIsProvidedThenSuccessResultWithCorrectResponseIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .status(DocumentStatus.SIGNED)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(SIGNED_DOCUMENT_CONTENT)
+                .build();
+
+        final var rangeHeader = "bytes=0-9";
+        final var parsedRanges = List.of(new DocumentRangesService.DocumentPart(0, 9, 0));
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(documentRangesService.getParts(rangeHeader, SIGNED_DOCUMENT_CONTENT.length)).thenReturn(parsedRanges);
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID, rangeHeader);
+
+        // then
+        assertSuccessSinglePartDownloadResult(result);
+    }
+
+    @Test
+    void testDownloadDocumentWhenHeaderWithMultipleRangesIsProvidedThenSuccessResultWithCorrectResponseIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .status(DocumentStatus.SIGNED)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(SIGNED_DOCUMENT_CONTENT)
+                .build();
+
+        final var rangeHeader = "bytes=0-9,20-29";
+        final var parsedRanges = List.of(
+                new DocumentRangesService.DocumentPart(0, 9, 0),
+                new DocumentRangesService.DocumentPart(20, 29, 1)
+        );
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(documentRangesService.getParts(rangeHeader, SIGNED_DOCUMENT_CONTENT.length)).thenReturn(parsedRanges);
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID, rangeHeader);
+
+        // then
+        assertSuccessMultiplePartsDownloadResult(result);
+    }
+
     private void assertFailResult(final Try<?> result, final Class<? extends Throwable> exceptionType, final String expectedMessage) {
         assertFalse(result.isSuccess());
 
@@ -469,5 +629,91 @@ class DocumentServiceTest {
         request.setServerPort(8080);
 
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+    }
+
+    private void assertSuccessFullDownloadResult(final Try<ResponseEntity<byte[]>> result) {
+        assertTrue(result.isSuccess());
+
+        final var response = result.getResponse();
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        final var headers = response.getHeaders();
+        assertEquals(SIGNED_DOCUMENT_CONTENT.length, headers.getContentLength());
+        assertEquals(MediaType.APPLICATION_PDF, headers.getContentType());
+        assertEquals(List.of(ACCEPT_RANGES_BYTES), headers.get(HttpHeaders.ACCEPT_RANGES));
+        assertNull(headers.get(HttpHeaders.CONTENT_RANGE));
+
+        assertArrayEquals(SIGNED_DOCUMENT_CONTENT, response.getBody());
+    }
+
+    private void assertSuccessSinglePartDownloadResult(final Try<ResponseEntity<byte[]>> result) {
+        assertTrue(result.isSuccess());
+
+        final var response = result.getResponse();
+        assertEquals(HttpStatus.PARTIAL_CONTENT, response.getStatusCode());
+
+        final var headers = response.getHeaders();
+        assertEquals(10, headers.getContentLength());
+        assertEquals(MediaType.APPLICATION_PDF, headers.getContentType());
+        assertEquals(List.of(ACCEPT_RANGES_BYTES), headers.get(HttpHeaders.ACCEPT_RANGES));
+        assertEquals(List.of("bytes 0-9/231"), headers.get(HttpHeaders.CONTENT_RANGE));
+
+        final var expectedContent = Arrays.copyOfRange(SIGNED_DOCUMENT_CONTENT, 0, 10);
+        assertArrayEquals(expectedContent, response.getBody());
+    }
+
+    private void assertSuccessMultiplePartsDownloadResult(final Try<ResponseEntity<byte[]>> result) {
+        assertTrue(result.isSuccess());
+
+        final var response = result.getResponse();
+        assertEquals(HttpStatus.PARTIAL_CONTENT, response.getStatusCode());
+
+        final var actualBody = new String(response.getBody());
+        final var separator = findSeparator(actualBody);
+        final var expectedBody = buildExpectedMultiRangesBody(separator);
+        assertEquals(expectedBody, actualBody);
+
+        final var headers = response.getHeaders();
+        assertEquals(expectedBody.length(), headers.getContentLength());
+        assertEquals(List.of("multipart/byteranges; boundary=" + separator), headers.get(HttpHeaders.CONTENT_TYPE));
+        assertEquals(List.of(ACCEPT_RANGES_BYTES), headers.get(HttpHeaders.ACCEPT_RANGES));
+        assertNull(headers.get(HttpHeaders.CONTENT_RANGE));
+    }
+
+    private static String findSeparator(final String body) {
+        final var pattern = Pattern.compile("--(MULTIPART_BYTERANGES_\\d+)");
+        final var matcher = pattern.matcher(body);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return fail("Response body does not contain expected boundary pattern");
+    }
+
+    private String buildExpectedMultiRangesBody(final String separator) {
+        final var template = """
+                --${boundary}
+                Content-Type: ${contentType}
+                Content-Range: bytes 0-9/${totalLength}
+                
+                ${range1}
+                --${boundary}
+                Content-Type: ${contentType}
+                Content-Range: bytes 20-29/${totalLength}
+                
+                ${range2}
+                --${boundary}--
+                """;
+
+        final var values = Map.of(
+                "boundary", separator,
+                "contentType", MediaType.APPLICATION_PDF,
+                "totalLength", SIGNED_DOCUMENT_CONTENT.length,
+                "range1", new String(Arrays.copyOfRange(SIGNED_DOCUMENT_CONTENT, 0, 10)),
+                "range2", new String(Arrays.copyOfRange(SIGNED_DOCUMENT_CONTENT, 20, 30))
+        );
+
+        return StringSubstitutor.replace(template, values);
     }
 }

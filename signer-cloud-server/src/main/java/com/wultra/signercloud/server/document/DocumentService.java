@@ -457,6 +457,7 @@ class DocumentService {
             return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
                     .header(HttpHeaders.CONTENT_TYPE, "multipart/byteranges; boundary=" + boundary)
                     .header(HttpHeaders.ACCEPT_RANGES, ACCEPT_RANGES_BYTES)
+                    .contentLength(multiPartContent.length)
                     .body(multiPartContent);
 
         } catch (final IOException e) {
