@@ -32,6 +32,16 @@ import java.util.List;
  */
 interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
 
+    /**
+     * Finds a list of callback events with the status 'PENDING' where the next call timestamp
+     * is earlier than the provided timestamp. Results are ordered by the next call timestamp
+     * in descending order and limited to the provided number of rows.
+     *
+     * @param timestamp the timestamp used to filter callback events with a next call time prior to this value
+     * @param limit the maximum number of callback events to return
+     * @return a list of pending callback events that match the specified criteria
+     * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
+     */
     @Query("""
             SELECT c FROM sc_callback_event c
             WHERE c.status = 'PENDING'
