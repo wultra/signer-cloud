@@ -37,7 +37,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder(toBuilder = true)
 @ToString
-class Callback {
+public class Callback {
 
     @Id
     @Sequence("sc_callback_seq")

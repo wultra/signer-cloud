@@ -18,9 +18,7 @@
 package com.wultra.signercloud.server.signer;
 
 import com.wultra.core.rest.client.base.RestClientException;
-import com.wultra.signercloud.server.callback.CallbackEvent;
-import com.wultra.signercloud.server.callback.CallbackEventStatus;
-import com.wultra.signercloud.server.callback.CallbackService;
+import com.wultra.signercloud.server.callback.*;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
@@ -34,6 +32,7 @@ import java.security.cert.CertificateException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Stream;
 
 /**
  * Service for {@link Signer} operations.
@@ -94,18 +93,29 @@ class SignerService {
     private void createCallbacks(final List<Signer> signers) {
         logger.info("Creating {} expiration callbacks.", signers.size());
         final LocalDateTime now = LocalDateTime.now();
+        final List<Callback> callbacks = callbackService.findCallbacks(CallbackType.EXPIRED);
+
         final List<CallbackEvent> callbackEvents = signers.stream()
-                .map(signer -> createCallbackEvent(signer, now))
+                .flatMap(signer -> createCallbackEvents(signer, callbacks, now))
                 .toList();
+
         callbackService.save(callbackEvents);
     }
 
-    private CallbackEvent createCallbackEvent(final Signer signer, final LocalDateTime now) {
+    private static Stream<CallbackEvent> createCallbackEvents(final Signer signer, final List<Callback> callbacks, final LocalDateTime now) {
+        if (callbacks.isEmpty()) {
+            logger.info("There are no expiration callbacks configured.");
+        }
 
+        return callbacks.stream()
+                .map(callback -> createCallbackEvent(signer, callback, now));
+    }
+
+    private static CallbackEvent createCallbackEvent(final Signer signer, final Callback callback, final LocalDateTime now) {
         return CallbackEvent.builder()
                 .status(CallbackEventStatus.PENDING)
                 .callbackData(createCallbackData(signer))
-                .callbackId(1) // TODO Lubos load one or more callbacks
+                .callbackId(callback.getId())
                 .timestampCreated(now)
                 .idempotencyKey(UUID.randomUUID().toString())
                 .build();

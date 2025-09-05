@@ -22,6 +22,8 @@ import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
@@ -29,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 @AllArgsConstructor
 public class CallbackService {
+
+    private final CallbackRepository callbackRepository;
 
     private final CallbackEventRepository callbackEventRepository;
 
@@ -39,5 +43,15 @@ public class CallbackService {
      */
     public void save(final Iterable<CallbackEvent> events) {
         callbackEventRepository.saveAll(events);
+    }
+
+    /**
+     * Finds a list of {@link Callback} entities of the specified type.
+     *
+     * @param callbackType the type of callback to filter by
+     * @return a list of matching {@link Callback} entities, or an empty list if none are found
+     */
+    public List<Callback> findCallbacks(final CallbackType callbackType) {
+        return callbackRepository.findCallbacksByCallbackType(callbackType);
     }
 }
