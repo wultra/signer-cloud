@@ -15,27 +15,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
+package com.wultra.signercloud.server.callback;
 
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Signer configuration properties.
+ * Callback configuration properties.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@ConfigurationProperties(prefix = "signer-cloud.server.signer")
+@ConfigurationProperties(prefix = "signer-cloud.server.callback")
 @Getter
 @Setter
-class SignerConfigurationProperties {
+class CallbackConfigurationProperties {
 
-    private Expiration expiration = new Expiration(false, new Job(1000));
+    private Configuration dispatchPendingCallbackEvents = new Configuration(new Job(100));
 
-    record Job(int limit) {
+    private Configuration cleanupCallbackEvents = new Configuration(new Job(1000));
+
+    private Configuration rerunStaleCallbackEvents = new Configuration(new Job(1000));
+
+    record Configuration(Job job) {
     }
 
-    record Expiration(boolean callbackEnabled, Job job) {
+    record Job(int limit) {
     }
 }

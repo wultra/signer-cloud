@@ -47,7 +47,7 @@ interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
             WHERE c.status = 'COMPLETED'
             AND c.timestamp_delete_after < :timestamp
             """)
-    void deleteCompletedAfterRetentionPeriod(LocalDateTime timestamp);
+    int deleteCompletedAfterRetentionPeriod(LocalDateTime timestamp);
 
     @Modifying
     @Query("""
