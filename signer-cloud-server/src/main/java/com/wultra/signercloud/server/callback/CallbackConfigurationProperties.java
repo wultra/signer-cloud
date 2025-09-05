@@ -21,6 +21,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 /**
  * Callback configuration properties.
  *
@@ -32,6 +34,46 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 class CallbackConfigurationProperties {
 
     private Configuration dispatchPendingCallbackEvents = new Configuration(new Job(100));
+
+    /**
+     * Whether HTTP proxy is enabled for outgoing HTTP requests.
+     */
+    private Boolean httpProxyEnabled;
+
+    /**
+     * HTTP proxy host.
+     */
+    private String httpProxyHost;
+
+    /**
+     * HTTP proxy port.
+     */
+    private Integer httpProxyPort;
+
+    /**
+     * HTTP proxy username, use only in case HTTP proxy authentication is required.
+     */
+    private String httpProxyUsername;
+
+    /**
+     * HTTP proxy password, use only in case HTTP proxy authentication is required.
+     */
+    private String httpProxyPassword;
+
+    /**
+     * HTTP connection timeout.
+     */
+    private Duration httpConnectionTimeout = Duration.ofSeconds(5);
+
+    /**
+     * HTTP response timeout.
+     */
+    private Duration httpResponseTimeout = Duration.ofSeconds(60);
+
+    /**
+     * HTTP connection max idle time.
+     */
+    private Duration httpMaxIdleTime;
 
     record Configuration(Job job) {
     }
