@@ -61,7 +61,7 @@ class DocumentRangesService {
         try {
             return HttpRange.parseRanges(ranges);
         } catch (final IllegalArgumentException e) {
-            final var message = String.format("Invalid range header: %s Reason: %s", ranges, e.getMessage());
+            final var message = "Invalid range header: %s Reason: %s".formatted(ranges, e.getMessage());
             throw new DownloadDocumentException(message);
         }
     }
