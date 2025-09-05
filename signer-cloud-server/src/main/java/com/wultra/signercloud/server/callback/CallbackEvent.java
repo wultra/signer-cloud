@@ -32,7 +32,7 @@ import java.time.LocalDateTime;
  */
 @Table("sc_callback_event")
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @ToString
 public class CallbackEvent {
 

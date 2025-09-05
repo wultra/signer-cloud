@@ -33,5 +33,5 @@ record CallbackEventData(
         Map<String, Object> callbackData,
         CallbackEventStatus status,
         String idempotencyKey,
-        CallbackData callbackConfig
+        CallbackData config
 ) { }
