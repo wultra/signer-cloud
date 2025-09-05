@@ -83,7 +83,7 @@ class SignerService {
         final Instant now = Instant.now();
         final List<Signer> signers = signerRepository.markAsExpired(now, limit);
 
-        if (configurationProperties.getExpiration().callback().enabled()) {
+        if (configurationProperties.getExpiration().callbackEnabled()) {
             createCallbacks(signers);
         }
 
