@@ -51,20 +51,18 @@ class CallbackJob {
     @Scheduled(cron = "${signer-cloud.server.callback.cleanup-callback-events.job.cron}", zone = "UTC")
     @SchedulerLock(name = "cleanupCallbackEvents")
     public void cleanupCallbackEvents() {
-        final int limit = configurationProperties.getCleanupCallbackEvents().job().limit();
-        logger.info("action: cleanupCallbackEvents, state: initiated, limit: {}", limit);
+        logger.info("action: cleanupCallbackEvents, state: initiated}");
         LockAssert.assertLocked();
-        final var result = callbackService.deleteCallbackEventsAfterRetentionPeriod(limit);
+        final var result = callbackService.deleteCallbackEventsAfterRetentionPeriod();
         logger.info("action: cleanupCallbackEvents, state: succeeded, count: {}", result);
     }
 
     @Scheduled(cron = "${signer-cloud.server.callback.rerun-stale-callback-events.job.cron}", zone = "UTC")
     @SchedulerLock(name = "rerunStaleCallbackEvents")
     public void rerunStaleCallbackEvents() {
-        final int limit = configurationProperties.getRerunStaleCallbackEvents().job().limit();
-        logger.info("action: rerunStaleCallbackEvents, state: initiated, limit: {}", limit);
+        logger.info("action: rerunStaleCallbackEvents, state: initiated");
         LockAssert.assertLocked();
-        final var result = callbackService.resetStaleCallbackEvents(limit);
+        final var result = callbackService.resetStaleCallbackEvents();
         logger.info("action: rerunStaleCallbackEvents, state: succeeded, count: {}", result);
     }
 }

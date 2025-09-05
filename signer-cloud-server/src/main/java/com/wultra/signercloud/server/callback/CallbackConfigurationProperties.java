@@ -33,10 +33,6 @@ class CallbackConfigurationProperties {
 
     private Configuration dispatchPendingCallbackEvents = new Configuration(new Job(100));
 
-    private Configuration cleanupCallbackEvents = new Configuration(new Job(1000));
-
-    private Configuration rerunStaleCallbackEvents = new Configuration(new Job(1000));
-
     record Configuration(Job job) {
     }
 

@@ -18,7 +18,6 @@
 
 package com.wultra.signercloud.server.callback;
 
-import org.springframework.data.domain.Pageable;
 import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -38,8 +37,9 @@ interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
             WHERE c.status = 'PENDING'
             AND c.timestamp_next_call < :timestamp
             ORDER BY c.timestamp_next_call DESC
+            FETCH FIRST :limit ROWS ONLY
             """)
-    List<CallbackEvent> findPending(LocalDateTime timestamp, Pageable pageable);
+    List<CallbackEvent> findPending(LocalDateTime timestamp, int limit);
 
     @Modifying
     @Query("""
