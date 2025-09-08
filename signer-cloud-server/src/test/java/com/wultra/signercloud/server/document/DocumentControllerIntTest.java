@@ -69,6 +69,7 @@ class DocumentControllerIntTest {
     private static final String UPLOAD_DOCUMENT_ENDPOINT = "/api/documents";
     private static final String SIGN_DOCUMENT_ENDPOINT = "/api/documents/{documentId}/signature";
     private static final String DOWNLOAD_DOCUMENT_ENDPOINT = "/api/documents/{documentId}/file";
+    private static final String DELETE_DOCUMENT_ENDPOINT = "/api/documents/{documentId}";
     private static final String CONTENT_TYPE = "application/pdf";
     private static final String DOCUMENT_NAME_PARAM = "name";
     private static final String EXTERNAL_DOCUMENT_ID_PARAM = "externalId";
@@ -456,6 +457,35 @@ class DocumentControllerIntTest {
 
         // then
         assertDownloadResponseWithMultipleParts(result.getResponse());
+    }
+
+
+    @Test
+    void testDeleteWhenDocumentDoesNotExistThen200IsReturned() throws Exception {
+        // given
+        // -
+
+        // when / then
+        mockMvc.perform(MockMvcRequestBuilders.delete(DELETE_DOCUMENT_ENDPOINT, DOCUMENT_UUID))
+                .andExpect(status().isOk())
+                .andReturn();
+    }
+
+    @Test
+    void testDeleteWhenDocumentExistsThen200IsReturnedAndDocumentIsDeletedInDatabase() throws Exception {
+        // given
+        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
+        final var documentContentId = createDocumentContentInDatabase(signedDocumentContent);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
+
+        // when
+        mockMvc.perform(MockMvcRequestBuilders.delete(DELETE_DOCUMENT_ENDPOINT, DOCUMENT_UUID))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        assertEquals(0, documentRepository.count());
+        assertEquals(0, documentContentRepository.count());
     }
 
     private MockMultipartFile loadFile(final String contentType) {

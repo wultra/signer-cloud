@@ -493,6 +493,28 @@ class DocumentServiceTest {
         assertSuccessDownloadResult(result);
     }
 
+    @Test
+    void testDeleteDocumentWhenDocumentDoesNotExistThenNoExceptionIsThrown() {
+        // given
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
+
+        // when / then
+        assertDoesNotThrow(() -> documentService.deleteDocument(DOCUMENT_UUID));
+    }
+
+    @Test
+    void testDeleteDocumentWhenDocumentExistThenNoExceptionIsThrown() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+
+        // when / then
+        assertDoesNotThrow(() -> documentService.deleteDocument(DOCUMENT_UUID));
+    }
+
     private void assertFailResult(final Try<?> result, final Class<? extends Throwable> exceptionType, final String expectedMessage) {
         assertFalse(result.isSuccess());
 

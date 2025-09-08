@@ -404,8 +404,8 @@ class DocumentService {
 
         if (documentOpt.isPresent()) {
             final var document = documentOpt.get();
-            documentContentRepository.deleteById(document.getDocumentContentId());
             documentRepository.delete(document);
+            documentContentRepository.deleteById(document.getDocumentContentId());
         }
     }
 
