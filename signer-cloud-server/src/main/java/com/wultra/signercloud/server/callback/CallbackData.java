@@ -28,7 +28,7 @@ import java.time.Duration;
  */
 @Builder
 record CallbackData(
-        String entityId,
+        Long id,
         String url,
         Duration retentionPeriod,
         Duration initialBackoff,

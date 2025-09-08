@@ -185,8 +185,8 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
         }
         try {
             return objectMapper.readValue(authentication, CallbackAuthentication.class);
-        } catch (IOException ex) {
-            logger.error("Unable to parse JSON payload", ex);
+        } catch (IOException e) {
+            logger.error("Unable to parse JSON payload", e);
             return new CallbackAuthentication();
         }
     }

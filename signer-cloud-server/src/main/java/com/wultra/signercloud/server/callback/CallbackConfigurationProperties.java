@@ -61,11 +61,22 @@ class CallbackConfigurationProperties {
     private double backoffMultiplier = 1.5;
 
     /**
+     * Period after which a Callback Event is considered stale and should be dispatched again.
+     * The default value is computed as a function of configured HTTP timeouts.
+     */
+    private Duration forceRerunPeriod;
+
+    /**
      * Number of allowed Callback Events failures in a row.
      * When the threshold is reached, no other events with the same Callback configuration will be posted.
      * {@code -1} means that the threshold is disabled.
      */
     private int failureThreshold = 200;
+
+    /**
+     * Period after which a Callback Event will be dispatched even though the failure threshold is reached.
+     */
+    private Duration failureResetTimeout = Duration.ofSeconds(60);
 
     /**
      * Whether HTTP proxy is enabled for outgoing HTTP requests.
