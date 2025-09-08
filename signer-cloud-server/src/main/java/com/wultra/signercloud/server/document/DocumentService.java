@@ -394,6 +394,21 @@ class DocumentService {
         return new ByteArrayResource(documentContent.getContent());
     }
 
+    /**
+     * Deletes the {@link Document} and it's {@link DocumentContent}.
+     *
+     * @param documentUuid identifier of the document to be deleted
+     */
+    void deleteDocument(final String documentUuid) {
+        final var documentOpt = documentRepository.findByDocumentId(documentUuid);
+
+        if (documentOpt.isPresent()) {
+            final var document = documentOpt.get();
+            documentContentRepository.deleteById(document.getDocumentContentId());
+            documentRepository.delete(document);
+        }
+    }
+
     @Builder
     record CleanupResult(String rejectedDocuments, String signedDocuments, String waitingDocuments) {
     }
