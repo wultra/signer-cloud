@@ -107,23 +107,22 @@ public class DocumentController {
 
     @Operation(
             summary = "Downloads signed document",
-            description = "Downloads full or partial (if the {@code Range} header is provided) content of the signed document." +
-                    "In case of multiple ranges, server does not process",
+            description = "Downloads the full content of the signed document, or a partial segment if the {@code Range} header is provided. " +
+                    "In the case of multiple ranges, the server does not process the {@code Range} header but instead splits the response into parts exactly as requested by the client.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
                             description = "Full document content",
-                            content = @Content(schema = @Schema(implementation = byte[].class))
+                            content = @Content(schema = @Schema(implementation = Resource.class))
                     ),
                     @ApiResponse(
                             responseCode = "206",
-                            description = "Partial document content according to the {@code Range} header. Overlapping or are adjacent ranges are merged.",
-                            content = @Content(schema = @Schema(implementation = byte[].class))
+                            description = "Partial document content according to the {@code Range} header.",
+                            content = @Content(schema = @Schema(implementation = Resource.class))
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Document not found, not signed yet or request is invalid (malformed value of {@code Range} header for example). " +
-                                    "See the error message for details"
+                            description = "Document not found, not signed yet. See the error message for details"
                     )
             }
     )
