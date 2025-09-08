@@ -69,6 +69,7 @@ class DocumentControllerIntTest {
     private static final String UPLOAD_DOCUMENT_ENDPOINT = "/api/documents";
     private static final String SIGN_DOCUMENT_ENDPOINT = "/api/documents/{documentId}/signature";
     private static final String DOWNLOAD_DOCUMENT_ENDPOINT = "/api/documents/{documentId}/file";
+    private static final String REJECT_DOCUMENT_ENDPOINT = "/api/documents/{documentId}";
     private static final String CONTENT_TYPE = "application/pdf";
     private static final String DOCUMENT_NAME_PARAM = "name";
     private static final String EXTERNAL_DOCUMENT_ID_PARAM = "externalId";
@@ -478,6 +479,84 @@ class DocumentControllerIntTest {
         assertDownloadResponseWithMultipleParts(result.getResponse());
     }
 
+    @Test
+    void testRejectWhenRequestWithInvalidStatusIsSentThen400WithCorrectResponseIsReturned() throws Exception {
+        // given
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.WAITING);
+
+        // when
+        final var result = mockMvc.perform(MockMvcRequestBuilders.put(REJECT_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+
+        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Invalid status in the request body. Expected: REJECTED, actual: WAITING");
+    }
+
+    @Test
+    void testRejectWhenDocumentIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
+        // given
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.REJECTED);
+
+        // when
+        final var result = mockMvc.perform(MockMvcRequestBuilders.put(REJECT_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+
+        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Document not found for document ID: " + DOCUMENT_UUID);
+    }
+
+    @Test
+    void testRejectWhenDocumentStatusIsChangedThen200WithCorrectResponseIsReturned() throws Exception {
+        // given
+        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
+
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.REJECTED);
+
+        // when
+        final var result = mockMvc.perform(MockMvcRequestBuilders.put(REJECT_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), RejectDocumentResponse.class);
+
+        assertRejectResponse(responseBody);
+    }
+
+    @Test
+    void testRejectWhenDocumentStatusIsChangedThenCorrectValuesAreStoredIntoDatabase() throws Exception {
+        // given
+        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
+        final var documentContentId = createDocumentContentInDatabase(signedDocumentContent);
+        final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
+
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.REJECTED);
+
+        // when
+        mockMvc.perform(MockMvcRequestBuilders.put(REJECT_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(requestBody)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        assertRejectedDocument(documentId);
+    }
+
     private MockMultipartFile loadFile(final String contentType) {
         return new MockMultipartFile(
                 "file",
@@ -547,7 +626,7 @@ class DocumentControllerIntTest {
         assertEquals(HASH, response.hash());
     }
 
-    private void assertUploadedDocument(final Document document, final String expectedDocumentId) throws IOException {
+    private void assertUploadedDocument(final Document document, final String expectedDocumentId) {
         assertNotEquals(0, document.getId());
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(expectedDocumentId, document.getDocumentId());
@@ -659,5 +738,20 @@ class DocumentControllerIntTest {
         );
 
         return StringSubstitutor.replace(template, values);
+    }
+
+    private void assertRejectResponse(final RejectDocumentResponse response) {
+        assertEquals(DOCUMENT_UUID, response.documentId());
+        assertEquals(DUMMY_DOCUMENT_NAME, response.name());
+        assertEquals(FILENAME, response.filename());
+        assertEquals(UPLOADED_FILE_SIZE, response.size());
+        assertEquals(HASH, response.hash());
+    }
+
+    private void assertRejectedDocument(final long documentId) {
+        final var document = documentRepository.findById(documentId).orElseThrow();
+
+        assertEquals(DocumentStatus.REJECTED, document.getStatus());
+        assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
     }
 }
