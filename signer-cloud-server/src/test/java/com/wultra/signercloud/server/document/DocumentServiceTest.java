@@ -581,6 +581,38 @@ class DocumentServiceTest {
         assertSuccessMultiplePartsDownloadResult(result);
     }
 
+    @Test
+    void testRejectDocumentWhenDocumentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
+
+        // when
+        final var result = documentService.rejectDocument(DOCUMENT_UUID);
+
+        // then
+        assertFailResult(result, DocumentNotFoundException.class, "Document not found for document ID: " + DOCUMENT_UUID);
+    }
+
+    @Test
+    void testRejectDocumentWhenStatusIsChangesThenSuccessResultWithCorrectResponseIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentId(DOCUMENT_UUID)
+                .documentName(DUMMY_DOCUMENT_NAME)
+                .fileName(DUMMY_FILE_NAME)
+                .fileSize(UPLOADED_DOCUMENT_CONTENT.length)
+                .hash(DOCUMENT_HASH)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+
+        // when
+        final var result = documentService.rejectDocument(DOCUMENT_UUID);
+
+        // then
+        assertRejectSuccessResult(result);
+    }
+
     private void assertFailResult(final Try<?> result, final Class<? extends Throwable> exceptionType, final String expectedMessage) {
         assertFalse(result.isSuccess());
 
@@ -715,5 +747,16 @@ class DocumentServiceTest {
         );
 
         return StringSubstitutor.replace(template, values);
+    }
+
+    private void assertRejectSuccessResult(final Try<RejectDocumentResponse> result) {
+        assertTrue(result.isSuccess());
+
+        final var response = result.getResponse();
+        assertEquals(DOCUMENT_UUID, response.documentId());
+        assertEquals(DUMMY_DOCUMENT_NAME, response.name());
+        assertEquals(DUMMY_FILE_NAME, response.filename());
+        assertEquals(UPLOADED_DOCUMENT_CONTENT.length, response.size());
+        assertEquals(DOCUMENT_HASH, response.hash());
     }
 }
