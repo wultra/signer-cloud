@@ -28,6 +28,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.Assert;
 
 import javax.crypto.SecretKey;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.util.Arrays;
@@ -58,7 +60,7 @@ public class EncryptionService {
      * @param encryptionMode Encryption mode.
      * @param encryptionKeyProvider Provider for values used for derivation of secret key.
      * @return Decrypted value.
-     * @apiNote is not determined to encrypt binary data.
+     * @apiNote is not determined to dencrypt binary data.
      */
     public String decrypt(final String dataString, final EncryptionMode encryptionMode, final Supplier<List<String>> encryptionKeyProvider) {
         if (encryptionMode == EncryptionMode.NO_ENCRYPTION) {
@@ -72,9 +74,49 @@ public class EncryptionService {
         }
     }
 
+    /**
+     * Encrypt the given string.
+     *
+     * @param data String to encrypt.
+     * @param encryptionKeyProvider Provider for values used for derivation of secret key.
+     * @return Encryptable composite data.
+     * @apiNote is not determined to encrypt binary data.
+     */
+    public String encrypt(final String data, final Supplier<List<String>> encryptionKeyProvider) {
+        Assert.hasText(data, "Data must not be null");
+
+        final byte[] dataBytes = data.getBytes(StandardCharsets.UTF_8);
+        final byte[] encryptedData = encrypt(dataBytes, encryptionKeyProvider);
+        return Base64.getEncoder().encodeToString(encryptedData);
+    }
+
+    private byte[] encrypt(final byte[] data, final Supplier<List<String>> encryptionKeyProvider) {
+        final String masterDbEncryptionKeyBase64 = fetchMasterDbEncryptionKeyBase64();
+
+        try {
+            final SecretKey masterDbEncryptionKey = keyConvertor.convertBytesToSharedSecretKey(Base64.getDecoder().decode(masterDbEncryptionKeyBase64));
+
+            final SecretKey secretKey = deriveSecretKey(masterDbEncryptionKey, encryptionKeyProvider);
+
+            // Generate random IV
+            final byte[] iv = keyGenerator.generateRandomBytes(16);
+
+            // Encrypt serverPrivateKey using secretKey with generated IV
+            final byte[] encrypted = aesEncryptionUtils.encrypt(data, iv, secretKey);
+
+            // Generate output bytes as encrypted + IV
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            baos.write(iv);
+            baos.write(encrypted);
+            return baos.toByteArray();
+        } catch (InvalidKeyException | GenericCryptoException | CryptoProviderException | IOException e) {
+            logger.error(e.getMessage(), e);
+            throw new IllegalStateException("Failed to encrypt data", e);
+        }
+    }
+
     private byte[] decrypt(final byte[] data, final Supplier<List<String>> encryptionKeyProvider) {
-        final String masterDbEncryptionKeyBase64 = configuration.getMasterDbEncryptionKey();
-        Assert.hasText(masterDbEncryptionKeyBase64, "Missing master DB encryption key");
+        final String masterDbEncryptionKeyBase64 = fetchMasterDbEncryptionKeyBase64();
         // Check that the length of the byte array is sufficient to avoid AIOOBE on the next calls
         Assert.isTrue(data.length >= 16, "The byte array is too short");
 
@@ -96,8 +138,14 @@ public class EncryptionService {
         }
     }
 
+    private String fetchMasterDbEncryptionKeyBase64() {
+        final String masterDbEncryptionKeyBase64 = configuration.getMasterDbEncryptionKey();
+        Assert.hasText(masterDbEncryptionKeyBase64, "Missing master DB encryption key");
+        return masterDbEncryptionKeyBase64;
+    }
+
     /**
-     * Derive a secret key from the the master DB encryption key and the given derivations.
+     * Derive a secret key from the master DB encryption key and the given derivations.
      *
      * @param masterDbEncryptionKey Master DB encryption key.
      * @param encryptionKeyProvider Provider for values used for derivation of the secret key.
