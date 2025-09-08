@@ -582,12 +582,26 @@ class DocumentServiceTest {
     }
 
     @Test
+    void testRejectDocumentWhenInvalidStatusIsRequestedThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.SIGNED);
+
+        // when
+        final var result = documentService.rejectDocument(DOCUMENT_UUID, requestBody);
+
+        // then
+        assertFailResult(result, RejectDocumentException.class, "Invalid status in the request body. Expected: REJECTED, actual: SIGNED");
+    }
+
+    @Test
     void testRejectDocumentWhenDocumentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
         // given
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.REJECTED);
+
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
 
         // when
-        final var result = documentService.rejectDocument(DOCUMENT_UUID);
+        final var result = documentService.rejectDocument(DOCUMENT_UUID, requestBody);
 
         // then
         assertFailResult(result, DocumentNotFoundException.class, "Document not found for document ID: " + DOCUMENT_UUID);
@@ -604,10 +618,12 @@ class DocumentServiceTest {
                 .hash(DOCUMENT_HASH)
                 .build();
 
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.REJECTED);
+
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
 
         // when
-        final var result = documentService.rejectDocument(DOCUMENT_UUID);
+        final var result = documentService.rejectDocument(DOCUMENT_UUID, requestBody);
 
         // then
         assertRejectSuccessResult(result);

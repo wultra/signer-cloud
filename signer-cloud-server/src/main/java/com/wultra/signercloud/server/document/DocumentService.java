@@ -470,18 +470,27 @@ class DocumentService {
      * Rejects the {@link Document} identified by {@code documentId}.
      *
      * @param documentId identifier of the document to be rejected
+     * @param requestBody request body with the status {@link DocumentStatus#REJECTED}
      * @return response as a {@link Try}
      */
-    Try<RejectDocumentResponse> rejectDocument(final String documentId) {
+    Try<RejectDocumentResponse> rejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
         try {
-            final var response = processRejectDocument(documentId);
+            final var response = processRejectDocument(documentId, requestBody);
             return Try.success(response);
-        } catch (final DocumentNotFoundException e) {
+        } catch (final DocumentNotFoundException | RejectDocumentException e) {
             return Try.error(e);
         }
     }
 
-    private RejectDocumentResponse processRejectDocument(final String documentId) {
+    private RejectDocumentResponse processRejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
+        final var requestedStatus = requestBody.status();
+        if (requestedStatus != DocumentStatus.REJECTED) {
+            throw new RejectDocumentException("Invalid status in the request body. Expected: %s, actual: %s".formatted(
+                    DocumentStatus.REJECTED,
+                    requestedStatus)
+            );
+        }
+
         final var document = documentRepository.findByDocumentId(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
 

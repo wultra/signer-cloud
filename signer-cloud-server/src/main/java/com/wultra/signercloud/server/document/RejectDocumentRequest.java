@@ -17,7 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
-import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.NotNull;
 
 /**
  * REST API request to reject the {@link Document}.
@@ -25,6 +25,5 @@ import jakarta.validation.constraints.Pattern;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 record RejectDocumentRequest(
-        @Pattern(regexp = "REJECTED")
-        DocumentStatus status
+        @NotNull DocumentStatus status
 ) {}

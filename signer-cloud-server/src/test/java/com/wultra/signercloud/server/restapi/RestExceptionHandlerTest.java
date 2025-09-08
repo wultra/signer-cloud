@@ -17,10 +17,7 @@
  */
 package com.wultra.signercloud.server.restapi;
 
-import com.wultra.signercloud.server.document.DocumentNotFoundException;
-import com.wultra.signercloud.server.document.DocumentUploadException;
-import com.wultra.signercloud.server.document.DownloadDocumentException;
-import com.wultra.signercloud.server.document.SignDocumentException;
+import com.wultra.signercloud.server.document.*;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -149,6 +146,18 @@ class RestExceptionHandlerTest {
 
         // When
         final var response = restExceptionHandler.handleDownloadDocumentException(new DownloadDocumentException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
+    }
+
+    @Test
+    void testHandleRejectDocumentExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Invalid status in the request body. Expected: REJECTED, actual: SIGNED";
+
+        // When
+        final var response = restExceptionHandler.handleRejectDocumentException(new RejectDocumentException(message));
 
         // Then
         assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
