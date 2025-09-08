@@ -18,6 +18,7 @@
 
 package com.wultra.signercloud.server.callback;
 
+import com.wultra.signercloud.server.encryption.EncryptionMode;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.ToString;

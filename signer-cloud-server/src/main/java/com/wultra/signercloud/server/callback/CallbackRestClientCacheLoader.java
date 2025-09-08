@@ -22,6 +22,7 @@ import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.wultra.core.rest.client.base.DefaultRestClient;
 import com.wultra.core.rest.client.base.RestClient;
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.encryption.EncryptionService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.Nullable;
@@ -39,7 +40,9 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Specialization of {@link CacheLoader} for {@link CachedRestClient}.
@@ -56,6 +59,8 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
     private final CallbackConfigurationProperties callbackConfiguration;
 
     private final CallbackRepository callbackRepository;
+
+    private final EncryptionService encryptionService;
 
     @Override
     public @Nullable CachedRestClient load(final Long callbackId) throws RestClientException {
@@ -118,7 +123,7 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
                     .username(callbackConfiguration.getHttpProxyUsername())
                     .password(callbackConfiguration.getHttpProxyPassword());
         }
-        final CallbackAuthentication authentication = convert(callback.getAuthentication());
+        final CallbackAuthentication authentication = convert(decryptAuthentication(callback));
         final CallbackAuthentication.Certificate certificateAuth = authentication.getCertificate();
         if (certificateAuth != null && certificateAuth.isEnabled()) {
             final byte[] keyStoreBytes = StringUtils.hasText(certificateAuth.getKeyStoreContent())
@@ -178,7 +183,14 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
         return oAuth2ExchangeFilterFunction;
     }
 
-    // TODO (racansky, 2025-09-05) implement decryption
+    private String decryptAuthentication(final Callback callback) {
+        return encryptionService.decrypt(callback.getAuthentication(), callback.getEncryptionMode(), createEncryptionKeyProvider(callback.getId()));
+    }
+
+    private static Supplier<List<String>> createEncryptionKeyProvider(final Long callbackId) {
+        return () -> List.of(callbackId.toString());
+    }
+
     private CallbackAuthentication convert(String authentication) {
         if (authentication == null) {
             return new CallbackAuthentication();
