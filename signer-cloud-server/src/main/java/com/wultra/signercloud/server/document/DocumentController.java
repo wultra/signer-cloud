@@ -140,4 +140,19 @@ public class DocumentController {
             throw error;
         }
     }
+
+    @PutMapping("/{documentId}")
+    RejectDocumentResponse reject(@PathVariable final String documentId) throws Throwable {
+        logger.info("action: rejectDocument, state: initiated, documentId: {}", documentId);
+        final var result = documentService.rejectDocument(documentId);
+
+        if (result.isSuccess()) {
+            logger.info("action: rejectDocument, state: succeeded");
+            return result.getResponse();
+        } else {
+            final var error = result.getError();
+            logger.info("action: rejectDocument, state: failed, errorMessage: {}", error.getMessage());
+            throw error;
+        }
+    }
 }

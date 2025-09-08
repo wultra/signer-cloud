@@ -466,6 +466,41 @@ class DocumentService {
         }
     }
 
+    /**
+     * Rejects the {@link Document} identified by {@code documentId}.
+     *
+     * @param documentId identifier of the document to be rejected
+     * @return response as a {@link Try}
+     */
+    Try<RejectDocumentResponse> rejectDocument(final String documentId) {
+        try {
+            final var response = processRejectDocument(documentId);
+            return Try.success(response);
+        } catch (final DocumentNotFoundException e) {
+            return Try.error(e);
+        }
+    }
+
+    private RejectDocumentResponse processRejectDocument(final String documentId) {
+        final var document = documentRepository.findByDocumentId(documentId)
+                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
+
+        final var updatedDocument = document.toBuilder()
+                .timestampLastUpdated(Instant.now())
+                .status(DocumentStatus.REJECTED)
+                .build();
+
+        documentRepository.save(updatedDocument);
+
+        return new RejectDocumentResponse(
+                documentId,
+                document.getDocumentName(),
+                document.getFileName(),
+                document.getFileSize(),
+                document.getHash()
+        );
+    }
+
     @Builder
     record CleanupResult(String rejectedDocuments, String signedDocuments, String waitingDocuments) {
     }
