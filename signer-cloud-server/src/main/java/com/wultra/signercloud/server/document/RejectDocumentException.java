@@ -17,20 +17,13 @@
  */
 package com.wultra.signercloud.server.document;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
-
 /**
- * REST API request to reject the {@link Document}.
+ * Exception thrown for {@link Document} reject operation.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-record RejectDocumentRequest(
-        @Schema(
-                description = "The document status. Must be REJECTED.",
-                example = "REJECTED",
-                allowableValues = {"REJECTED"}
-        )
-        @NotNull
-        DocumentStatus status
-) {}
+public class RejectDocumentException extends RuntimeException {
+    public RejectDocumentException(final String message) {
+        super(message);
+    }
+}
