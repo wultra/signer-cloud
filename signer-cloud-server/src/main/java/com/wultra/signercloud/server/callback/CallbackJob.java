@@ -51,7 +51,7 @@ class CallbackJob {
     @Scheduled(cron = "${signer-cloud.server.callback.cleanup-callback-events.job.cron}", zone = "UTC")
     @SchedulerLock(name = "cleanupCallbackEvents")
     public void cleanupCallbackEvents() {
-        logger.info("action: cleanupCallbackEvents, state: initiated}");
+        logger.info("action: cleanupCallbackEvents, state: initiated");
         LockAssert.assertLocked();
         final var result = callbackService.deleteCallbackEventsAfterRetentionPeriod();
         logger.info("action: cleanupCallbackEvents, state: succeeded, count: {}", result);

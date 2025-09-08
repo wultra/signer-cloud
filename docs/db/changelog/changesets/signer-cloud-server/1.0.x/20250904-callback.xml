@@ -9,7 +9,7 @@
                 <tableExists tableName="sc_callback"/>
             </not>
         </preConditions>
-        <comment>Create a new table pa_application_callback</comment>
+        <comment>Create a new table sc_callback</comment>
         <createTable tableName="sc_callback">
             <column name="id" type="bigint">
                 <constraints primaryKey="true" />
@@ -50,7 +50,7 @@
                 <columnExists tableName="sc_callback_event" columnName="callback_id"/>
             </not>
         </preConditions>
-        <comment>Create a new colum sc_callback_event.callback_id</comment>
+        <comment>Create a new column sc_callback_event.callback_id</comment>
         <addColumn tableName="sc_callback_event">
             <column name="callback_id" type="bigint">
                 <constraints nullable="false" foreignKeyName="sc_callback_event_callback_id_fk" referencedTableName="sc_callback" referencedColumnNames="id" />

@@ -91,7 +91,7 @@
                 <columnExists tableName="sc_callback_event" columnName="type" />
             </not>
         </preConditions>
-        <comment>Drop the column pa_application_callback</comment>
+        <comment>Drop the column callback_type from sc_callback_event</comment>
         <dropColumn tableName="sc_callback_event" columnName="callback_type" />
     </changeSet>
 

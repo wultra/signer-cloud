@@ -103,7 +103,7 @@ class CallbackEventResponseHandler {
         }
 
         callbackEventRepository.save(builder.build());
-        incrementFailureCount(callbackEvent.getId());
+        incrementFailureCount(callbackEvent.getCallbackId());
     }
 
     /**
