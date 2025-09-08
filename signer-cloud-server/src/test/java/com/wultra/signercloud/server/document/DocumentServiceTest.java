@@ -30,6 +30,7 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import org.apache.hc.core5.http.ContentType;
+import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -79,7 +80,7 @@ class DocumentServiceTest {
 
     private static final long DOCUMENT_CONTENT_ID = 2L;
     private static final byte[] UPLOADED_DOCUMENT_CONTENT = Base64.getDecoder().decode("JVBERi0xLjEKMSAwIG9iago8PC9UeXBlIC9DYXRhbG9nIC9QYWdlcyAyIDAgUiA+PgplbmRvYmoKMiAwIG9iago8PC9UeXBlIC9QYWdlcyAvS2lkcyBbMyAwIFJdIC9Db3VudCAxID4+CmVuZG9iagozIDAgb2JqCjw8L1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCAxMCAxMF0gPj4KZW5kb2JqCnRyYWlsZXIKPDwvUm9vdCAxIDAgUiA+PnN0YXJ0eHJlZjoxMjMKJSVFT0YK");
-    private static final byte[] SIGNED_DOCUMENT_CONTENT = org.bouncycastle.util.Arrays.concatenate(UPLOADED_DOCUMENT_CONTENT, "SIGNED".getBytes());
+    private static final byte[] SIGNED_DOCUMENT_CONTENT = Arrays.concatenate(UPLOADED_DOCUMENT_CONTENT, "SIGNED".getBytes());
 
     private static final String MULTIPART_FILE_FIELD_NAME = "content";
 
