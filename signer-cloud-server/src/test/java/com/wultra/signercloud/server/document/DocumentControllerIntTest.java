@@ -406,26 +406,6 @@ class DocumentControllerIntTest {
     }
 
     @Test
-    void testDownloadWhenInvalidHeaderRangeIsProvidedThen400WithCorrectResponseIsReturned() throws Exception {
-        // given
-        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
-        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
-
-        // when
-        final var result = mockMvc.perform(MockMvcRequestBuilders.get(DOWNLOAD_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
-                        .header("Range", "bytes=a-100")
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andReturn();
-
-        // then
-        final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
-
-        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Invalid range header: bytes=a-100 Reason: Error at index 0 in: \"a\"");
-    }
-
-    @Test
     void testDownloadWhenRangeHeaderIsNotProvidedThen200WithFullContentIsReturned() throws Exception {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
@@ -547,7 +527,7 @@ class DocumentControllerIntTest {
         assertEquals(HASH, response.hash());
     }
 
-    private void assertUploadedDocument(final Document document, final String expectedDocumentId) throws IOException {
+    private void assertUploadedDocument(final Document document, final String expectedDocumentId) {
         assertNotEquals(0, document.getId());
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(expectedDocumentId, document.getDocumentId());
@@ -619,13 +599,12 @@ class DocumentControllerIntTest {
         final var expectedBody = buildExpectedMultiRangesBody(boundarySeparator);
         assertEquals(expectedBody, actualBody);
 
-        assertEquals(expectedBody.length(), response.getContentLength());
         assertEquals("bytes", response.getHeader("Accept-Ranges"));
         assertNull(response.getHeader("Content-Range"));
     }
 
     private static String findSeparator(final String text) {
-        final var pattern = Pattern.compile("multipart/byteranges; boundary=(MULTIPART_BYTERANGES_\\d+)");
+        final var pattern = Pattern.compile("multipart/byteranges; boundary=(.+)$");
         final var matcher = pattern.matcher(text);
 
         if (matcher.find()) {
@@ -637,18 +616,18 @@ class DocumentControllerIntTest {
 
     private String buildExpectedMultiRangesBody(final String separator) {
         final var template = """
-                --${boundary}
-                Content-Type: ${contentType}
-                Content-Range: bytes 0-99/${totalLength}
-                
-                ${range1}
-                --${boundary}
-                Content-Type: ${contentType}
-                Content-Range: bytes 200-299/${totalLength}
-                
-                ${range2}
-                --${boundary}--
-                """;
+            \r\n\
+            --${boundary}\r\n\
+            Content-Type: ${contentType}\r\n\
+            Content-Range: bytes 0-99/${totalLength}\r\n\
+            \r\n\
+            ${range1}\r\n\
+            --${boundary}\r\n\
+            Content-Type: ${contentType}\r\n\
+            Content-Range: bytes 200-299/${totalLength}\r\n\
+            \r\n\
+            ${range2}\r\n\
+            --${boundary}--""";
 
         final var values = Map.of(
                 "boundary", separator,

@@ -24,6 +24,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -107,7 +108,7 @@ public class DocumentController {
     @Operation(
             summary = "Downloads signed document",
             description = "Downloads full or partial (if the {@code Range} header is provided) content of the signed document." +
-                    "If multiple ranges are requested, they are merged if they overlap or are adjacent.",
+                    "In case of multiple ranges, server does not process",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -127,9 +128,9 @@ public class DocumentController {
             }
     )
     @GetMapping("/{documentId}/file")
-    ResponseEntity<byte[]> download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
+    ResponseEntity<Resource> download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
         logger.info("action: downloadDocument, state: initiated, documentId: {}, ranges: {}", documentId, rangeHeader);
-        final var result = documentService.downloadDocument(documentId, rangeHeader);
+        final var result = documentService.downloadDocument(documentId);
 
         if (result.isSuccess()) {
             logger.info("action: downloadDocument, state: succeeded");
