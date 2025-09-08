@@ -39,7 +39,10 @@ import java.util.Objects;
 @Slf4j
 class CallbackEventResponseHandler {
 
+    private final CallbackConfigurationProperties configuration;
+
     private final CallbackEventRepository callbackEventRepository;
+
     private final LoadingCache<Long, CachedRestClient> callbackRestClientCache;
 
     /**
@@ -54,8 +57,7 @@ class CallbackEventResponseHandler {
 
         logger.info("Callback succeeded, URL={}, callbackEventId={}", callbackEventData.config().url(), callbackEvent.getId());
 
-        // TODO Lubos powerAuthCallbacksConfiguration
-        final Duration retentionPeriod = Objects.requireNonNullElse(callbackEventData.config().retentionPeriod(), powerAuthCallbacksConfiguration.getDefaultRetentionPeriod());
+        final Duration retentionPeriod = Objects.requireNonNullElse(callbackEventData.config().retentionPeriod(), configuration.getDefaultRetentionPeriod());
 
         callbackEventRepository.save(callbackEvent.toBuilder()
                 .timestampDeleteAfter(LocalDateTime.now().plus(retentionPeriod))
@@ -84,17 +86,17 @@ class CallbackEventResponseHandler {
         builder.attempts(callbackEvent.getAttempts() + 1)
                 .timestampRerunAfter(null);
 
-        final int maxAttempts = Objects.requireNonNullElse(callbackEventData.config().maxAttempts(), powerAuthCallbacksConfiguration.getDefaultMaxAttempts());
+        final int maxAttempts = Objects.requireNonNullElse(callbackEventData.config().maxAttempts(), configuration.getDefaultMaxAttempts());
         final int attemptsMade = callbackEvent.getAttempts();
 
         if (attemptsMade < maxAttempts) {
-            final Duration initialBackoff = Objects.requireNonNullElse(callbackEventData.config().initialBackoff(), powerAuthCallbacksConfiguration.getDefaultInitialBackoff());
-            final Duration backoffPeriod = calculateExponentialBackoffPeriod(callbackEvent.getAttempts(), initialBackoff, powerAuthCallbacksConfiguration.getBackoffMultiplier(), powerAuthCallbacksConfiguration.getMaxBackoff());
+            final Duration initialBackoff = Objects.requireNonNullElse(callbackEventData.config().initialBackoff(), configuration.getDefaultInitialBackoff());
+            final Duration backoffPeriod = calculateExponentialBackoffPeriod(callbackEvent.getAttempts(), initialBackoff, configuration.getBackoffMultiplier(), configuration.getMaxBackoff());
             builder.timestampNextCall(LocalDateTime.now().plus(backoffPeriod))
                     .status(CallbackEventStatus.PENDING);
         } else {
             logger.debug("Maximum number of attempts reached for callbackEventId={}", callbackEvent.getId());
-            final Duration retentionPeriod = Objects.requireNonNullElse(callbackEventData.config().retentionPeriod(), powerAuthCallbacksConfiguration.getDefaultRetentionPeriod());
+            final Duration retentionPeriod = Objects.requireNonNullElse(callbackEventData.config().retentionPeriod(), configuration.getDefaultRetentionPeriod());
             builder.timestampDeleteAfter(LocalDateTime.now().plus(retentionPeriod))
                     .timestampNextCall(null)
                     .status(CallbackEventStatus.FAILED);
@@ -124,7 +126,7 @@ class CallbackEventResponseHandler {
     }
 
     private void incrementFailureCount(final Long callbackId) {
-        if (powerAuthCallbacksConfiguration.failureStatsDisabled()) {
+        if (configuration.failureStatsDisabled()) {
             return;
         }
 
@@ -140,7 +142,7 @@ class CallbackEventResponseHandler {
     }
 
     private void resetFailureCount(final Long callbackId) {
-        if (powerAuthCallbacksConfiguration.failureStatsDisabled()) {
+        if (configuration.failureStatsDisabled()) {
             return;
         }
 

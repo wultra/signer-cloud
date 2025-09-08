@@ -36,6 +36,38 @@ class CallbackConfigurationProperties {
     private Configuration dispatchPendingCallbackEvents = new Configuration(new Job(100));
 
     /**
+     * Default maximum number of attempts in case the corresponding Callback does not define any.
+     */
+    private int defaultMaxAttempts = 1;
+
+    /**
+     * Default retention period of the event in case the corresponding Callback does not define any.
+     */
+    private Duration defaultRetentionPeriod = Duration.ofDays(30);
+
+    /**
+     * Default initial backoff between attempts in case the corresponding Callback does not define any.
+     */
+    private Duration defaultInitialBackoff = Duration.ofSeconds(2);
+
+    /**
+     * Maximum possible backoff period between successive attempts.
+     */
+    private Duration maxBackoff = Duration.ofSeconds(32);
+
+    /**
+     * Multiplier used to calculate the backoff period.
+     */
+    private double backoffMultiplier = 1.5;
+
+    /**
+     * Number of allowed Callback Events failures in a row.
+     * When the threshold is reached, no other events with the same Callback configuration will be posted.
+     * {@code -1} means that the threshold is disabled.
+     */
+    private int failureThreshold = 200;
+
+    /**
      * Whether HTTP proxy is enabled for outgoing HTTP requests.
      */
     private Boolean httpProxyEnabled;
@@ -74,6 +106,10 @@ class CallbackConfigurationProperties {
      * HTTP connection max idle time.
      */
     private Duration httpMaxIdleTime;
+
+    boolean failureStatsDisabled() {
+        return failureThreshold == -1;
+    }
 
     record Configuration(Job job) {
     }
