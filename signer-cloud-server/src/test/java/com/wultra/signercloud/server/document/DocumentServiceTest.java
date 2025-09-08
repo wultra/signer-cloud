@@ -425,7 +425,7 @@ class DocumentServiceTest {
     }
 
     @Test
-    void testDownloadDocumentWhenDocumentIsNotFoundThenThenFailResultWithCorrectMessageIsReturned() {
+    void testDownloadDocumentWhenDocumentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
         // given
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
 
@@ -437,7 +437,7 @@ class DocumentServiceTest {
     }
 
     @Test
-    void testDownloadDocumentWhenDocumentContentIsNotFoundThenThenFailResultWithCorrectMessageIsReturned() {
+    void testDownloadDocumentWhenDocumentContentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
         // given
         final var document = Document.builder()
                 .documentContentId(DOCUMENT_CONTENT_ID)
