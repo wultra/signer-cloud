@@ -17,15 +17,26 @@
  */
 package com.wultra.signercloud.server.document;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * REST API response for {@link Document} rejection operation.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 record RejectDocumentResponse(
+        @Schema(description = "Unique identifier of the document in UUID format", example = "9a19a657-24a5-4d9f-9b72-f6b66de8f2c4")
         String documentId,
+
+        @Schema(description = "Display name of the document.", example = "Customer Contract")
         String name,
+
+        @Schema(description = "Original filename of the uploaded document.", example = "contract.pdf")
         String filename,
+
+        @Schema(description = "Size of the document in bytes.", example = "27531")
         int size,
+
+        @Schema(description = "Hash of the document content.", example = "x/PQFGarKCBiFs2lzQkH4QDtxBqR+6e6YQSomQEWv+U=")
         String hash
 ) {}
