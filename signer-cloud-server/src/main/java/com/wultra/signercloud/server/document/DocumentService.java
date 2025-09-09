@@ -395,7 +395,7 @@ class DocumentService {
     }
 
     /**
-     * Deletes the {@link Document} and it's {@link DocumentContent}.
+     * Deletes the {@link Document} and its {@link DocumentContent}.
      *
      * @param documentUuid identifier of the document to be deleted
      */

@@ -503,7 +503,7 @@ class DocumentServiceTest {
     }
 
     @Test
-    void testDeleteDocumentWhenDocumentExistThenNoExceptionIsThrown() {
+    void testDeleteDocumentWhenDocumentExistsThenNoExceptionIsThrown() {
         // given
         final var document = Document.builder()
                 .documentContentId(DOCUMENT_CONTENT_ID)
