@@ -140,4 +140,34 @@ public class DocumentController {
             throw error;
         }
     }
+
+    @Operation(
+            summary = "Rejects a document",
+            description = "Rejects a document and doesn't matter in which state it is. It sets the document state to REJECTED.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Document rejected successfully",
+                            content = @Content(schema = @Schema(implementation = RejectDocumentResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Document not found or invalid status in request body"
+                    )
+            }
+    )
+    @PutMapping("/{documentId}")
+    RejectDocumentResponse reject(@PathVariable final String documentId, @Valid @RequestBody final RejectDocumentRequest requestBody) throws Throwable {
+        logger.info("action: rejectDocument, state: initiated, documentId: {}", documentId);
+        final var result = documentService.rejectDocument(documentId, requestBody);
+
+        if (result.isSuccess()) {
+            logger.info("action: rejectDocument, state: succeeded");
+            return result.getResponse();
+        } else {
+            final var error = result.getError();
+            logger.info("action: rejectDocument, state: failed, errorMessage: {}", error.getMessage());
+            throw error;
+        }
+    }
 }

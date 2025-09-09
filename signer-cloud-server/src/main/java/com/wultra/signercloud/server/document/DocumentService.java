@@ -37,8 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ContentType;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -392,6 +390,50 @@ class DocumentService {
         }
 
         return new ByteArrayResource(documentContent.getContent());
+    }
+
+    /**
+     * Rejects the {@link Document} identified by {@code documentId}.
+     *
+     * @param documentId identifier of the document to be rejected
+     * @param requestBody request body with the status {@link DocumentStatus#REJECTED}
+     * @return response as a {@link Try}
+     */
+    Try<RejectDocumentResponse> rejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
+        try {
+            final var response = processRejectDocument(documentId, requestBody);
+            return Try.success(response);
+        } catch (final DocumentNotFoundException | RejectDocumentException e) {
+            return Try.error(e);
+        }
+    }
+
+    private RejectDocumentResponse processRejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
+        final var requestedStatus = requestBody.status();
+        if (requestedStatus != DocumentStatus.REJECTED) {
+            throw new RejectDocumentException("Invalid status in the request body. Expected: %s, actual: %s".formatted(
+                    DocumentStatus.REJECTED,
+                    requestedStatus)
+            );
+        }
+
+        final var document = documentRepository.findByDocumentId(documentId)
+                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
+
+        final var updatedDocument = document.toBuilder()
+                .timestampLastUpdated(Instant.now())
+                .status(DocumentStatus.REJECTED)
+                .build();
+
+        documentRepository.save(updatedDocument);
+
+        return new RejectDocumentResponse(
+                documentId,
+                document.getDocumentName(),
+                document.getFileName(),
+                document.getFileSize(),
+                document.getHash()
+        );
     }
 
     @Builder
