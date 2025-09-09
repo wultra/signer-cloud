@@ -18,6 +18,7 @@
 package com.wultra.signercloud.server.signer;
 
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
 import com.wultra.signercloud.server.callback.CallbackEvent;
 import com.wultra.signercloud.server.callback.CallbackEventStatus;
 import com.wultra.signercloud.server.callback.CallbackService;
@@ -27,6 +28,7 @@ import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,7 +72,7 @@ class SignerService {
      */
     Try<Void> createUpdateSigner(final CreateUpdateSignerRequest request) {
         try {
-            createUpdateSignerWithCertificate(request);
+            processCreateUpdateSigner(request);
             return Try.success();
         } catch (final InactiveSignerException | RestClientException | CertificateException | IOException e) {
             return Try.error(e);
@@ -119,15 +121,12 @@ class SignerService {
                 {"externalSignerId": "%s", "userId": "%s"}""".formatted(signer.getExternalSignerId(), signer.getUserId());
     }
 
-    private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
+    private void processCreateUpdateSigner(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
         final var externalSignerId = request.signerId();
-
-        final var isRegistrationActive = powerAuthService.isRegistrationActive(externalSignerId);
-        if (!isRegistrationActive) {
-            throw new InactiveSignerException("Signer registration is not active for external signer ID: " + externalSignerId);
-        }
-
         final var csr = request.csr();
+
+        verifySignature(externalSignerId, csr);
+
         final var userId = request.userId();
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(csr)
@@ -153,6 +152,32 @@ class SignerService {
                 .build();
 
         signerRepository.save(signer);
+    }
+
+    private void verifySignature(final String externalSignerId, final String csrBase64) {
+        try {
+            final var csrBytes = Base64.getDecoder().decode(csrBase64);
+            final var csr = new PKCS10CertificationRequest(csrBytes);
+
+            final var signature = csr.getSignature();
+            final var signatureBase64 = Base64.getEncoder().encodeToString(signature);
+
+            final var data = csr.toASN1Structure()
+                    .getCertificationRequestInfo()
+                    .getEncoded();
+            final var dataBase64 = Base64.getEncoder().encodeToString(data);
+
+            final var isSignatureValid = powerAuthService.isSignatureValid(externalSignerId, dataBase64, signatureBase64);
+            if (!isSignatureValid) {
+                throw new SignatureNotVerified("Signature is not valid");
+            }
+        } catch (final PowerAuthClientException e) {
+            logger.warn("Error response from PowerAuth server", e);
+            throw new SignatureNotVerified("Signature could not be verified due to PowerAuth error: " + e.getMessage());
+        } catch (final IOException e) {
+            logger.warn("Error when processing CSR", e);
+            throw new SignatureNotVerified("CSR is not valid");
+        }
     }
 
     private Signer.SignerBuilder createSigner(final String externalSignerId) {

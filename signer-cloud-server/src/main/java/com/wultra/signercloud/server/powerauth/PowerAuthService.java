@@ -63,4 +63,9 @@ public class PowerAuthService {
             return Optional.empty();
         }
     }
+
+    public boolean isSignatureValid(final String registrationId, final String data, final String signature) throws PowerAuthClientException {
+        final var response = powerAuthClient.verifyECDSASignature(registrationId, data, signature);
+        return response.isSignatureValid();
+    }
 }
