@@ -35,18 +35,14 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ContentType;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
@@ -54,9 +50,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 /**
@@ -71,14 +65,12 @@ import java.util.function.Consumer;
 class DocumentService {
     private static final String CERTIFICATE_TYPE = "X.509";
     private static final String DOCUMENT_DOWNLOAD_PATH = "/api/v1/documents/{documentId}/download";
-    private static final String ACCEPT_RANGES_BYTES = "bytes";
 
     private final DocumentConfigurationProperties configurationProperties;
     private final DocumentRepository documentRepository;
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
     private final PAdESService padesService;
-    private final DocumentRangesService documentRangesService;
 
     /**
      * Cleanup documents.
@@ -372,23 +364,21 @@ class DocumentService {
     }
 
     /**
-     * Downloads the content of the {@link Document} (full or partial) identified by {@code documentUuid}.
+     * Downloads the content of the {@link Document} identified by {@code documentUuid}.
      *
      * @param documentUuid identifier of the document to be downloaded
-     * @param rangeHeader optional value of the HTTP {@code Range} header.
-     *                    If provided, only the specified byte ranges are returned, otherwise the full content is returned.
      * @return response as a {@link Try}
      */
-    Try<ResponseEntity<byte[]>> downloadDocument(final String documentUuid, final String rangeHeader) {
+    Try<Resource> downloadDocument(final String documentUuid) {
         try {
-            final var response = processDownloadDocument(documentUuid, rangeHeader);
+            final var response = processDownloadDocument(documentUuid);
             return Try.success(response);
         } catch (final DocumentNotFoundException | DownloadDocumentException e) {
             return Try.error(e);
         }
     }
 
-    private ResponseEntity<byte[]> processDownloadDocument(final String documentUuid, final String rangeHeader) {
+    private Resource processDownloadDocument(final String documentUuid) {
         final var document = documentRepository.findByDocumentId(documentUuid)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
 
@@ -399,71 +389,7 @@ class DocumentService {
             throw new DownloadDocumentException("Document is not signed yet");
         }
 
-        final var contentBytes = documentContent.getContent();
-        final var ranges = documentRangesService.getParts(rangeHeader, contentBytes.length);
-
-        if (CollectionUtils.isEmpty(ranges)) {
-            return createFullContentResponse(contentBytes);
-        } else if (ranges.size() == 1) {
-            return createSinglePartResponse(contentBytes, ranges.get(0));
-        } else {
-            return createMultiPartResponse(ranges, contentBytes);
-        }
-    }
-
-    private ResponseEntity<byte[]> createFullContentResponse(final byte[] contentBytes) {
-        return ResponseEntity.status(HttpStatus.OK)
-                .contentLength(contentBytes.length)
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.ACCEPT_RANGES, ACCEPT_RANGES_BYTES)
-                .body(contentBytes);
-    }
-
-    private ResponseEntity<byte[]> createSinglePartResponse(final byte[] contentBytes, final DocumentRangesService.DocumentPart range) {
-        final var singlePartContent = Arrays.copyOfRange(contentBytes, range.start(), range.end() + 1);
-
-        return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_PDF_VALUE)
-                .header(HttpHeaders.CONTENT_RANGE, "bytes %s-%s/%s".formatted(range.start(), range.end(), contentBytes.length))
-                .header(HttpHeaders.ACCEPT_RANGES, ACCEPT_RANGES_BYTES)
-                .contentLength(singlePartContent.length)
-                .body(singlePartContent);
-    }
-
-    private ResponseEntity<byte[]> createMultiPartResponse(
-            final List<DocumentRangesService.DocumentPart> ranges,
-            final byte[] contentBytes
-    ) {
-        try {
-            final var totalLength = contentBytes.length;
-            final var boundary = "MULTIPART_BYTERANGES_" + Instant.now().toEpochMilli();
-            final var out = new ByteArrayOutputStream();
-
-            for (final var range : ranges) {
-                final var start = range.start();
-                final var end = range.end();
-
-                out.write(String.format("--%s%n", boundary).getBytes());
-                out.write(String.format("Content-Type: %s%n", MediaType.APPLICATION_PDF_VALUE).getBytes());
-                out.write(String.format("Content-Range: bytes %s-%s/%s%n%n", start, end, totalLength).getBytes());
-                out.write(contentBytes, start, end - start + 1);
-                out.write(String.format("%n").getBytes());
-            }
-
-            out.write(String.format("--%s--%n", boundary).getBytes());
-
-            final var multiPartContent = out.toByteArray();
-
-            return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT)
-                    .header(HttpHeaders.CONTENT_TYPE, "multipart/byteranges; boundary=" + boundary)
-                    .header(HttpHeaders.ACCEPT_RANGES, ACCEPT_RANGES_BYTES)
-                    .contentLength(multiPartContent.length)
-                    .body(multiPartContent);
-
-        } catch (final IOException e) {
-            logger.error("Exception when creating multi-part response body", e);
-            throw new DownloadDocumentException("Error when producing multi-part response: " + e.getMessage());
-        }
+        return new ByteArrayResource(documentContent.getContent());
     }
 
     /**
