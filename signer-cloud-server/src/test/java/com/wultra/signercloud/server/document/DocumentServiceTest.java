@@ -520,7 +520,7 @@ class DocumentServiceTest {
     }
 
     @Test
-    void testRejectDocumentWhenStatusIsChangesThenSuccessResultWithCorrectResponseIsReturned() {
+    void testRejectDocumentWhenStatusIsChangedThenSuccessResultWithCorrectResponseIsReturned() {
         // given
         final var document = Document.builder()
                 .documentId(DOCUMENT_UUID)
