@@ -38,9 +38,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -546,16 +543,10 @@ class DocumentServiceTest {
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 
-    private void assertSuccessDownloadResult(final Try<ResponseEntity<Resource>> result) throws IOException {
+    private void assertSuccessDownloadResult(final Try<Resource> result) throws IOException {
         assertTrue(result.isSuccess());
 
         final var response = result.getResponse();
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-
-        final var headers = response.getHeaders();
-        assertEquals(MediaType.APPLICATION_PDF, headers.getContentType());
-
-        final var body = response.getBody();
-        assertArrayEquals(SIGNED_DOCUMENT_CONTENT, body.getContentAsByteArray());
+        assertArrayEquals(SIGNED_DOCUMENT_CONTENT, response.getContentAsByteArray());
     }
 }

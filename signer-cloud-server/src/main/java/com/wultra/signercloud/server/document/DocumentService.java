@@ -371,7 +371,7 @@ class DocumentService {
      * @param documentUuid identifier of the document to be downloaded
      * @return response as a {@link Try}
      */
-    Try<ResponseEntity<Resource>> downloadDocument(final String documentUuid) {
+    Try<Resource> downloadDocument(final String documentUuid) {
         try {
             final var response = processDownloadDocument(documentUuid);
             return Try.success(response);
@@ -380,7 +380,7 @@ class DocumentService {
         }
     }
 
-    private ResponseEntity<Resource> processDownloadDocument(final String documentUuid) {
+    private Resource processDownloadDocument(final String documentUuid) {
         final var document = documentRepository.findByDocumentId(documentUuid)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
 
@@ -391,11 +391,7 @@ class DocumentService {
             throw new DownloadDocumentException("Document is not signed yet");
         }
 
-        final var resource = new ByteArrayResource(documentContent.getContent());
-
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .body(resource);
+        return new ByteArrayResource(documentContent.getContent());
     }
 
     @Builder

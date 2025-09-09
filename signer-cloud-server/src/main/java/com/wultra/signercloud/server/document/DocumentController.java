@@ -25,7 +25,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -126,8 +126,8 @@ public class DocumentController {
                     )
             }
     )
-    @GetMapping("/{documentId}/file")
-    ResponseEntity<Resource> download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
+    @GetMapping(value = "/{documentId}/file", produces = MediaType.APPLICATION_PDF_VALUE)
+    Resource download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
         logger.info("action: downloadDocument, state: initiated, documentId: {}, ranges: {}", documentId, rangeHeader);
         final var result = documentService.downloadDocument(documentId);
 
