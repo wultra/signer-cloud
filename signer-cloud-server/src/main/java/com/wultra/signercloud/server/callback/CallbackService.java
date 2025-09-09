@@ -18,35 +18,32 @@
 
 package com.wultra.signercloud.server.callback;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.wultra.core.rest.client.base.RestClient;
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.utils.TransactionUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 @Service
-@Transactional
 @AllArgsConstructor
 @Slf4j
 public class CallbackService {
@@ -61,30 +58,69 @@ public class CallbackService {
 
     private final LoadingCache<Long, CachedRestClient> restClientCache;
 
-    private final ObjectMapper objectMapper;
+    private final CallbackConvertor callbackConvertor;
 
     /**
-     * Saves a new {@link CallbackEvent}s to the repository.
+     * Dispatch a Callback Event.
      *
-     * @param events the events to save
+     * @param callbackEventData Callback Event to dispatch.
      */
-    public void save(final Iterable<CallbackEvent> events) {
-        callbackEventRepository.saveAll(events);
+    @Transactional(propagation = Propagation.SUPPORTS)
+    public void dispatchInstantCallbackEvent(final CallbackEventData callbackEventData) {
+        postCallback(callbackEventData);
     }
 
     /**
-     * Finds a list of {@link Callback} entities of the specified type.
+     * Move a Callback Event to the PENDING state.
+     *
+     * @param callbackEventData Callback Event to set as PENDING.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void moveCallbackEventToPending(final CallbackEventData callbackEventData) {
+        callbackEventRepository.updateEventToPendingState(callbackEventData.id());
+    }
+
+    /**
+     * Create and save a new {@link CallbackEvent} in processing state.
+     *
+     * @param callback Existing Callback with the Callback URL configuration.
+     * @param callbackData Data to be sent with the Callback URL.
+     * @return Saved {@link CallbackEvent}.
+     */
+    @Transactional
+    public CallbackEvent createAndSaveEventForProcessing(final Callback callback, final String callbackData) {
+        final LocalDateTime now = LocalDateTime.now();
+        final Duration forceRerunPeriod = Objects.requireNonNullElse(configuration.getForceRerunPeriod(), defaultForceRerunPeriod());
+
+        final CallbackEvent callbackEvent = CallbackEvent.builder()
+                .status(CallbackEventStatus.PROCESSING)
+                .callbackData(callbackData)
+                .callbackId(callback.getId())
+                .timestampCreated(now)
+                .timestampLastCall(now)
+                .timestampRerunAfter(shouldBeSentAtMostOnce(callback) ? null : now.plus(forceRerunPeriod))
+                .attempts(0)
+                .idempotencyKey(UUID.randomUUID().toString())
+                .build();
+
+        return callbackEventRepository.save(callbackEvent);
+    }
+
+    /**
+     * Finds a {@link Callback} entity of the specified type.
      *
      * @param callbackType the type of callback to filter by
-     * @return a list of matching {@link Callback} entities, or an empty list if none are found
+     * @return a matching {@link Callback} entity, or an empty if none are found
      */
-    public List<Callback> findCallbacks(final CallbackType callbackType) {
-        return callbackRepository.findCallbacksByCallbackType(callbackType);
+    @Transactional(readOnly = true)
+    public Optional<Callback> findCallback(final CallbackType callbackType) {
+        return callbackRepository.findCallbackByCallbackType(callbackType);
     }
 
     /**
      * Dispatch Callback Events in pending state.
      */
+    @Transactional
     public int dispatchPendingCallbackEvents(final int limit) {
         final List<CallbackEvent> callbackEvents = callbackEventRepository.findPending(LocalDateTime.now(), limit);
         callbackEvents
@@ -95,6 +131,7 @@ public class CallbackService {
     /**
      * Delete Callback Events that are past their retention period.
      */
+    @Transactional
     public int deleteCallbackEventsAfterRetentionPeriod() {
         return callbackEventRepository.deleteCompletedAfterRetentionPeriod(LocalDateTime.now());
     }
@@ -106,6 +143,7 @@ public class CallbackService {
      * and won't be dispatched without this action. Otherwise, there is a risk of posting
      * a Callback Event more than once.
      */
+    @Transactional
     public int resetStaleCallbackEvents() {
         final int numberOfAffectedEvents = callbackEventRepository.updateStaleEventsToPendingState(LocalDateTime.now());
         logger.info("Number of stale Callback Events moved to PENDING state: {}", numberOfAffectedEvents);
@@ -142,9 +180,9 @@ public class CallbackService {
                 .timestampRerunAfter(shouldBeSentAtMostOnce(callback) ? null : timestampNow.plus(forceRerunPeriod))
                 .build());
 
-        final CallbackEventData callbackEventData = convert(savedCallbackEvent, callback);
+        final CallbackEventData callbackEventData = callbackConvertor.convert(savedCallbackEvent, callback);
 
-        executeAfterTransactionCommits(() -> postCallback(callbackEventData));
+        TransactionUtils.executeAfterTransactionCommits(() -> postCallback(callbackEventData));
     }
 
     /**
@@ -198,15 +236,17 @@ public class CallbackService {
 
     /**
      * Obtain maximum attempts to send a Callback Event.
+     *
      * @param callback The Callback Event configuration.
      * @return Maximum number of attempts.
      */
-    public int obtainMaxAttempts(final Callback callback) {
+    private int obtainMaxAttempts(final Callback callback) {
         return Objects.requireNonNullElse(callback.getMaxAttempts(), configuration.getDefaultMaxAttempts());
     }
 
     /**
      * Send Callback Event as a non-blocking POST request.
+     *
      * @param callbackEventData Event to post.
      */
     private void postCallback(final CallbackEventData callbackEventData) {
@@ -265,50 +305,5 @@ public class CallbackService {
         } else {
             return configuration.getDefaultRetentionPeriod();
         }
-    }
-
-    private CallbackEventData convert(final CallbackEvent callbackEvent, final Callback callback) {
-        return CallbackEventData.builder()
-                .id(callbackEvent.getId())
-                .callbackData(convert(callbackEvent.getCallbackData()))
-                .status(callbackEvent.getStatus())
-                .idempotencyKey(callbackEvent.getIdempotencyKey())
-                .config(convert(callback))
-                .build();
-    }
-
-    private Map<String, Object> convert(String source) {
-        if (source == null) {
-            return Map.of();
-        }
-
-        try {
-            return objectMapper.readValue(source, new TypeReference<>() {});
-        } catch (IOException ex) {
-            throw new IllegalStateException("Unable to parse JSON payload", ex);
-        }
-    }
-
-    private static CallbackData convert(final Callback callback) {
-        return CallbackData.builder()
-                .id(callback.getId())
-                .url(callback.getCallbackUrl())
-                .retentionPeriod(callback.getRetentionPeriod())
-                .initialBackoff(callback.getInitialBackoff())
-                .maxAttempts(callback.getMaxAttempts())
-                .build();
-    }
-
-    /**
-     * Execute a task after the current transaction commits.
-     * @param task Task to execute.
-     */
-    private static void executeAfterTransactionCommits(final Runnable task) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                task.run();
-            }
-        });
     }
 }

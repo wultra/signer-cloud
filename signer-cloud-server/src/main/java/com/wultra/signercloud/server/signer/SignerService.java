@@ -22,6 +22,7 @@ import com.wultra.signercloud.server.callback.*;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
+import com.wultra.signercloud.server.utils.TransactionUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -30,9 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.stream.Stream;
+import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Service for {@link Signer} operations.
@@ -55,6 +55,8 @@ class SignerService {
     private final SignerRepository signerRepository;
     private final SignerConfigurationProperties configurationProperties;
     private final CallbackService callbackService;
+    private final CallbackQueueService callbackQueueService;
+    private final CallbackConvertor callbackConvertor;
 
     /**
      * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
@@ -84,42 +86,39 @@ class SignerService {
         final List<Signer> signers = signerRepository.markAsExpired(now, limit);
 
         if (configurationProperties.getExpiration().callbackEnabled()) {
-            createCallbacks(signers);
+            notifyCallbacks(signers);
         }
 
         return signers.size();
     }
 
-    private void createCallbacks(final List<Signer> signers) {
+    private void notifyCallbacks(final List<Signer> signers) {
         logger.info("Creating {} expiration callbacks.", signers.size());
-        final LocalDateTime now = LocalDateTime.now();
-        final List<Callback> callbacks = callbackService.findCallbacks(CallbackType.EXPIRED);
-
-        final List<CallbackEvent> callbackEvents = signers.stream()
-                .flatMap(signer -> createCallbackEvents(signer, callbacks, now))
-                .toList();
-
-        callbackService.save(callbackEvents);
-    }
-
-    private static Stream<CallbackEvent> createCallbackEvents(final Signer signer, final List<Callback> callbacks, final LocalDateTime now) {
-        if (callbacks.isEmpty()) {
-            logger.info("There are no expiration callbacks configured.");
+        final Optional<Callback> callback = callbackService.findCallback(CallbackType.EXPIRED);
+        if (callback.isEmpty()) {
+            logger.info("There is no expiration callback configured.");
+            return;
         }
 
-        return callbacks.stream()
-                .map(callback -> createCallbackEvent(signer, callback, now));
+        for (final Signer signer : signers) {
+            final CallbackEvent callbackEvent = callbackService.createAndSaveEventForProcessing(callback.get(), createCallbackData(signer));
+            final CallbackEventData callbackEventData = callbackConvertor.convert(callbackEvent, callback.get());
+            TransactionUtils.executeAfterTransactionCommits(() -> enqueue(callbackEventData));
+        }
     }
 
-    private static CallbackEvent createCallbackEvent(final Signer signer, final Callback callback, final LocalDateTime now) {
-        return CallbackEvent.builder()
-                .status(CallbackEventStatus.PENDING)
-                .callbackData(createCallbackData(signer))
-                .callbackId(callback.getId())
-                .timestampCreated(now)
-                .timestampNextCall(now)
-                .idempotencyKey(UUID.randomUUID().toString())
-                .build();
+    /**
+     * Try to submit a Callback Event to a task executor. If rejected, enqueue the Callback Event to a database.
+     * @param callbackEventData Callback Event to enqueue
+     */
+    private void enqueue(final CallbackEventData callbackEventData) {
+        try {
+            callbackQueueService.submitToExecutor(callbackEventData);
+        } catch (RejectedExecutionException e) {
+            logger.info("CallbackEvent was rejected by the executor: callbackEventId={}, {}", callbackEventData.id(), e.getMessage());
+            logger.debug("CallbackEvent was rejected by the executor: callbackEventId={}", callbackEventData.id(), e);
+            callbackQueueService.enqueueToDatabase(callbackEventData);
+        }
     }
 
     @SuppressWarnings("java:S5663")

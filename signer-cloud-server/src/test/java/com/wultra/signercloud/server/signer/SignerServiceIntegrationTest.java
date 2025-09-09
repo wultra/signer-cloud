@@ -40,7 +40,7 @@ class SignerServiceIntegrationTest {
         final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM sc_callback_event ORDER BY timestamp_created DESC LIMIT 1");
         assertNotNull(callbackEvent);
         assertEquals(1L, callbackEvent.get("CALLBACK_ID"));
-        assertEquals(CallbackEventStatus.PENDING.toString(), callbackEvent.get("STATUS"));
+        assertEquals(CallbackEventStatus.PROCESSING.toString(), callbackEvent.get("STATUS"));
         assertEquals("{\"externalSignerId\": \"signer1\", \"userId\": \"user1\"}", callbackEvent.get("CALLBACK_DATA"));
         assertNotNull(callbackEvent.get("IDEMPOTENCY_KEY"));
         assertNotNull(callbackEvent.get("TIMESTAMP_CREATED"));

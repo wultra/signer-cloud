@@ -20,7 +20,7 @@ package com.wultra.signercloud.server.callback;
 
 import org.springframework.data.repository.CrudRepository;
 
-import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository for  {@link Callback}.
@@ -28,5 +28,5 @@ import java.util.List;
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 interface CallbackRepository extends CrudRepository<Callback, Long>  {
-    List<Callback> findCallbacksByCallbackType(CallbackType type);
+    Optional<Callback> findCallbackByCallbackType(CallbackType type);
 }

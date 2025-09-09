@@ -69,4 +69,14 @@ interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
             AND c.timestamp_rerun_after < :timestamp
             """)
     int updateStaleEventsToPendingState(LocalDateTime timestamp);
+
+    @Modifying
+    @Query("""
+            UPDATE sc_callback_event c
+            SET status = 'PENDING',
+                timestamp_next_call = c.timestamp_last_call,
+                timestamp_rerun_after = null
+            WHERE c.id = :id
+            """)
+    void updateEventToPendingState(Long id);
 }

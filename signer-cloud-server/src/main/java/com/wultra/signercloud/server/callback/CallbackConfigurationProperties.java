@@ -118,6 +118,21 @@ class CallbackConfigurationProperties {
      */
     private Duration httpMaxIdleTime;
 
+    /**
+     * Number of core threads in the thread pool.
+     */
+    private int threadPoolCoreSize = 1;
+
+    /**
+     * Maximum number of threads in the thread pool.
+     */
+    private int threadPoolMaxSize = 2;
+
+    /**
+     * Queue capacity of the thread pool.
+     */
+    private int threadPoolQueueCapacity = 1000;
+
     boolean failureStatsDisabled() {
         return failureThreshold == -1;
     }

@@ -19,19 +19,27 @@ package com.wultra.signercloud.server.callback;
 
 import lombok.Builder;
 
-import java.util.Map;
-
 /**
- * Data class holding Callback Event details.
+ * Runnable action to be executed by an Executor.
  *
- * @param id ID of {@link CallbackEvent}
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 @Builder
-public record CallbackEventData(
-        Long id,
-        Map<String, Object> callbackData,
-        CallbackEventStatus status,
-        String idempotencyKey,
-        CallbackData config
-) { }
+record CallbackEventRunnable(Runnable dispatchAction, Runnable cancelAction) implements Runnable {
+
+    /**
+     * Run the dispatching action called by an Executor.
+     */
+    @Override
+    public void run() {
+        dispatchAction.run();
+    }
+
+    /**
+     * Run the cancel action on shutdown of an Executor.
+     */
+    public void cancel() {
+        cancelAction.run();
+    }
+
+}
