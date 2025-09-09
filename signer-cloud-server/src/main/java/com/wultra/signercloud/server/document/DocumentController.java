@@ -24,6 +24,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -100,6 +102,42 @@ public class DocumentController {
         } else {
             logger.info("action: signDocument, state: failed, errorMessage: {}", result.getError().getMessage());
             throw result.getError();
+        }
+    }
+
+    @Operation(
+            summary = "Downloads signed document",
+            description = "Downloads the full content of the signed document, or a partial segment if the {@code Range} header is provided. " +
+                    "In the case of multiple ranges, the server does not process the {@code Range} header but instead splits the response into parts exactly as requested by the client.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Full document content",
+                            content = @Content(schema = @Schema(implementation = Resource.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "206",
+                            description = "Partial document content according to the {@code Range} header.",
+                            content = @Content(schema = @Schema(implementation = Resource.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Document not found, not signed yet. See the error message for details"
+                    )
+            }
+    )
+    @GetMapping(value = "/{documentId}/file", produces = MediaType.APPLICATION_PDF_VALUE)
+    Resource download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
+        logger.info("action: downloadDocument, state: initiated, documentId: {}, ranges: {}", documentId, rangeHeader);
+        final var result = documentService.downloadDocument(documentId);
+
+        if (result.isSuccess()) {
+            logger.info("action: downloadDocument, state: succeeded");
+            return result.getResponse();
+        } else {
+            final var error = result.getError();
+            logger.info("action: downloadDocument, state: failed, errorMessage: {}", error.getMessage());
+            throw error;
         }
     }
 }

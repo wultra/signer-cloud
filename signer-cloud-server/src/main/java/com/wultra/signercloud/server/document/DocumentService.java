@@ -35,6 +35,10 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ContentType;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -359,6 +363,35 @@ class DocumentService {
                 .path(DOCUMENT_DOWNLOAD_PATH)
                 .buildAndExpand(documentId)
                 .toUriString();
+    }
+
+    /**
+     * Downloads the content of the {@link Document} identified by {@code documentUuid}.
+     *
+     * @param documentUuid identifier of the document to be downloaded
+     * @return response as a {@link Try}
+     */
+    Try<Resource> downloadDocument(final String documentUuid) {
+        try {
+            final var response = processDownloadDocument(documentUuid);
+            return Try.success(response);
+        } catch (final DocumentNotFoundException | DownloadDocumentException e) {
+            return Try.error(e);
+        }
+    }
+
+    private Resource processDownloadDocument(final String documentUuid) {
+        final var document = documentRepository.findByDocumentId(documentUuid)
+                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
+
+        final var documentContent = documentContentRepository.findById(document.getDocumentContentId())
+                .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentUuid));
+
+        if (document.getStatus() != DocumentStatus.SIGNED) {
+            throw new DownloadDocumentException("Document is not signed yet");
+        }
+
+        return new ByteArrayResource(documentContent.getContent());
     }
 
     @Builder

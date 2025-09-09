@@ -37,6 +37,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -421,6 +422,77 @@ class DocumentServiceTest {
         assertSuccessSignResult(result);
     }
 
+    @Test
+    void testDownloadDocumentWhenDocumentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID);
+
+        // then
+        assertFailResult(result, DocumentNotFoundException.class, "Document not found for document ID: " + DOCUMENT_UUID);
+    }
+
+    @Test
+    void testDownloadDocumentWhenDocumentContentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.empty());
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID);
+
+        // then
+        assertFailResult(result, DocumentNotFoundException.class, "Document content not found for document ID: " + DOCUMENT_UUID);
+    }
+
+    @Test
+    void testDownloadDocumentWhenDocumentIsNotSignedYetThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .status(DocumentStatus.WAITING)
+                .build();
+
+        final var documentContent = DocumentContent.builder().build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID);
+
+        // then
+        assertFailResult(result, DownloadDocumentException.class, "Document is not signed yet");
+    }
+
+    @Test
+    void testDownloadDocumentWhenValidRequestIsReceivedThenSuccessResultWithCorrectResponseIsReturned() throws IOException {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .status(DocumentStatus.SIGNED)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(SIGNED_DOCUMENT_CONTENT)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+
+        // when
+        final var result = documentService.downloadDocument(DOCUMENT_UUID);
+
+        // then
+        assertSuccessDownloadResult(result);
+    }
+
     private void assertFailResult(final Try<?> result, final Class<? extends Throwable> exceptionType, final String expectedMessage) {
         assertFalse(result.isSuccess());
 
@@ -469,5 +541,12 @@ class DocumentServiceTest {
         request.setServerPort(8080);
 
         RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+    }
+
+    private void assertSuccessDownloadResult(final Try<Resource> result) throws IOException {
+        assertTrue(result.isSuccess());
+
+        final var response = result.getResponse();
+        assertArrayEquals(SIGNED_DOCUMENT_CONTENT, response.getContentAsByteArray());
     }
 }

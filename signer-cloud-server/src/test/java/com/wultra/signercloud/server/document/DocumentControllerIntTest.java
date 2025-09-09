@@ -23,6 +23,7 @@ import com.wultra.signercloud.server.restapi.ErrorResponse;
 import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
+import org.apache.commons.text.StringSubstitutor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +32,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -38,8 +40,12 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -62,6 +68,7 @@ class DocumentControllerIntTest {
 
     private static final String UPLOAD_DOCUMENT_ENDPOINT = "/api/documents";
     private static final String SIGN_DOCUMENT_ENDPOINT = "/api/documents/{documentId}/signature";
+    private static final String DOWNLOAD_DOCUMENT_ENDPOINT = "/api/documents/{documentId}/file";
     private static final String CONTENT_TYPE = "application/pdf";
     private static final String DOCUMENT_NAME_PARAM = "name";
     private static final String EXTERNAL_DOCUMENT_ID_PARAM = "externalId";
@@ -112,11 +119,13 @@ class DocumentControllerIntTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private byte[] fileContent;
+    private byte[] uploadedDocumentContent;
+    private byte[] signedDocumentContent;
 
     @BeforeEach
     void setUp() throws IOException {
-        fileContent = new ClassPathResource("input.pdf").getContentAsByteArray();
+        uploadedDocumentContent = new ClassPathResource("input.pdf").getContentAsByteArray();
+        signedDocumentContent = new ClassPathResource("input_signed.pdf").getContentAsByteArray();
     }
 
     @AfterEach
@@ -230,7 +239,7 @@ class DocumentControllerIntTest {
     void testSignWhenSignerIsNotActiveThen400WithCorrectResponseIsReturned() throws Exception {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.BLOCKED);
-        final var documentContentId = createDocumentContentInDatabase();
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
         final var request = new SignDocumentRequest(SIGNATURE);
@@ -252,7 +261,7 @@ class DocumentControllerIntTest {
     void testSignWhenDocumentIsNotInWaitingStateThen400WithCorrectResponseIsReturned() throws Exception {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
-        final var documentContentId = createDocumentContentInDatabase();
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
 
         final var request = new SignDocumentRequest(SIGNATURE);
@@ -274,7 +283,7 @@ class DocumentControllerIntTest {
     void testSignWhenDocumentSignAttemptIsAfterDeadlineThen400WithCorrectResponseIsReturned() throws Exception {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
-        final var documentContentId = createDocumentContentInDatabase();
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         final var creationTimeAfterWaitingTimeout = Instant.now().minusSeconds(DOCUMENT_WAITING_TIMEOUT_SECONDS + 60);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, creationTimeAfterWaitingTimeout);
 
@@ -297,7 +306,7 @@ class DocumentControllerIntTest {
     void testSignWhenSignatureIsInvalidThen400WithCorrectResponseIsReturned() throws Exception {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
-        final var documentContentId = createDocumentContentInDatabase();
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
         final var request = new SignDocumentRequest("invalidSignature");
@@ -319,7 +328,7 @@ class DocumentControllerIntTest {
     void testSignWhenSignatureIsValidThen200WithCorrectResponseIsReturned() throws Exception {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
-        final var documentContentId = createDocumentContentInDatabase();
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
         final var request = new SignDocumentRequest(SIGNATURE);
@@ -344,7 +353,7 @@ class DocumentControllerIntTest {
     void testSignWhenSignatureIsValidThenDocumentIsUpdatedInDatabaseWithCorrectValues() throws Exception {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
-        final var documentContentId = createDocumentContentInDatabase();
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now().minusSeconds(30));
 
         final var request = new SignDocumentRequest(SIGNATURE);
@@ -360,12 +369,101 @@ class DocumentControllerIntTest {
         assertSignedDocument(documentId, signerId, documentContentId);
     }
 
-    private MockMultipartFile loadFile(final String contentType) throws IOException {
+    @Test
+    void testDownloadWhenDocumentIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
+        // given
+        // -
+
+        // when
+        final var result = mockMvc.perform(MockMvcRequestBuilders.get(DOWNLOAD_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+
+        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Document not found for document ID: " + DOCUMENT_UUID);
+    }
+
+    @Test
+    void testDownloadWhenDocumentIsNotSignedYetThen400WithCorrectResponseIsReturned() throws Exception {
+        // given
+        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
+
+        // when
+        final var result = mockMvc.perform(MockMvcRequestBuilders.get(DOWNLOAD_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // then
+        final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
+
+        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Document is not signed yet");
+    }
+
+    @Test
+    void testDownloadWhenRangeHeaderIsNotProvidedThen200WithFullContentIsReturned() throws Exception {
+        // given
+        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
+        final var documentContentId = createDocumentContentInDatabase(signedDocumentContent);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
+
+        // when
+        final var result = mockMvc.perform(MockMvcRequestBuilders.get(DOWNLOAD_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        assertDownloadResponseWithFullContent(result.getResponse());
+    }
+
+    @Test
+    void testDownloadWhenHeaderWithSingleRangeIsProvidedThen206WithSinglePartIsReturned() throws Exception {
+        // given
+        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
+        final var documentContentId = createDocumentContentInDatabase(signedDocumentContent);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
+
+        // when
+        final var result = mockMvc.perform(MockMvcRequestBuilders.get(DOWNLOAD_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Range", "bytes=0-99"))
+                .andExpect(status().isPartialContent())
+                .andReturn();
+
+        // then
+        assertDownloadResponseWithSinglePart(result.getResponse());
+    }
+
+    @Test
+    void testDownloadWhenHeaderWithMultipleRangesIsProvidedThen206WithAllPartsIsReturned() throws Exception {
+        // given
+        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
+        final var documentContentId = createDocumentContentInDatabase(signedDocumentContent);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
+
+        // when
+        final var result = mockMvc.perform(MockMvcRequestBuilders.get(DOWNLOAD_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .header("Range", "bytes=0-99,200-299"))
+                .andExpect(status().isPartialContent())
+                .andReturn();
+
+        // then
+        assertDownloadResponseWithMultipleParts(result.getResponse());
+    }
+
+    private MockMultipartFile loadFile(final String contentType) {
         return new MockMultipartFile(
                 "file",
                 FILENAME,
                 contentType,
-                fileContent
+                uploadedDocumentContent
         );
     }
 
@@ -392,9 +490,9 @@ class DocumentControllerIntTest {
         return savedSigner.getId();
     }
 
-    private long createDocumentContentInDatabase() throws IOException {
+    private long createDocumentContentInDatabase(final byte[] content) {
         final var documentContent = DocumentContent.builder()
-                .content(fileContent)
+                .content(content)
                 .build();
 
         final var savedDocumentContent = documentContentRepository.save(documentContent);
@@ -429,7 +527,7 @@ class DocumentControllerIntTest {
         assertEquals(HASH, response.hash());
     }
 
-    private void assertUploadedDocument(final Document document, final String expectedDocumentId) throws IOException {
+    private void assertUploadedDocument(final Document document, final String expectedDocumentId) {
         assertNotEquals(0, document.getId());
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(expectedDocumentId, document.getDocumentId());
@@ -443,7 +541,7 @@ class DocumentControllerIntTest {
         assertNull(document.getSignature());
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContentId()).orElseThrow();
-        assertArrayEquals(fileContent, documentContent.getContent());
+        assertArrayEquals(uploadedDocumentContent, documentContent.getContent());
     }
 
     private void assertSignResponse(final SignDocumentResponse response) {
@@ -471,5 +569,74 @@ class DocumentControllerIntTest {
         final var documentContent = documentContentRepository.findById(document.getDocumentContentId()).orElseThrow();
         final var fileContent = documentContent.getContent();
         assertTrue(UPLOADED_FILE_SIZE < fileContent.length);
+    }
+
+    private void assertDownloadResponseWithFullContent(final MockHttpServletResponse response) {
+        assertEquals(signedDocumentContent.length, response.getContentLength());
+        assertEquals("bytes", response.getHeader("Accept-Ranges"));
+        assertNull(response.getHeader("Content-Range"));
+        assertEquals(MediaType.APPLICATION_PDF_VALUE, response.getContentType());
+
+        final var responseBody = response.getContentAsByteArray();
+        assertArrayEquals(signedDocumentContent, responseBody);
+    }
+
+    private void assertDownloadResponseWithSinglePart(final MockHttpServletResponse response) {
+        assertEquals(100, response.getContentLength());
+        assertEquals("bytes", response.getHeader("Accept-Ranges"));
+        assertEquals("bytes 0-99/27780", response.getHeader("Content-Range"));
+        assertEquals(MediaType.APPLICATION_PDF_VALUE, response.getContentType());
+
+        final var expectedBody = Arrays.copyOfRange(signedDocumentContent, 0, 100);
+        final var responseBody = response.getContentAsByteArray();
+        assertArrayEquals(expectedBody, responseBody);
+    }
+
+    private void assertDownloadResponseWithMultipleParts(final MockHttpServletResponse response) {
+        final var boundarySeparator = findSeparator(response.getContentType());
+
+        final var actualBody = new String(response.getContentAsByteArray(), StandardCharsets.ISO_8859_1);
+        final var expectedBody = buildExpectedMultiRangesBody(boundarySeparator);
+        assertEquals(expectedBody, actualBody);
+
+        assertEquals("bytes", response.getHeader("Accept-Ranges"));
+        assertNull(response.getHeader("Content-Range"));
+    }
+
+    private static String findSeparator(final String text) {
+        final var pattern = Pattern.compile("multipart/byteranges; boundary=(.+)$");
+        final var matcher = pattern.matcher(text);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+
+        return fail("Separator for boundary not found in header");
+    }
+
+    private String buildExpectedMultiRangesBody(final String separator) {
+        final var template = """
+            \r\n\
+            --${boundary}\r\n\
+            Content-Type: ${contentType}\r\n\
+            Content-Range: bytes 0-99/${totalLength}\r\n\
+            \r\n\
+            ${range1}\r\n\
+            --${boundary}\r\n\
+            Content-Type: ${contentType}\r\n\
+            Content-Range: bytes 200-299/${totalLength}\r\n\
+            \r\n\
+            ${range2}\r\n\
+            --${boundary}--""";
+
+        final var values = Map.of(
+                "boundary", separator,
+                "contentType", MediaType.APPLICATION_PDF,
+                "totalLength", signedDocumentContent.length,
+                "range1", new String(Arrays.copyOfRange(signedDocumentContent, 0, 100), StandardCharsets.ISO_8859_1),
+                "range2", new String(Arrays.copyOfRange(signedDocumentContent, 200, 300), StandardCharsets.ISO_8859_1)
+        );
+
+        return StringSubstitutor.replace(template, values);
     }
 }
