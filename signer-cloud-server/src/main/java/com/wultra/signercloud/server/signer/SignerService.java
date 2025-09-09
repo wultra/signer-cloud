@@ -117,6 +117,7 @@ class SignerService {
                 .callbackData(createCallbackData(signer))
                 .callbackId(callback.getId())
                 .timestampCreated(now)
+                .timestampNextCall(now)
                 .idempotencyKey(UUID.randomUUID().toString())
                 .build();
     }
