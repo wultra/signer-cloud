@@ -494,6 +494,54 @@ class DocumentServiceTest {
     }
 
     @Test
+    void testRejectDocumentWhenInvalidStatusIsRequestedThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.SIGNED);
+
+        // when
+        final var result = documentService.rejectDocument(DOCUMENT_UUID, requestBody);
+
+        // then
+        assertFailResult(result, RejectDocumentException.class, "Invalid status in the request body. Expected: REJECTED, actual: SIGNED");
+    }
+
+    @Test
+    void testRejectDocumentWhenDocumentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
+        // given
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.REJECTED);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
+
+        // when
+        final var result = documentService.rejectDocument(DOCUMENT_UUID, requestBody);
+
+        // then
+        assertFailResult(result, DocumentNotFoundException.class, "Document not found for document ID: " + DOCUMENT_UUID);
+    }
+
+    @Test
+    void testRejectDocumentWhenStatusIsChangedThenSuccessResultWithCorrectResponseIsReturned() {
+        // given
+        final var document = Document.builder()
+                .documentId(DOCUMENT_UUID)
+                .documentName(DUMMY_DOCUMENT_NAME)
+                .fileName(DUMMY_FILE_NAME)
+                .fileSize(UPLOADED_DOCUMENT_CONTENT.length)
+                .hash(DOCUMENT_HASH)
+                .build();
+
+        final var requestBody = new RejectDocumentRequest(DocumentStatus.REJECTED);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+
+        // when
+        final var result = documentService.rejectDocument(DOCUMENT_UUID, requestBody);
+
+        // then
+        assertRejectSuccessResult(result);
+    }
+
+    @Test
     void testDeleteDocumentWhenDocumentDoesNotExistThenNoExceptionIsThrown() {
         // given
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
@@ -570,5 +618,16 @@ class DocumentServiceTest {
 
         final var response = result.getResponse();
         assertArrayEquals(SIGNED_DOCUMENT_CONTENT, response.getContentAsByteArray());
+    }
+
+    private void assertRejectSuccessResult(final Try<RejectDocumentResponse> result) {
+        assertTrue(result.isSuccess());
+
+        final var response = result.getResponse();
+        assertEquals(DOCUMENT_UUID, response.documentId());
+        assertEquals(DUMMY_DOCUMENT_NAME, response.name());
+        assertEquals(DUMMY_FILE_NAME, response.filename());
+        assertEquals(UPLOADED_DOCUMENT_CONTENT.length, response.size());
+        assertEquals(DOCUMENT_HASH, response.hash());
     }
 }
