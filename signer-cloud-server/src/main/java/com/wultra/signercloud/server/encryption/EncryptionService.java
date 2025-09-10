@@ -60,7 +60,7 @@ public class EncryptionService {
      * @param encryptionMode Encryption mode.
      * @param encryptionKeyProvider Provider for values used for derivation of secret key.
      * @return Decrypted value.
-     * @apiNote is not determined to dencrypt binary data.
+     * @apiNote is not designed to decrypt binary data.
      */
     public String decrypt(final String dataString, final EncryptionMode encryptionMode, final Supplier<List<String>> encryptionKeyProvider) {
         if (encryptionMode == EncryptionMode.NO_ENCRYPTION) {
@@ -80,7 +80,7 @@ public class EncryptionService {
      * @param data String to encrypt.
      * @param encryptionKeyProvider Provider for values used for derivation of secret key.
      * @return Encryptable composite data.
-     * @apiNote is not determined to encrypt binary data.
+     * @apiNote is not designed to encrypt binary data.
      */
     public String encrypt(final String data, final Supplier<List<String>> encryptionKeyProvider) {
         Assert.hasText(data, "Data must not be null");
