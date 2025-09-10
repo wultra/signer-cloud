@@ -87,9 +87,7 @@
 
     <changeSet id="6" logicalFilePath="signer-cloud-server/1.0.x/20250821-callback-event-table.xml" author="Lubos Racansky">
         <preConditions onFail="MARK_RAN">
-            <not>
-                <columnExists tableName="sc_callback_event" columnName="type" />
-            </not>
+            <columnExists tableName="sc_callback_event" columnName="callback_type" />
         </preConditions>
         <comment>Drop the column callback_type from sc_callback_event</comment>
         <dropColumn tableName="sc_callback_event" columnName="callback_type" />
