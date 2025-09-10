@@ -44,7 +44,7 @@ public class CallbackQueueService {
      */
     @PreDestroy
     private void clearExecutorQueue() {
-        logger.info("Moving Callback URL Events from executor's queue to PENDING state.");
+        logger.info("Moving Callback Events from executor's queue to PENDING state.");
         callbackEventsThreadPoolExecutor.getThreadPoolExecutor().shutdownNow().stream()
                 .filter(CallbackEventRunnable.class::isInstance)
                 .map(CallbackEventRunnable.class::cast)
