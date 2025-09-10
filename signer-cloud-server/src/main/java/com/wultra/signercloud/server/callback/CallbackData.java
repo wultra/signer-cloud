@@ -22,7 +22,7 @@ import lombok.Builder;
 import java.time.Duration;
 
 /**
- * Data class holding config of a Callback Event.
+ * Data class holding config of a Callback.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
