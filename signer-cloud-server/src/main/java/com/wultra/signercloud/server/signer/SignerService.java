@@ -115,8 +115,8 @@ class SignerService {
         try {
             callbackQueueService.submitToExecutor(callbackEventData);
         } catch (RejectedExecutionException e) {
-            logger.info("CallbackEvent was rejected by the executor: callbackEventId={}, {}", callbackEventData.id(), e.getMessage());
-            logger.debug("CallbackEvent was rejected by the executor: callbackEventId={}", callbackEventData.id(), e);
+            logger.info("CallbackEvent was rejected by the executor, saving to database: callbackEventId={}, {}", callbackEventData.id(), e.getMessage());
+            logger.debug("CallbackEvent was rejected by the executor, saving to database: callbackEventId={}", callbackEventData.id(), e);
             callbackQueueService.enqueueToDatabase(callbackEventData);
         }
     }
