@@ -41,7 +41,8 @@ class SignerServiceIntegrationTest {
         assertNotNull(callbackEvent);
         assertEquals(1L, callbackEvent.get("CALLBACK_ID"));
         assertEquals(CallbackEventStatus.PROCESSING.toString(), callbackEvent.get("STATUS"));
-        assertEquals("{\"externalSignerId\": \"signer1\", \"userId\": \"user1\"}", callbackEvent.get("CALLBACK_DATA"));
+        assertEquals("""
+                {"externalSignerId": "signer1", "userId": "user1", "callbackType": "EXPIRED"}""", callbackEvent.get("CALLBACK_DATA"));
         assertNotNull(callbackEvent.get("IDEMPOTENCY_KEY"));
         assertNotNull(callbackEvent.get("TIMESTAMP_CREATED"));
     }

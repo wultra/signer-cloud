@@ -86,22 +86,22 @@ class SignerService {
         final List<Signer> signers = signerRepository.markAsExpired(now, limit);
 
         if (configurationProperties.getExpiration().callbackEnabled()) {
-            notifyCallbacks(signers);
+            notifyCallbacks(signers, CallbackType.EXPIRED);
         }
 
         return signers.size();
     }
 
-    private void notifyCallbacks(final List<Signer> signers) {
+    private void notifyCallbacks(final List<Signer> signers, final CallbackType callbackType) {
         logger.info("Creating {} expiration callbacks.", signers.size());
-        final Optional<Callback> callback = callbackService.findCallback(CallbackType.EXPIRED);
+        final Optional<Callback> callback = callbackService.findCallback(callbackType);
         if (callback.isEmpty()) {
             logger.info("There is no expiration callback configured.");
             return;
         }
 
         for (final Signer signer : signers) {
-            final CallbackEvent callbackEvent = callbackService.createAndSaveEventForProcessing(callback.get(), createCallbackData(signer));
+            final CallbackEvent callbackEvent = callbackService.createAndSaveEventForProcessing(callback.get(), createCallbackData(signer, callbackType));
             final CallbackEventData callbackEventData = callbackConvertor.convert(callbackEvent, callback.get());
             TransactionUtils.executeAfterTransactionCommits(() -> enqueue(callbackEventData));
         }
@@ -122,9 +122,9 @@ class SignerService {
     }
 
     @SuppressWarnings("java:S5663")
-    private static String createCallbackData(final Signer signer) {
+    private static String createCallbackData(final Signer signer, final CallbackType callbackType) {
         return """
-                {"externalSignerId": "%s", "userId": "%s"}""".formatted(signer.getExternalSignerId(), signer.getUserId());
+                {"externalSignerId": "%s", "userId": "%s", "callbackType": "%s"}""".formatted(signer.getExternalSignerId(), signer.getUserId(), callbackType);
     }
 
     private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
