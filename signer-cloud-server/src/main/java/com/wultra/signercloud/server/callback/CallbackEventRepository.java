@@ -46,7 +46,7 @@ interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
             SELECT c FROM sc_callback_event c
             WHERE c.status = 'PENDING'
             AND c.timestamp_next_call < :timestamp
-            ORDER BY c.timestamp_next_call DESC
+            ORDER BY c.timestamp_next_call
             FETCH FIRST :limit ROWS ONLY
             """)
     List<CallbackEvent> findPending(LocalDateTime timestamp, int limit);
