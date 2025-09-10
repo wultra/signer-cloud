@@ -123,7 +123,35 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
                     .username(callbackConfiguration.getHttpProxyUsername())
                     .password(callbackConfiguration.getHttpProxyPassword());
         }
+        configureAuthentication(callback, builder);
+
+        return builder.build();
+    }
+
+    private void configureAuthentication(final Callback callback, final DefaultRestClient.Builder builder) {
         final CallbackAuthentication authentication = convert(decryptAuthentication(callback));
+        configureCertificateAuth(authentication, builder);
+        configureBasicAuth(authentication, builder);
+        configureOAuth2(authentication, builder);
+    }
+
+    private static void configureOAuth2(final CallbackAuthentication authentication, final DefaultRestClient.Builder builder) {
+        final CallbackAuthentication.OAuth2 oAuth2Config = authentication.getOAuth2();
+        if (oAuth2Config != null && oAuth2Config.isEnabled()) {
+            builder.filter(configureOAuth2ExchangeFilter(oAuth2Config));
+        }
+    }
+
+    private static void configureBasicAuth(final CallbackAuthentication authentication, final DefaultRestClient.Builder builder) {
+        final CallbackAuthentication.HttpBasic httpBasicAuth = authentication.getHttpBasic();
+        if (httpBasicAuth != null && httpBasicAuth.isEnabled()) {
+            builder.httpBasicAuth()
+                    .username(httpBasicAuth.getUsername())
+                    .password(httpBasicAuth.getPassword());
+        }
+    }
+
+    private static void configureCertificateAuth(final CallbackAuthentication authentication, final DefaultRestClient.Builder builder) {
         final CallbackAuthentication.Certificate certificateAuth = authentication.getCertificate();
         if (certificateAuth != null && certificateAuth.isEnabled()) {
             final byte[] keyStoreBytes = StringUtils.hasText(certificateAuth.getKeyStoreContent())
@@ -148,23 +176,9 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
                         .trustStorePassword(certificateAuth.getTrustStorePassword());
             }
         }
-        final CallbackAuthentication.HttpBasic httpBasicAuth = authentication.getHttpBasic();
-        if (httpBasicAuth != null && httpBasicAuth.isEnabled()) {
-            builder.httpBasicAuth()
-                    .username(httpBasicAuth.getUsername())
-                    .password(httpBasicAuth.getPassword());
-        }
-
-        final CallbackAuthentication.OAuth2 oAuth2Config = authentication.getOAuth2();
-        if (oAuth2Config != null && oAuth2Config.isEnabled()) {
-            builder.filter(configureOAuth2ExchangeFilter(oAuth2Config, callback.getId()));
-        }
-
-        return builder.build();
     }
 
-    private static ServerOAuth2AuthorizedClientExchangeFilterFunction configureOAuth2ExchangeFilter(final CallbackAuthentication.OAuth2 config, final Long callbackId) {
-        logger.debug("Configuring OAuth2 for callback ID: {}", callbackId);
+    private static ServerOAuth2AuthorizedClientExchangeFilterFunction configureOAuth2ExchangeFilter(final CallbackAuthentication.OAuth2 config) {
         final String registrationId = "callback OAuth2";
         final ClientRegistration clientRegistration = ClientRegistration.withRegistrationId(registrationId)
                 .tokenUri(config.getTokenUri())
