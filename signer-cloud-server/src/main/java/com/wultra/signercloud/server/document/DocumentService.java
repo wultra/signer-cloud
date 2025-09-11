@@ -444,11 +444,14 @@ class DocumentService {
     void deleteDocument(final String documentUuid) {
         final var documentOpt = documentRepository.findByDocumentId(documentUuid);
 
-        if (documentOpt.isPresent()) {
-            final var document = documentOpt.get();
-            documentRepository.delete(document);
-            documentContentRepository.deleteById(document.getDocumentContentId());
+        if (documentOpt.isEmpty()) {
+            logger.warn("Document for deletion not found. Document UUID: {}", documentUuid);
+            return;
         }
+
+        final var document = documentOpt.get();
+        documentRepository.delete(document);
+        documentContentRepository.deleteById(document.getDocumentContentId());
     }
 
     @Builder
