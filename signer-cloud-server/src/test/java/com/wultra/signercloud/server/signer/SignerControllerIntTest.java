@@ -126,7 +126,7 @@ class SignerControllerIntTest {
     }
 
     @Test
-    void testCreateUpdateWhenCertificateEnntrollmentFailsThenFailResponseIsReturned() throws Exception {
+    void testCreateUpdateWhenCertificateEnrollmentFailsThenFailResponseIsReturned() throws Exception {
         // given
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(CSR_BASE64)
