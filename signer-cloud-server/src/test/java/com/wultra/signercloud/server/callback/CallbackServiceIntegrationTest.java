@@ -16,12 +16,13 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Integration tests for {@link CallbackQueueService}.
+ * Integration tests for {@link CallbackService}.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
@@ -51,13 +52,15 @@ class CallbackServiceIntegrationTest {
 
     @Test
     void testDispatchInstantCallbackEvent_wrongStatus() {
+        final String idempotencyKey = UUID.randomUUID().toString();
+
         final long id = callbackEventRepository.save(CallbackEvent.builder()
                 .status(CallbackEventStatus.PENDING)
                 .callbackId(1L)
                 .callbackData("""
                         {"foo":"bar"}""")
                 .timestampCreated(LocalDateTime.now())
-                .idempotencyKey("A6A46119-BF8A-4273-9BFB-EC267CFFB5DB")
+                .idempotencyKey(idempotencyKey)
                 .build()).getId();
 
         final CallbackEventData input = CallbackEventData.builder()
@@ -74,13 +77,15 @@ class CallbackServiceIntegrationTest {
 
     @Test
     void testDispatchInstantCallbackEvent_success() throws Exception {
+        final String idempotencyKey = UUID.randomUUID().toString();
+
         final long id = callbackEventRepository.save(CallbackEvent.builder()
                 .status(CallbackEventStatus.PROCESSING)
                 .callbackId(1L)
                 .callbackData("""
                         {"foo":"bar"}""")
                 .timestampCreated(LocalDateTime.now())
-                .idempotencyKey("EAC1E55C-51FD-43A6-85C5-4F64678200DA")
+                .idempotencyKey(idempotencyKey)
                 .build()).getId();
 
         final CallbackData config = CallbackData.builder()
@@ -90,7 +95,7 @@ class CallbackServiceIntegrationTest {
 
         final CallbackEventData input = CallbackEventData.builder()
                 .id(id)
-                .idempotencyKey("EAC1E55C-51FD-43A6-85C5-4F64678200DA")
+                .idempotencyKey(idempotencyKey)
                 .status(CallbackEventStatus.PROCESSING)
                 .config(config)
                 .callbackData(Map.of("foo", "bar"))
@@ -103,7 +108,7 @@ class CallbackServiceIntegrationTest {
         final RecordedRequest recordedRequest = mockWebServer.takeRequest(1L, TimeUnit.SECONDS);
         assertNotNull(recordedRequest);
         assertEquals("POST /callback HTTP/1.1", recordedRequest.getRequestLine());
-        assertEquals("EAC1E55C-51FD-43A6-85C5-4F64678200DA", recordedRequest.getHeader("Idempotency-Key"));
+        assertEquals(idempotencyKey, recordedRequest.getHeader("Idempotency-Key"));
         assertEquals("""
             {"foo":"bar"}""", recordedRequest.getBody().readUtf8());
 
@@ -112,6 +117,96 @@ class CallbackServiceIntegrationTest {
                 .until(() -> callbackEventRepository.findById(id)
                         .map(CallbackEvent::getStatus)
                         .filter(CallbackEventStatus.COMPLETED::equals)
+                        .isPresent());
+    }
+
+    @Test
+    void testDispatchInstantCallbackEvent_error_failed() throws Exception {
+        final String idempotencyKey = UUID.randomUUID().toString();
+
+        final long id = callbackEventRepository.save(CallbackEvent.builder()
+                .status(CallbackEventStatus.PROCESSING)
+                .attempts(1) // set attempts to 1, so that after failure it will be 2 and overreach maxAttempts=1
+                .callbackId(1L)
+                .callbackData("""
+                        {"foo":"bar"}""")
+                .timestampCreated(LocalDateTime.now())
+                .idempotencyKey(idempotencyKey)
+                .build()).getId();
+
+        final CallbackData config = CallbackData.builder()
+                .id(1L)
+                .url(mockWebServer.url("callback").toString())
+                .build();
+
+        final CallbackEventData input = CallbackEventData.builder()
+                .id(id)
+                .idempotencyKey(idempotencyKey)
+                .status(CallbackEventStatus.PROCESSING)
+                .config(config)
+                .callbackData(Map.of("foo", "bar"))
+                .build();
+
+        mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+
+        tested.dispatchInstantCallbackEvent(input);
+
+        final RecordedRequest recordedRequest = mockWebServer.takeRequest(1L, TimeUnit.SECONDS);
+        assertNotNull(recordedRequest);
+        assertEquals("POST /callback HTTP/1.1", recordedRequest.getRequestLine());
+        assertEquals(idempotencyKey, recordedRequest.getHeader("Idempotency-Key"));
+        assertEquals("""
+            {"foo":"bar"}""", recordedRequest.getBody().readUtf8());
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(5L))
+                .until(() -> callbackEventRepository.findById(id)
+                        .filter(it -> it.getStatus() == CallbackEventStatus.FAILED && it.getAttempts() == 2)
+                        .isPresent());
+    }
+
+    @Test
+    void testDispatchInstantCallbackEvent_error_pending() throws Exception {
+        final String idempotencyKey = UUID.randomUUID().toString();
+
+        final long id = callbackEventRepository.save(CallbackEvent.builder()
+                .status(CallbackEventStatus.PROCESSING)
+                .attempts(0) // set attempts to 0, so that after failure it will be 1
+                .callbackId(1L)
+                .callbackData("""
+                        {"foo":"bar"}""")
+                .timestampCreated(LocalDateTime.now())
+                .idempotencyKey(idempotencyKey)
+                .build()).getId();
+
+        final CallbackData config = CallbackData.builder()
+                .id(1L)
+                .url(mockWebServer.url("callback").toString())
+                .build();
+
+        final CallbackEventData input = CallbackEventData.builder()
+                .id(id)
+                .idempotencyKey(idempotencyKey)
+                .status(CallbackEventStatus.PROCESSING)
+                .config(config)
+                .callbackData(Map.of("foo", "bar"))
+                .build();
+
+        mockWebServer.enqueue(new MockResponse().setResponseCode(400));
+
+        tested.dispatchInstantCallbackEvent(input);
+
+        final RecordedRequest recordedRequest = mockWebServer.takeRequest(1L, TimeUnit.SECONDS);
+        assertNotNull(recordedRequest);
+        assertEquals("POST /callback HTTP/1.1", recordedRequest.getRequestLine());
+        assertEquals(idempotencyKey, recordedRequest.getHeader("Idempotency-Key"));
+        assertEquals("""
+            {"foo":"bar"}""", recordedRequest.getBody().readUtf8());
+
+        Awaitility.await()
+                .atMost(Duration.ofSeconds(5L))
+                .until(() -> callbackEventRepository.findById(id)
+                        .filter(it -> it.getStatus() == CallbackEventStatus.PENDING && it.getAttempts() == 1)
                         .isPresent());
     }
 }
