@@ -2,6 +2,7 @@ package com.wultra.signercloud.server.signer;
 
 import com.wultra.signercloud.server.callback.CallbackEventStatus;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -32,7 +33,7 @@ class SignerServiceIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    void testCleanupSigners() {
+    void testCleanupSigners() throws Exception {
         final long result = tested.cleanupSigners(1);
 
         assertEquals(1, result);
@@ -41,8 +42,8 @@ class SignerServiceIntegrationTest {
         assertNotNull(callbackEvent);
         assertEquals(1L, callbackEvent.get("CALLBACK_ID"));
         assertEquals(CallbackEventStatus.PROCESSING.toString(), callbackEvent.get("STATUS"));
-        assertEquals("""
-                {"externalSignerId": "signer1", "userId": "user1", "callbackType": "EXPIRED"}""", callbackEvent.get("CALLBACK_DATA"));
+        JSONAssert.assertEquals("""
+                {"externalSignerId": "signer1", "userId": "user1", "callbackType": "EXPIRED"}""", callbackEvent.get("CALLBACK_DATA").toString(), false);
         assertNotNull(callbackEvent.get("IDEMPOTENCY_KEY"));
         assertNotNull(callbackEvent.get("TIMESTAMP_CREATED"));
     }
