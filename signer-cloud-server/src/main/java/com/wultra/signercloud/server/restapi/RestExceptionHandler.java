@@ -17,10 +17,7 @@
  */
 package com.wultra.signercloud.server.restapi;
 
-import com.wultra.signercloud.server.document.DocumentNotFoundException;
-import com.wultra.signercloud.server.document.DocumentUploadException;
-import com.wultra.signercloud.server.document.DownloadDocumentException;
-import com.wultra.signercloud.server.document.SignDocumentException;
+import com.wultra.signercloud.server.document.*;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -110,6 +107,17 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDownloadDocumentException(final DownloadDocumentException ex) {
+        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link RejectDocumentException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleRejectDocumentException(final RejectDocumentException ex) {
         return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
     }
 
