@@ -170,4 +170,21 @@ public class DocumentController {
             throw error;
         }
     }
+
+    @Operation(
+            summary = "Deletes a document",
+            description = "Permanently deletes a document from the database, regardless of its state. This operation cannot be undone.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Document deleted successfully"
+                    )
+            }
+    )
+    @DeleteMapping("/{documentId}")
+    void delete(@PathVariable final String documentId) {
+        logger.info("action: deleteDocument, state: initiated, documentId: {}", documentId);
+        documentService.deleteDocument(documentId);
+        logger.info("action: deleteDocument, state: succeeded");
+    }
 }

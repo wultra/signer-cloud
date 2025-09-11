@@ -436,6 +436,24 @@ class DocumentService {
         );
     }
 
+    /**
+     * Deletes the {@link Document} and its {@link DocumentContent}.
+     *
+     * @param documentUuid identifier of the document to be deleted
+     */
+    void deleteDocument(final String documentUuid) {
+        final var documentOpt = documentRepository.findByDocumentId(documentUuid);
+
+        if (documentOpt.isEmpty()) {
+            logger.warn("Document for deletion not found. Document UUID: {}", documentUuid);
+            return;
+        }
+
+        final var document = documentOpt.get();
+        documentRepository.delete(document);
+        documentContentRepository.deleteById(document.getDocumentContentId());
+    }
+
     @Builder
     record CleanupResult(String rejectedDocuments, String signedDocuments, String waitingDocuments) {
     }
