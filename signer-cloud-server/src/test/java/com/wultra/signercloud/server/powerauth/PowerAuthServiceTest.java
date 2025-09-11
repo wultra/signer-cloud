@@ -18,9 +18,8 @@
 package com.wultra.signercloud.server.powerauth;
 
 import com.wultra.security.powerauth.client.PowerAuthClient;
-import com.wultra.security.powerauth.client.model.enumeration.ActivationStatus;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
-import com.wultra.security.powerauth.client.model.response.GetActivationStatusResponse;
+import com.wultra.security.powerauth.client.model.response.VerifyECDSASignatureResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,7 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 /**
@@ -40,6 +39,8 @@ import static org.mockito.Mockito.when;
 class PowerAuthServiceTest {
 
     private static final String REGISTRATION_ID = "97ae0ada-4c9d-49e2-8ddf-ae46edfed4d2";
+    private static final String DATA = "data";
+    private static final String SIGNATURE = "signature";
 
     @Mock
     private PowerAuthClient powerAuthClient;
@@ -48,38 +49,43 @@ class PowerAuthServiceTest {
     private PowerAuthService tested;
 
     @Test
-    void testIsRegistrationActive_successful() throws Exception {
-        when(powerAuthClient.getActivationStatus(REGISTRATION_ID))
-                .thenReturn(createResponse(ActivationStatus.ACTIVE));
-
-        final boolean result = tested.isRegistrationActive(REGISTRATION_ID);
-
-        assertTrue(result);
-    }
-
-    @Test
-    void testIsRegistrationActive_negative_scenario() throws Exception {
-        when(powerAuthClient.getActivationStatus(REGISTRATION_ID))
-                .thenReturn(createResponse(ActivationStatus.BLOCKED));
-
-        final boolean result = tested.isRegistrationActive(REGISTRATION_ID);
-
-        assertFalse(result);
-    }
-
-    @Test
-    void testIsRegistrationActive_exception() throws Exception {
-        when(powerAuthClient.getActivationStatus(REGISTRATION_ID))
+    void testIsSignatureValidWhenClientThrowsExceptionThenExceptionIsPropagated() throws Exception {
+        // given
+        when(powerAuthClient.verifyECDSASignature(REGISTRATION_ID, DATA, SIGNATURE))
                 .thenThrow(new PowerAuthClientException());
 
-        final boolean result = tested.isRegistrationActive(REGISTRATION_ID);
-
-        assertFalse(result);
+        // when / then
+        assertThrows(PowerAuthClientException.class, () -> tested.isSignatureValid(REGISTRATION_ID, DATA, SIGNATURE));
     }
 
-    private static GetActivationStatusResponse createResponse(final ActivationStatus activationStatus) {
-        final GetActivationStatusResponse result = new GetActivationStatusResponse();
-        result.setActivationStatus(activationStatus);
-        return result;
+    @Test
+    void testIsSignatureValidWhenSignatureIsNotValidThenFalseIsReturned() throws Exception {
+        // given
+        final var powerAuthResponse = VerifyECDSASignatureResponse.builder()
+                        .build();
+
+        when(powerAuthClient.verifyECDSASignature(REGISTRATION_ID, DATA, SIGNATURE)).thenReturn(powerAuthResponse);
+
+        // when
+        final var response = tested.isSignatureValid(REGISTRATION_ID, DATA, SIGNATURE);
+
+        // then
+        assertFalse(response);
+    }
+
+    @Test
+    void testIsSignatureValidWhenSignatureIsValidThenTrueIsReturned() throws Exception {
+        // given
+        final var powerAuthResponse = VerifyECDSASignatureResponse.builder()
+                .signatureValid(true)
+                .build();
+
+        when(powerAuthClient.verifyECDSASignature(REGISTRATION_ID, DATA, SIGNATURE)).thenReturn(powerAuthResponse);
+
+        // when
+        final var response = tested.isSignatureValid(REGISTRATION_ID, DATA, SIGNATURE);
+
+        // then
+        assertFalse(response);
     }
 }
