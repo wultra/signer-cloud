@@ -41,9 +41,9 @@ class SignerController {
 
     @Operation(
             summary = "Create a new signer or update an existing one",
-            description = "Creates a new signer with the provided data. If a signer with the provided {@code externalSignerId} " +
-                    "already exists, it is updated. In both cases, activation is checked in PowerAuth, and a certificate " +
-                    "is generated in EJBCA from the provided {@code csr}.",
+            description = "Creates a new signer with the provided data. If a signer with the specified {@code externalSignerId} " +
+                    "already exists, it is updated. In both cases, the signature in {@code csr} is verified using PowerAuth, " +
+                    "and a certificate is generated in EJBCA.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",

@@ -106,8 +106,8 @@ class SignerService {
 
     /**
      * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
-     * This method verifies signature in {@code csr} via PowerAuth server, then generates a certificate via the EJBCA service
-     * (based on {@link CreateUpdateSignerRequest#csr()}), and finally stores the signer in the database.
+     * This method verifies signature in {@link CreateUpdateSignerRequest#csr()} via PowerAuth server, then generates
+     * a certificate via the EJBCA service and finally stores the signer in the database.
      *
      * @param request the request containing details of signer
      * @return result of operation as {@link Try}
@@ -130,7 +130,7 @@ class SignerService {
 
         final var x509Certificate = enrollCertificate(externalSignerId, userId, csr);
 
-        final var certificateBase64 = getCertificateBase64(x509Certificate);
+        final var certificateBase64 = encodeCertificateToBase64(x509Certificate);
         final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
 
         final var signerBuilder = signerRepository.findByExternalSignerId(externalSignerId)
@@ -195,7 +195,7 @@ class SignerService {
         }
     }
 
-    private static String getCertificateBase64(final X509Certificate certificate) {
+    private static String encodeCertificateToBase64(final X509Certificate certificate) {
         try {
             return Base64.getEncoder().encodeToString(certificate.getEncoded());
         } catch (final CertificateEncodingException e) {
