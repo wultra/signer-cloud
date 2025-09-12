@@ -30,7 +30,7 @@ import lombok.ToString;
  */
 @Getter
 @Setter
-public class CallbackAuthentication {
+class CallbackAuthentication {
 
     /**
      * Certificate authentication credentials object.

@@ -28,7 +28,7 @@ import java.util.Map;
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 @Builder
-public record CallbackEventData(
+record CallbackEventData(
         Long id,
         CallbackType callbackType,
         Map<String, Object> callbackData,
