@@ -35,7 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @RestController
-@RequestMapping("api/documents")
+@RequestMapping("documents")
 @AllArgsConstructor
 @Slf4j
 public class DocumentController {

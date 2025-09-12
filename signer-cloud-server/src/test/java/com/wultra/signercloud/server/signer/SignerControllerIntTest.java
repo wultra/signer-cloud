@@ -68,8 +68,8 @@ class SignerControllerIntTest {
     private static final long DUMMY_CERTIFICATE_EXPIRATION_SECONDS = 3_600;
     private static final Instant DUMMY_TIMESTAMP_CREATED = Instant.now().minusSeconds(120);
 
-    private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/api/signers";
-    private static final String SIGNER_ENDPOINT_WITH_ID = "/api/signers/{externalSignerId}";
+    private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/signers";
+    private static final String SIGNER_ENDPOINT_WITH_ID = "/signers/{externalSignerId}";
 
     @Autowired
     private MockMvc mockMvc;
