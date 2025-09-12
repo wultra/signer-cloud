@@ -144,7 +144,7 @@ class DocumentService {
     ) throws NoSuchAlgorithmException {
         final var contentType = file.getContentType();
         if (!ContentType.APPLICATION_PDF.getMimeType().equals(contentType)) {
-            throw new DocumentUploadException("Unsupported content callbackType: " + contentType);
+            throw new DocumentUploadException("Unsupported content type: " + contentType);
         }
 
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
