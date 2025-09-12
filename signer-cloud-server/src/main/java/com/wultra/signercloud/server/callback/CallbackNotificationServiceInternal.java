@@ -34,7 +34,7 @@ import java.util.concurrent.RejectedExecutionException;
 @Service
 @AllArgsConstructor
 @Slf4j
-class CallbackNotificationServiceImpl implements CallbackNotificationService {
+class CallbackNotificationServiceInternal implements CallbackNotificationService {
 
     private final CallbackService callbackService;
     private final CallbackQueueService callbackQueueService;
