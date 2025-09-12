@@ -656,7 +656,7 @@ class DocumentControllerIntTest {
     private void assertSignResponse(final SignDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://signercloud.wultra.com:8080/v1/documents/%s/download", DOCUMENT_UUID);
+        final var expectedUri = String.format("https://signercloud.wultra.com:8080/documents/%s/download", DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }
 
