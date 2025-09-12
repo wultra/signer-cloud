@@ -42,7 +42,7 @@ public class IssuedCertificate {
     /**
      * {@link Signer#id}
      */
-    private long singerId;
+    private long signerId;
 
     private Instant timestampCreated;
 

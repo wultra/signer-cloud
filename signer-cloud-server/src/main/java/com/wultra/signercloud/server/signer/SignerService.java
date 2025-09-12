@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -59,6 +60,7 @@ class SignerService {
     private final SignerRepository signerRepository;
     private final SignerConfigurationProperties configurationProperties;
     private final CallbackService callbackService;
+    private final IssuedCertificateRepository issuedCertificateRepository;
 
     /**
      * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
@@ -152,7 +154,8 @@ class SignerService {
                 .status(SignerStatus.ACTIVE)
                 .build();
 
-        signerRepository.save(signer);
+        final var savedSigner = signerRepository.save(signer);
+        saveIssuedCertificate(savedSigner.getId(), x509Certificate);
     }
 
     private Signer.SignerBuilder createSigner(final String externalSignerId) {
@@ -164,6 +167,22 @@ class SignerService {
     private Signer.SignerBuilder updateSigner(final Signer signer) {
         return signer.toBuilder()
                 .timestampLastUpdated(Instant.now());
+    }
+
+    private void saveIssuedCertificate(final long signerId, final X509Certificate x509Certificate) {
+        final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
+        final var serialNumber = x509Certificate.getSerialNumber().toString();
+        final var issuerDn = x509Certificate.getIssuerX500Principal().getName();
+
+        final var issuedCertificate = IssuedCertificate.builder()
+                .signerId(signerId)
+                .timestampCreated(Instant.now())
+                .serialNumber(serialNumber)
+                .issuerDn(issuerDn)
+                .timestampCertificateExpiration(certificateExpiration)
+                .build();
+
+        issuedCertificateRepository.save(issuedCertificate);
     }
 
     /**
