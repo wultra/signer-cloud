@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.IOException;
@@ -64,6 +63,9 @@ class SignerServiceTest {
     private static final Date CERTIFICATE_EXPIRATION_DATE = new Date();
 
     private X509Certificate x509Certificate;
+
+    @Mock
+    private X509Certificate x509CertificateMock;
 
     @Mock
     private PowerAuthService powerAuthService;
@@ -205,7 +207,6 @@ class SignerServiceTest {
     void testCreateUpdateSignerWhenEncodingCertificateThrowsExceptionThenFailResultIsReturned() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
         // given
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
-        final var x509CertificateMock = Mockito.mock(X509Certificate.class);
 
         when(powerAuthService.isSignatureValid(EXTERNAL_SIGNER_ID, CSR_SIGNED_DATA_BASE64, CSR_SIGNATURE_BASE64))
                 .thenReturn(true);
