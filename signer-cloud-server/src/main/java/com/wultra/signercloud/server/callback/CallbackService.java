@@ -225,6 +225,7 @@ class CallbackService {
 
     /**
      * Get the default force rerun period, after which is a Callback Event in PROCESSING state considered stale.
+     *
      * @return Default force rerun period.
      */
     private Duration defaultForceRerunPeriod() {
