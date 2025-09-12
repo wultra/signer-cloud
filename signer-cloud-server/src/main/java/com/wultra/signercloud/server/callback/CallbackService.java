@@ -60,8 +60,6 @@ class CallbackService {
 
     private final CallbackRestClient renewedCallbackClient;
 
-    private final CallbackConfigurationProperties callbackConfigurationProperties;
-
     /**
      * Dispatch a Callback Event.
      *
@@ -277,7 +275,7 @@ class CallbackService {
     }
 
     private CallbackEvent failWithoutDispatching(final CallbackEvent callbackEvent) {
-        final Duration retentionPeriod = callbackConfigurationProperties.callbackConfigurationFor(callbackEvent.getCallbackType()).retentionPeriod();
+        final Duration retentionPeriod = configuration.callbackConfigurationFor(callbackEvent.getCallbackType()).retentionPeriod();
 
         return callbackEventRepository.save(callbackEvent.toBuilder()
                 .status(CallbackEventStatus.FAILED)
