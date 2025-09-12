@@ -55,6 +55,7 @@ class sc_callback_event <<table>> {
 class sc_signer_seq <<sequence>>
 class sc_document_seq <<sequence>>
 class sc_document_content_seq <<sequence>>
+class sc_callback_event_seq <<sequence>>
 
 sc_signer_seq -> sc_signer
 sc_document_seq -> sc_document
