@@ -42,7 +42,7 @@ class SignerServiceIntegrationTest {
         assertEquals("EXPIRED", callbackEvent.get("CALLBACK_TYPE"));
         assertEquals("PROCESSING", callbackEvent.get("STATUS"));
         JSONAssert.assertEquals("""
-                {"externalSignerId": "signer1", "userId": "user1", "callbackType": "EXPIRED"}""", callbackEvent.get("CALLBACK_DATA").toString(), false);
+                {"externalSignerId": "signer1", "userId": "user1", "callbackType": "EXPIRED", "certificateSerialNumber": "64309416018842723591211913217267439625813315032"}""", callbackEvent.get("CALLBACK_DATA").toString(), false);
         assertNotNull(callbackEvent.get("IDEMPOTENCY_KEY"));
         assertNotNull(callbackEvent.get("TIMESTAMP_CREATED"));
     }
