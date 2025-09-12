@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <sequenceExists sequenceName="sc_issued_certificate_seq"/>
+            </not>
+        </preConditions>
+        <comment>Create a new sequence sc_issued_certificate_seq</comment>
+        <createSequence sequenceName="sc_issued_certificate_seq" startValue="1" incrementBy="1" cacheSize="50"/>
+    </changeSet>
+
+    <changeSet id="2" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="sc_issued_certificate" />
+            </not>
+        </preConditions>
+        <comment>Create a new table sc_callback_event</comment>
+        <createTable tableName="sc_issued_certificate">
+            <column name="id" type="bigint">
+                <constraints primaryKey="true" />
+            </column>
+            <column name="timestamp_created" type="timestamp(6)">
+                <constraints nullable="false" />
+            </column>
+            <column name="signer_id" type="bigint">
+                <constraints nullable="false" foreignKeyName="sc_issued_certificate_signer_id_fk" referencedTableName="sc_signer" referencedColumnNames="id" />
+            </column>
+            <column name="serial_number" type="varchar(64)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="issuer_dn" type="varchar(512)">
+                <constraints nullable="false" />
+            </column>
+            <column name="timestamp_certificate_expiration" type="timestamp(6)">
+                <constraints nullable="false" />
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="3" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="sc_issued_certificate_signer_id_idx"/>
+            </not>
+        </preConditions>
+        <comment>Create a new index sc_issued_certificate_signer_id_idx</comment>
+        <createIndex tableName="sc_issued_certificate" indexName="sc_issued_certificate_signer_id_idx">
+            <column name="signer_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="4" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="sc_issued_certificate_timestamp_certificate_expiration_idx"/>
+            </not>
+        </preConditions>
+        <comment>Create a new index sc_issued_certificate_signer_id_idx</comment>
+        <createIndex tableName="sc_issued_certificate" indexName="sc_issued_certificate_timestamp_certificate_expiration_idx">
+            <column name="timestamp_certificate_expiration"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>
