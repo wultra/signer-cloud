@@ -15,22 +15,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.encryption;
+package com.wultra.signercloud.server.callback;
+
+import com.wultra.core.rest.client.base.RestClient;
+import lombok.Builder;
+
+import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Enum representing encryption modes.
+ * Wrapper for the {@link RestClient} to track the creation timestamp and failure statistics of a REST Client instance.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public enum EncryptionMode {
-
-    /**
-     * No encryption.
-     */
-    NO_ENCRYPTION,
-
-    /**
-     * AES encryption with HMAC-based index.
-     */
-    AES_HMAC
-}
+@Builder
+record CallbackRestClient(
+        RestClient restClient,
+        LocalDateTime timestampCreated,
+        AtomicInteger failureCount,
+        AtomicReference<LocalDateTime> timestampLastFailure,
+        CallbackType callbackType
+) { }

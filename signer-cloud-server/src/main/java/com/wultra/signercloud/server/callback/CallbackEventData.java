@@ -30,8 +30,8 @@ import java.util.Map;
 @Builder
 public record CallbackEventData(
         Long id,
+        CallbackType callbackType,
         Map<String, Object> callbackData,
         CallbackEventStatus status,
-        String idempotencyKey,
-        CallbackData config
+        String idempotencyKey
 ) { }

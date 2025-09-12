@@ -18,11 +18,11 @@
 package com.wultra.signercloud.server.signer;
 
 import com.wultra.core.rest.client.base.RestClientException;
-import com.wultra.signercloud.server.callback.*;
+import com.wultra.signercloud.server.callback.CallbackNotificationService;
+import com.wultra.signercloud.server.callback.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
-import com.wultra.signercloud.server.utils.TransactionUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,8 +31,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.Base64;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Service for {@link Signer} operations.
@@ -54,9 +56,7 @@ class SignerService {
     private final EjbcaService ejbcaService;
     private final SignerRepository signerRepository;
     private final SignerConfigurationProperties configurationProperties;
-    private final CallbackService callbackService;
-    private final CallbackQueueService callbackQueueService;
-    private final CallbackConvertor callbackConvertor;
+    private final CallbackNotificationService callbackNotificationService;
 
     /**
      * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
@@ -94,30 +94,10 @@ class SignerService {
 
     private void notifyCallbacks(final List<Signer> signers, final CallbackType callbackType) {
         logger.info("Creating {} expiration callbacks.", signers.size());
-        final Optional<Callback> callback = callbackService.findCallback(callbackType);
-        if (callback.isEmpty()) {
-            logger.info("There is no expiration callback configured.");
-            return;
-        }
 
         for (final Signer signer : signers) {
-            final CallbackEvent callbackEvent = callbackService.createAndSaveEventForProcessing(callback.get(), createCallbackData(signer, callbackType));
-            final CallbackEventData callbackEventData = callbackConvertor.convert(callbackEvent, callback.get());
-            TransactionUtils.executeAfterTransactionCommits(() -> enqueue(callbackEventData));
-        }
-    }
-
-    /**
-     * Try to submit a Callback Event to a task executor. If rejected, enqueue the Callback Event to a database.
-     * @param callbackEventData Callback Event to enqueue
-     */
-    private void enqueue(final CallbackEventData callbackEventData) {
-        try {
-            callbackQueueService.submitToExecutor(callbackEventData);
-        } catch (RejectedExecutionException e) {
-            logger.info("CallbackEvent was rejected by the executor, saving to database: callbackEventId={}, {}", callbackEventData.id(), e.getMessage());
-            logger.debug("CallbackEvent was rejected by the executor, saving to database: callbackEventId={}", callbackEventData.id(), e);
-            callbackQueueService.enqueueToDatabase(callbackEventData);
+            final String callbackData = createCallbackData(signer, callbackType);
+            callbackNotificationService.notify(callbackType, callbackData);
         }
     }
 

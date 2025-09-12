@@ -114,7 +114,7 @@ class DocumentServiceTest {
         final var result = documentService.uploadDocument(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_EXTERNAL_DOCUMENT_ID, DUMMY_DOCUMENT_NAME, file);
 
         // then
-        assertFailResult(result, DocumentUploadException.class, "Unsupported content type: image/jpeg");
+        assertFailResult(result, DocumentUploadException.class, "Unsupported content callbackType: image/jpeg");
     }
 
     @Test

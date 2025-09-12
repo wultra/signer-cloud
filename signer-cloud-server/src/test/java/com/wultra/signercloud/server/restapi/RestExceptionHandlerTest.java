@@ -108,7 +108,7 @@ class RestExceptionHandlerTest {
     @Test
     void testHandleDocumentUploadExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
-        final var message = "Unsupported content type: image/jpeg";
+        final var message = "Unsupported content callbackType: image/jpeg";
 
         // When
         final var response = restExceptionHandler.handleDocumentUploadException(new DocumentUploadException(message));

@@ -17,7 +17,6 @@
  */
 package com.wultra.signercloud.server.callback;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,7 +26,6 @@ import org.springframework.util.Assert;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * Handlers of a Callback Event response.
@@ -43,7 +41,9 @@ class CallbackEventResponseHandler {
 
     private final CallbackEventRepository callbackEventRepository;
 
-    private final LoadingCache<Long, CachedRestClient> callbackRestClientCache;
+    private final CallbackRestClient expiredCallbackClient;
+
+    private final CallbackRestClient renewedCallbackClient;
 
     /**
      * Handle a successful Callback Event attempt.
@@ -55,9 +55,10 @@ class CallbackEventResponseHandler {
         final CallbackEvent callbackEvent = callbackEventRepository.findById(callbackEventData.id())
                 .orElseThrow(() -> new IllegalStateException("Callback Event was not found in database during its success handling: callbackEventId=" + callbackEventData.id()));
 
-        logger.info("Callback succeeded, URL={}, callbackEventId={}", callbackEventData.config().url(), callbackEvent.getId());
+        final CallbackConfigurationProperties.CallbackConfiguration callbackConfiguration = configuration.callbackConfigurationFor(callbackEvent.getCallbackType());
+        logger.info("Callback succeeded, URL={}, callbackEventId={}", callbackConfiguration.url(), callbackEvent.getId());
 
-        final Duration retentionPeriod = Objects.requireNonNullElse(callbackEventData.config().retentionPeriod(), configuration.getDefaultRetentionPeriod());
+        final Duration retentionPeriod = callbackConfiguration.retentionPeriod();
 
         callbackEventRepository.save(callbackEvent.toBuilder()
                 .timestampDeleteAfter(LocalDateTime.now().plus(retentionPeriod))
@@ -66,7 +67,8 @@ class CallbackEventResponseHandler {
                 .attempts(callbackEvent.getAttempts() + 1)
                 .status(CallbackEventStatus.COMPLETED)
                 .build());
-        resetFailureCount(callbackEvent.getCallbackId());
+
+        resetFailureCount(callbackEvent.getCallbackType());
     }
 
     /**
@@ -80,30 +82,32 @@ class CallbackEventResponseHandler {
         final CallbackEvent callbackEvent = callbackEventRepository.findById(callbackEventData.id())
                 .orElseThrow(() -> new IllegalStateException("Callback Event was not found in database during its failure handling: callbackEventId=" + callbackEventData.id()));
 
-        logger.info("Callback failed, URL={}, callbackEventId={}, error={}", callbackEventData.config().url(), callbackEvent.getId(), error.getMessage());
+        final CallbackConfigurationProperties.CallbackConfiguration callbackConfiguration = configuration.callbackConfigurationFor(callbackEvent.getCallbackType());
+        logger.info("Callback failed, URL={}, callbackEventId={}, error={}", callbackConfiguration.url(), callbackEvent.getId(), error.getMessage());
 
-        final CallbackEvent.CallbackEventBuilder builder = callbackEvent.toBuilder();
-        builder.attempts(callbackEvent.getAttempts() + 1)
+        final CallbackEvent.CallbackEventBuilder builder = callbackEvent.toBuilder()
+                .attempts(callbackEvent.getAttempts() + 1)
                 .timestampRerunAfter(null);
 
-        final int maxAttempts = Objects.requireNonNullElse(callbackEventData.config().maxAttempts(), configuration.getDefaultMaxAttempts());
+        final int maxAttempts = callbackConfiguration.maxAttempts();
         final int attemptsMade = callbackEvent.getAttempts();
 
         if (attemptsMade < maxAttempts) {
-            final Duration initialBackoff = Objects.requireNonNullElse(callbackEventData.config().initialBackoff(), configuration.getDefaultInitialBackoff());
+            final Duration initialBackoff = callbackConfiguration.initialBackoff();
             final Duration backoffPeriod = calculateExponentialBackoffPeriod(callbackEvent.getAttempts(), initialBackoff, configuration.getBackoffMultiplier(), configuration.getMaxBackoff());
             builder.timestampNextCall(LocalDateTime.now().plus(backoffPeriod))
                     .status(CallbackEventStatus.PENDING);
         } else {
             logger.debug("Maximum number of attempts reached for callbackEventId={}", callbackEvent.getId());
-            final Duration retentionPeriod = Objects.requireNonNullElse(callbackEventData.config().retentionPeriod(), configuration.getDefaultRetentionPeriod());
+            final Duration retentionPeriod = callbackConfiguration.retentionPeriod();
             builder.timestampDeleteAfter(LocalDateTime.now().plus(retentionPeriod))
                     .timestampNextCall(null)
                     .status(CallbackEventStatus.FAILED);
         }
 
         callbackEventRepository.save(builder.build());
-        incrementFailureCount(callbackEvent.getCallbackId());
+
+        incrementFailureCount(callbackEvent.getCallbackType());
     }
 
     /**
@@ -125,35 +129,28 @@ class CallbackEventResponseHandler {
         return Duration.ofMillis(Math.min(backoffMillis, maxBackoff.toMillis()));
     }
 
-    private void incrementFailureCount(final Long callbackId) {
+    private void incrementFailureCount(final CallbackType callbackType) {
         if (configuration.failureStatsDisabled()) {
             return;
         }
 
-        callbackRestClientCache.asMap().computeIfPresent(callbackId,
-                (key, cached) -> CachedRestClient.builder()
-                        .restClient(cached.restClient())
-                        .timestampCreated(cached.timestampCreated())
-                        .failureCount(cached.failureCount() + 1)
-                        .timestampLastFailure(LocalDateTime.now())
-                        .callback(cached.callback())
-                        .build()
-        );
+        final CallbackRestClient callbackRestClient = fetchCallbackRestClient(callbackType);
+        callbackRestClient.failureCount().incrementAndGet();
+        callbackRestClient.timestampLastFailure().set(LocalDateTime.now());
     }
 
-    private void resetFailureCount(final Long callbackId) {
+    private void resetFailureCount(final CallbackType callbackType) {
         if (configuration.failureStatsDisabled()) {
             return;
         }
 
-        callbackRestClientCache.asMap().computeIfPresent(callbackId,
-                (key, cached) -> CachedRestClient.builder()
-                        .restClient(cached.restClient())
-                        .timestampCreated(cached.timestampCreated())
-                        .failureCount(0)
-                        .timestampLastFailure(cached.timestampLastFailure())
-                        .callback(cached.callback())
-                        .build()
-        );
+        fetchCallbackRestClient(callbackType).failureCount().set(0);
+    }
+
+    private CallbackRestClient fetchCallbackRestClient(final CallbackType callbackType) {
+        return switch (callbackType) {
+            case EXPIRED -> expiredCallbackClient;
+            case RENEWED -> renewedCallbackClient;
+        };
     }
 }

@@ -58,11 +58,6 @@
             <artifactId>powerauth-rest-client-spring</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>io.getlime.security</groupId>
-            <artifactId>powerauth-java-crypto</artifactId>
-        </dependency>
-
         <!--  Bouncy Castle dependencies -->
         <dependency>
             <groupId>org.bouncycastle</groupId>

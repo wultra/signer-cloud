@@ -32,17 +32,17 @@ import java.util.Map;
  */
 @Component
 @AllArgsConstructor
-public class CallbackConvertor {
+class CallbackConvertor {
 
     private final ObjectMapper objectMapper;
 
-    public CallbackEventData convert(final CallbackEvent callbackEvent, final Callback callback) {
+    public CallbackEventData convert(final CallbackEvent callbackEvent) {
         return CallbackEventData.builder()
                 .id(callbackEvent.getId())
+                .callbackType(callbackEvent.getCallbackType())
                 .callbackData(convert(callbackEvent.getCallbackData()))
                 .status(callbackEvent.getStatus())
                 .idempotencyKey(callbackEvent.getIdempotencyKey())
-                .config(convert(callback))
                 .build();
     }
 
@@ -56,15 +56,5 @@ public class CallbackConvertor {
         } catch (IOException ex) {
             throw new IllegalStateException("Unable to parse JSON payload", ex);
         }
-    }
-
-    private static CallbackData convert(final Callback callback) {
-        return CallbackData.builder()
-                .id(callback.getId())
-                .url(callback.getCallbackUrl())
-                .retentionPeriod(callback.getRetentionPeriod())
-                .initialBackoff(callback.getInitialBackoff())
-                .maxAttempts(callback.getMaxAttempts())
-                .build();
     }
 }

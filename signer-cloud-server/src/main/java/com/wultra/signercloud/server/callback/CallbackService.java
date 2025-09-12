@@ -18,7 +18,6 @@
 
 package com.wultra.signercloud.server.callback;
 
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.wultra.core.rest.client.base.RestClient;
 import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.signercloud.server.utils.TransactionUtils;
@@ -36,19 +35,18 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
+ * Callback service.
+ *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
 @Service
 @AllArgsConstructor
 @Slf4j
-public class CallbackService {
-
-    private final CallbackRepository callbackRepository;
+class CallbackService {
 
     private final CallbackConfigurationProperties configuration;
 
@@ -56,9 +54,13 @@ public class CallbackService {
 
     private final CallbackEventRepository callbackEventRepository;
 
-    private final LoadingCache<Long, CachedRestClient> restClientCache;
-
     private final CallbackConvertor callbackConvertor;
+
+    private final CallbackRestClient expiredCallbackClient;
+
+    private final CallbackRestClient renewedCallbackClient;
+
+    private final CallbackConfigurationProperties callbackConfigurationProperties;
 
     /**
      * Dispatch a Callback Event.
@@ -83,38 +85,27 @@ public class CallbackService {
     /**
      * Create and save a new {@link CallbackEvent} in processing state.
      *
-     * @param callback Existing Callback with the Callback URL configuration.
+     * @param callbackType Callback callbackType.
      * @param callbackData Data to be sent with the Callback URL.
      * @return Saved {@link CallbackEvent}.
      */
     @Transactional
-    public CallbackEvent createAndSaveEventForProcessing(final Callback callback, final String callbackData) {
+    public CallbackEvent createAndSaveEventForProcessing(final CallbackType callbackType, final String callbackData) {
         final LocalDateTime now = LocalDateTime.now();
         final Duration forceRerunPeriod = Objects.requireNonNullElse(configuration.getForceRerunPeriod(), defaultForceRerunPeriod());
 
         final CallbackEvent callbackEvent = CallbackEvent.builder()
                 .status(CallbackEventStatus.PROCESSING)
                 .callbackData(callbackData)
-                .callbackId(callback.getId())
+                .callbackType(callbackType)
                 .timestampCreated(now)
                 .timestampLastCall(now)
-                .timestampRerunAfter(shouldBeSentAtMostOnce(callback) ? null : now.plus(forceRerunPeriod))
+                .timestampRerunAfter(shouldBeSentAtMostOnce(configuration.callbackConfigurationFor(callbackType)) ? null : now.plus(forceRerunPeriod))
                 .attempts(0)
                 .idempotencyKey(UUID.randomUUID().toString())
                 .build();
 
         return callbackEventRepository.save(callbackEvent);
-    }
-
-    /**
-     * Finds a {@link Callback} entity of the specified type.
-     *
-     * @param callbackType the type of callback to filter by
-     * @return a matching {@link Callback} entity, or an empty if none are found
-     */
-    @Transactional(readOnly = true)
-    public Optional<Callback> findCallback(final CallbackType callbackType) {
-        return callbackRepository.findCallbackByCallbackType(callbackType);
     }
 
     /**
@@ -150,23 +141,25 @@ public class CallbackService {
         return numberOfAffectedEvents;
     }
 
+    private CallbackRestClient fetchCallbackRestClient(final CallbackType callbackType) {
+        return switch (callbackType) {
+            case EXPIRED -> expiredCallbackClient;
+            case RENEWED -> renewedCallbackClient;
+        };
+    }
+
     /**
      * Dispatch Callback Event.
      * @param callbackEvent Event to dispatch.
      */
     private void dispatchPendingCallbackEvent(final CallbackEvent callbackEvent) {
-        final CachedRestClient restClient = restClientCache.get(callbackEvent.getCallbackId());
+        final CallbackType callbackType = callbackEvent.getCallbackType();
 
-        if (restClient == null) {
-            logger.warn("Callback is not available, associated events are not dispatched: callbackId={}", callbackEvent.getCallbackId());
-            failWithoutDispatching(callbackEvent, null);
-            return;
-        }
+        final CallbackRestClient callbackRestClient = fetchCallbackRestClient(callbackType);
 
-        final Callback callback = restClient.callback();
-        if (failureThresholdReached(callback)) {
-            logger.warn("Callback has reached failure threshold, associated events are not dispatched: callbackId={}", callback.getId());
-            failWithoutDispatching(callbackEvent, callback);
+        if (failureThresholdReached(callbackRestClient)) {
+            logger.warn("Callback has reached failure threshold, associated events are not dispatched: callbackType={}", callbackType);
+            failWithoutDispatching(callbackEvent);
             return;
         }
 
@@ -177,10 +170,10 @@ public class CallbackService {
                 .status(CallbackEventStatus.PROCESSING)
                 .timestampNextCall(null)
                 .timestampLastCall(timestampNow)
-                .timestampRerunAfter(shouldBeSentAtMostOnce(callback) ? null : timestampNow.plus(forceRerunPeriod))
+                .timestampRerunAfter(shouldBeSentAtMostOnce(configuration.callbackConfigurationFor(callbackType)) ? null : timestampNow.plus(forceRerunPeriod))
                 .build());
 
-        final CallbackEventData callbackEventData = callbackConvertor.convert(savedCallbackEvent, callback);
+        final CallbackEventData callbackEventData = callbackConvertor.convert(savedCallbackEvent);
 
         TransactionUtils.executeAfterTransactionCommits(() -> postCallback(callbackEventData));
     }
@@ -188,34 +181,48 @@ public class CallbackService {
     /**
      * Check if the Callback should be processed. This check prevents from failed callback event flooding.
      *
-     * @param callback Callback entity holding failure statistics.
+     * @param callbackType Callback type.
      * @return True if the callback should be processed, false otherwise.
      */
-    private boolean failureThresholdReached(final Callback callback) {
+    public boolean failureThresholdReached(final CallbackType callbackType) {
+        return failureThresholdReached(fetchCallbackRestClient(callbackType));
+    }
+
+    boolean failureThresholdReached(final CallbackRestClient callbackRestClient) {
         if (configuration.failureStatsDisabled()) {
             logger.debug("Failure stats are turned off for Callback processing");
-            return false;
-        }
-
-        final Long callbackId = callback.getId();
-        final CachedRestClient restClient = restClientCache.getIfPresent(callbackId);
-        if (restClient == null) {
-            logger.debug("No failure stats available yet for Callback processing: id={}", callbackId);
             return false;
         }
 
         final int failureThreshold = configuration.getFailureThreshold();
         final Duration resetTimeout = configuration.getFailureResetTimeout();
 
-        final int failureCount = restClient.failureCount();
-        final LocalDateTime timestampLastFailure = restClient.timestampLastFailure();
+        final int failureCount = callbackRestClient.failureCount().get();
+        final LocalDateTime timestampLastFailure = callbackRestClient.timestampLastFailure().get();
 
         if (failureCount >= failureThreshold && LocalDateTime.now().minus(resetTimeout).isAfter(timestampLastFailure)) {
-            logger.debug("Callback reached failure threshold, but before specified reset timeout period, id={}", callbackId);
+            logger.debug("Callback reached failure threshold, but before specified reset timeout period, callbackType={}", callbackRestClient.callbackType());
             return false;
         }
 
         return failureCount >= failureThreshold;
+    }
+
+    /**
+     * Create and save a new {@link CallbackEvent} in failed state.
+     *
+     * @param callbackType Callback type.
+     * @param callbackData Data to be sent with the Callback URL.
+     */
+    public void createAndSaveFailedEvent(final CallbackType callbackType, final String callbackData) {
+        final CallbackEvent callbackEvent = CallbackEvent.builder()
+                .callbackType(callbackType)
+                .callbackData(callbackData)
+                .idempotencyKey(UUID.randomUUID().toString())
+                .attempts(0)
+                .timestampCreated(LocalDateTime.now())
+                .build();
+        callbackEventRepository.save(failWithoutDispatching(callbackEvent));
     }
 
     /**
@@ -230,18 +237,8 @@ public class CallbackService {
                 .plus(allowedProcessingDelay);
     }
 
-    private boolean shouldBeSentAtMostOnce(final Callback callback) {
-        return obtainMaxAttempts(callback) == 1;
-    }
-
-    /**
-     * Obtain maximum attempts to send a Callback Event.
-     *
-     * @param callback The Callback Event configuration.
-     * @return Maximum number of attempts.
-     */
-    private int obtainMaxAttempts(final Callback callback) {
-        return Objects.requireNonNullElse(callback.getMaxAttempts(), configuration.getDefaultMaxAttempts());
+    private boolean shouldBeSentAtMostOnce(final CallbackConfigurationProperties.CallbackConfiguration configuration) {
+        return configuration.maxAttempts() == 1;
     }
 
     /**
@@ -260,11 +257,12 @@ public class CallbackService {
             final Consumer<Throwable> onError = error -> callbackEventResponseHandler.handleFailure(callbackEventData, error);
             final ParameterizedTypeReference<String> responseType = new ParameterizedTypeReference<>(){};
 
-            final RestClient restClient = fetchRestClient(callbackEventData);
+            final RestClient restClient = fetchCallbackRestClient(callbackEventData.callbackType()).restClient();
             final MultiValueMap<String, String> headers = new LinkedMultiValueMap<>();
             headers.add("Idempotency-Key", callbackEventData.idempotencyKey());
 
-            restClient.postNonBlocking(callbackEventData.config().url(),
+            // not needed to specify the path, using restClient baseUrl
+            restClient.postNonBlocking("",
                     callbackEventData.callbackData(),
                     new LinkedMultiValueMap<>(),
                     headers,
@@ -278,32 +276,14 @@ public class CallbackService {
         }
     }
 
-    private RestClient fetchRestClient(final CallbackEventData callbackEventData) throws RestClientException {
-        final Long callbackUrlId = callbackEventData.config().id();
-        final CachedRestClient restClient = restClientCache.get(callbackUrlId);
-        if (restClient == null) {
-            throw new RestClientException("REST Client not available for the Callback: id=" + callbackUrlId);
-        }
+    private CallbackEvent failWithoutDispatching(final CallbackEvent callbackEvent) {
+        final Duration retentionPeriod = callbackConfigurationProperties.callbackConfigurationFor(callbackEvent.getCallbackType()).retentionPeriod();
 
-        return restClient.restClient();
-    }
-
-    private void failWithoutDispatching(final CallbackEvent callbackEvent, final Callback callback) {
-        final Duration retentionPeriod = resolveRetentionPeriod(callback);
-
-        callbackEventRepository.save(callbackEvent.toBuilder()
+        return callbackEventRepository.save(callbackEvent.toBuilder()
                 .status(CallbackEventStatus.FAILED)
                 .timestampNextCall(null)
                 .timestampDeleteAfter(LocalDateTime.now().plus(retentionPeriod))
                 .timestampRerunAfter(null)
                 .build());
-    }
-
-    private Duration resolveRetentionPeriod(final Callback callback) {
-        if (callback != null && callback.getRetentionPeriod() != null) {
-            return callback.getRetentionPeriod();
-        } else {
-            return configuration.getDefaultRetentionPeriod();
-        }
     }
 }

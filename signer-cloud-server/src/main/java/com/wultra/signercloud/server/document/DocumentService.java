@@ -144,7 +144,7 @@ class DocumentService {
     ) throws NoSuchAlgorithmException {
         final var contentType = file.getContentType();
         if (!ContentType.APPLICATION_PDF.getMimeType().equals(contentType)) {
-            throw new DocumentUploadException("Unsupported content type: " + contentType);
+            throw new DocumentUploadException("Unsupported content callbackType: " + contentType);
         }
 
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
@@ -330,7 +330,7 @@ class DocumentService {
                     .generateCertificate(new ByteArrayInputStream(certificateBytes));
             return new CertificateToken(x509Certificate);
         } catch (final CertificateException e) {
-            logger.error("Exception when parsing certificate of type: {}", CERTIFICATE_TYPE, e);
+            logger.error("Exception when parsing certificate of callbackType: {}", CERTIFICATE_TYPE, e);
             throw e;
         }
     }

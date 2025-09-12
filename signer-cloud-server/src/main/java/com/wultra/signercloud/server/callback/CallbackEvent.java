@@ -40,10 +40,7 @@ public class CallbackEvent {
     @Sequence("sc_callback_event_seq")
     private long id;
 
-    /**
-     * {@link Callback#getId()}
-     */
-    private long callbackId;
+    private CallbackType callbackType;
 
     private String callbackData;
 

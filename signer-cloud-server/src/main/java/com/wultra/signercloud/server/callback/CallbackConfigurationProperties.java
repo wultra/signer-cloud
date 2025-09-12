@@ -33,22 +33,17 @@ import java.time.Duration;
 @Setter
 class CallbackConfigurationProperties {
 
-    private Configuration dispatchPendingCallbackEvents = new Configuration(new Job(100));
+    private JobConfiguration dispatchPendingCallbackEvents = new JobConfiguration(new Job(100));
 
     /**
-     * Default maximum number of attempts in case the corresponding Callback does not define any.
+     * Configuration for {@link CallbackType#EXPIRED}.
      */
-    private int defaultMaxAttempts = 1;
+    private CallbackConfiguration expired;
 
     /**
-     * Default retention period of the event in case the corresponding Callback does not define any.
+     * Configuration for {@link CallbackType#RENEWED}.
      */
-    private Duration defaultRetentionPeriod = Duration.ofDays(30);
-
-    /**
-     * Default initial backoff between attempts in case the corresponding Callback does not define any.
-     */
-    private Duration defaultInitialBackoff = Duration.ofSeconds(2);
+    private CallbackConfiguration renewed;
 
     /**
      * Maximum possible backoff period between successive attempts.
@@ -137,9 +132,38 @@ class CallbackConfigurationProperties {
         return failureThreshold == -1;
     }
 
-    record Configuration(Job job) {
+    public CallbackConfiguration callbackConfigurationFor(final CallbackType callbackType) {
+        return switch (callbackType) {
+            case EXPIRED -> expired;
+            case RENEWED -> renewed;
+        };
+    }
+
+    record JobConfiguration(Job job) {
     }
 
     record Job(int limit) {
+    }
+
+    /**
+     * Callback configuration.
+     *
+     * @param url
+     * @param maxAttempts Maximum number of attempts to send the callback.
+     * @param initialBackoff Initial backoff before the next sending attempt.
+     * @param retentionPeriod Duration for which the callback event is stored.
+     * @param authentication Callback authentication.
+     */
+    record CallbackConfiguration(String url, Integer maxAttempts, Duration initialBackoff, Duration retentionPeriod, CallbackAuthentication authentication) {
+        @Override
+        public String toString() {
+            return "CallbackConfiguration{" +
+                    "retentionPeriod=" + retentionPeriod +
+                    ", initialBackoff=" + initialBackoff +
+                    ", maxAttempts=" + maxAttempts +
+                    ", url='" + url + '\'' +
+                    // authentication omitted on purpose
+                    '}';
+        }
     }
 }

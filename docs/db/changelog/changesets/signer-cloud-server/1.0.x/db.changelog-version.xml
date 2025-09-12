@@ -10,6 +10,5 @@
     <include file="20250815-document-indexes.xml" relativeToChangelogFile="true" />
     <include file="20250820-signer-index.xml" relativeToChangelogFile="true" />
     <include file="20250821-callback-event-table.xml" relativeToChangelogFile="true" />
-    <include file="20250904-callback.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

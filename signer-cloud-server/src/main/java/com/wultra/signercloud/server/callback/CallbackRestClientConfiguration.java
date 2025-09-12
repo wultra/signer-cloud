@@ -17,15 +17,12 @@
  */
 package com.wultra.signercloud.server.callback;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.wultra.core.rest.client.base.DefaultRestClient;
 import com.wultra.core.rest.client.base.RestClient;
 import com.wultra.core.rest.client.base.RestClientException;
-import com.wultra.signercloud.server.encryption.EncryptionService;
-import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.Nullable;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager;
 import org.springframework.security.oauth2.client.InMemoryReactiveOAuth2AuthorizedClientService;
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService;
@@ -34,108 +31,76 @@ import org.springframework.security.oauth2.client.registration.InMemoryReactiveC
 import org.springframework.security.oauth2.client.registration.ReactiveClientRegistrationRepository;
 import org.springframework.security.oauth2.client.web.reactive.function.client.ServerOAuth2AuthorizedClientExchangeFilterFunction;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Specialization of {@link CacheLoader} for {@link CachedRestClient}.
+ * Configuration creating {@link CallbackRestClient}.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@AllArgsConstructor
 @Slf4j
-@Component
-class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClient> {
+@Configuration
+class CallbackRestClientConfiguration {
 
-    private final ObjectMapper objectMapper;
-
-    private final CallbackConfigurationProperties callbackConfiguration;
-
-    private final CallbackRepository callbackRepository;
-
-    private final EncryptionService encryptionService;
-
-    @Override
-    public @Nullable CachedRestClient load(final Long callbackId) throws RestClientException {
-        logger.debug("Loading RestClient for Callback; id={}", callbackId);
-
-        final Optional<Callback> callback = callbackRepository.findById(callbackId);
-        if (callback.isEmpty()) {
-            logger.warn("Callback is not available; id={}", callbackId);
-            return null;
-        }
-
-        return createNewCachedRestClient(callback.get());
+    @Bean
+    public CallbackRestClient expiredCallbackClient(final CallbackConfigurationProperties callbackConfiguration) throws RestClientException {
+        return createCallbackRestClient(CallbackType.EXPIRED, callbackConfiguration);
     }
 
-    @Override
-    public @Nullable CachedRestClient reload(final Long callbackId, final CachedRestClient cachedRestClient) throws RestClientException {
-        logger.debug("Checking cached RestClient for Callback; id={}", callbackId);
-
-        final Optional<Callback> callback = callbackRepository.findById(callbackId);
-        if (callback.isEmpty()) {
-            logger.warn("Callback is not available anymore; id={}", callbackId);
-            return null;
-        }
-
-        final LocalDateTime lastEntityUpdate = callback.get().getTimestampLastUpdated();
-        if (lastEntityUpdate != null && lastEntityUpdate.isAfter(cachedRestClient.timestampCreated())) {
-            return createNewCachedRestClient(callback.get());
-        }
-
-        logger.debug("Keeping the RestClient in cache for Callback; id={}", callbackId);
-        return cachedRestClient;
+    @Bean
+    public CallbackRestClient renewedCallbackClient(final CallbackConfigurationProperties callbackConfiguration) throws RestClientException {
+        return createCallbackRestClient(CallbackType.RENEWED, callbackConfiguration);
     }
 
-    private CachedRestClient createNewCachedRestClient(final Callback callback) throws RestClientException {
-        return CachedRestClient.builder()
-                .restClient(initializeRestClient(callback))
+    private CallbackRestClient createCallbackRestClient(final CallbackType callbackType, final CallbackConfigurationProperties configuration) throws RestClientException {
+        logger.info("Initiating RestClient for callbackType={}", callbackType);
+        return CallbackRestClient.builder()
+                .restClient(initializeRestClient(callbackType, configuration))
                 .timestampCreated(LocalDateTime.now())
-                .failureCount(0)
-                .timestampLastFailure(LocalDateTime.MIN)
-                .callback(callback)
+                .failureCount(new AtomicInteger(0))
+                .timestampLastFailure(new AtomicReference<>(LocalDateTime.MIN))
+                .callbackType(callbackType)
                 .build();
     }
 
-    /**
-     * Initialize a REST client instance and configure it based on client configuration.
-     *
-     * @param callback Callback entity.
-     * @throws RestClientException In case the REST Client initialization fails.
-     */
-    private RestClient initializeRestClient(final Callback callback) throws RestClientException {
-        logger.debug("Initiating a new RestClient for callback; id={}", callback.getId());
-        final DefaultRestClient.Builder builder = DefaultRestClient.builder();
-        builder.connectionTimeout(callbackConfiguration.getHttpConnectionTimeout());
-        builder.responseTimeout(callbackConfiguration.getHttpResponseTimeout());
-        builder.maxIdleTime(callbackConfiguration.getHttpMaxIdleTime());
-        if (Boolean.TRUE.equals(callbackConfiguration.getHttpProxyEnabled())) {
+    private static RestClient initializeRestClient(final CallbackType callbackType, final CallbackConfigurationProperties configuration) throws RestClientException {
+        final CallbackConfigurationProperties.CallbackConfiguration callbackConfiguration = configuration.callbackConfigurationFor(callbackType);
+
+        final DefaultRestClient.Builder builder = DefaultRestClient.builder()
+                .baseUrl(callbackConfiguration.url())
+                .connectionTimeout(configuration.getHttpConnectionTimeout())
+                .responseTimeout(configuration.getHttpResponseTimeout())
+                .maxIdleTime(configuration.getHttpMaxIdleTime());
+        if (Boolean.TRUE.equals(configuration.getHttpProxyEnabled())) {
             builder.proxy()
-                    .host(callbackConfiguration.getHttpProxyHost())
-                    .port(callbackConfiguration.getHttpProxyPort())
-                    .username(callbackConfiguration.getHttpProxyUsername())
-                    .password(callbackConfiguration.getHttpProxyPassword());
+                    .host(configuration.getHttpProxyHost())
+                    .port(configuration.getHttpProxyPort())
+                    .username(configuration.getHttpProxyUsername())
+                    .password(configuration.getHttpProxyPassword());
         }
-        configureAuthentication(callback, builder);
+
+        final CallbackAuthentication authentication = callbackConfiguration.authentication();
+        configureAuthentication(authentication, builder);
 
         return builder.build();
     }
 
-    private void configureAuthentication(final Callback callback, final DefaultRestClient.Builder builder) {
-        final CallbackAuthentication authentication = convert(decryptAuthentication(callback));
+    private static void configureAuthentication(final CallbackAuthentication authentication, final DefaultRestClient.Builder builder) {
         configureCertificateAuth(authentication, builder);
         configureBasicAuth(authentication, builder);
         configureOAuth2(authentication, builder);
     }
 
     private static void configureOAuth2(final CallbackAuthentication authentication, final DefaultRestClient.Builder builder) {
+        if (authentication == null) {
+            return;
+        }
+
         final CallbackAuthentication.OAuth2 oAuth2Config = authentication.getOAuth2();
         if (oAuth2Config != null && oAuth2Config.isEnabled()) {
             builder.filter(configureOAuth2ExchangeFilter(oAuth2Config));
@@ -143,6 +108,10 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
     }
 
     private static void configureBasicAuth(final CallbackAuthentication authentication, final DefaultRestClient.Builder builder) {
+        if (authentication == null) {
+            return;
+        }
+
         final CallbackAuthentication.HttpBasic httpBasicAuth = authentication.getHttpBasic();
         if (httpBasicAuth != null && httpBasicAuth.isEnabled()) {
             builder.httpBasicAuth()
@@ -152,6 +121,10 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
     }
 
     private static void configureCertificateAuth(final CallbackAuthentication authentication, final DefaultRestClient.Builder builder) {
+        if (authentication == null) {
+            return;
+        }
+
         final CallbackAuthentication.Certificate certificateAuth = authentication.getCertificate();
         if (certificateAuth != null && certificateAuth.isEnabled()) {
             final byte[] keyStoreBytes = StringUtils.hasText(certificateAuth.getKeyStoreContent())
@@ -195,25 +168,5 @@ class CallbackRestClientCacheLoader implements CacheLoader<Long, CachedRestClien
         final ServerOAuth2AuthorizedClientExchangeFilterFunction oAuth2ExchangeFilterFunction = new ServerOAuth2AuthorizedClientExchangeFilterFunction(authorizedClientManager);
         oAuth2ExchangeFilterFunction.setDefaultClientRegistrationId(registrationId);
         return oAuth2ExchangeFilterFunction;
-    }
-
-    private String decryptAuthentication(final Callback callback) {
-        return encryptionService.decrypt(callback.getAuthentication(), callback.getEncryptionMode(), createEncryptionKeyProvider(callback.getId()));
-    }
-
-    private static Supplier<List<String>> createEncryptionKeyProvider(final Long callbackId) {
-        return () -> List.of(callbackId.toString());
-    }
-
-    private CallbackAuthentication convert(String authentication) {
-        if (authentication == null) {
-            return new CallbackAuthentication();
-        }
-        try {
-            return objectMapper.readValue(authentication, CallbackAuthentication.class);
-        } catch (IOException e) {
-            logger.error("Unable to parse JSON payload", e);
-            return new CallbackAuthentication();
-        }
     }
 }

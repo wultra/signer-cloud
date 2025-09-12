@@ -40,7 +40,7 @@ class SignerServiceIntegrationTest {
 
         final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM sc_callback_event ORDER BY timestamp_created DESC LIMIT 1");
         assertNotNull(callbackEvent);
-        assertEquals(1L, callbackEvent.get("CALLBACK_ID"));
+        assertEquals("EXPIRED", callbackEvent.get("CALLBACK_TYPE"));
         assertEquals(CallbackEventStatus.PROCESSING.toString(), callbackEvent.get("STATUS"));
         JSONAssert.assertEquals("""
                 {"externalSignerId": "signer1", "userId": "user1", "callbackType": "EXPIRED"}""", callbackEvent.get("CALLBACK_DATA").toString(), false);

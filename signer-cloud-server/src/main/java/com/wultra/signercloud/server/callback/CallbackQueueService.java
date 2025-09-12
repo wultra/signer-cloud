@@ -33,7 +33,7 @@ import java.util.concurrent.RejectedExecutionException;
 @Service
 @Slf4j
 @AllArgsConstructor
-public class CallbackQueueService {
+class CallbackQueueService {
 
     private final CallbackService callbackService;
 

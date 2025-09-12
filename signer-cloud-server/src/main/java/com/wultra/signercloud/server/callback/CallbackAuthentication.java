@@ -24,7 +24,7 @@ import lombok.ToString;
 /**
  * Class for storing callback authentication credentials.
  * <p>
- * It is a model for a JSON string stored in a database column.
+ * It is a model for a JSON string.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
