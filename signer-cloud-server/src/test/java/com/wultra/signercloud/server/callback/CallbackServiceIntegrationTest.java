@@ -1,5 +1,6 @@
 package com.wultra.signercloud.server.callback;
 
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;

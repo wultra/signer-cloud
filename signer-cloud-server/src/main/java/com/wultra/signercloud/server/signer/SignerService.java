@@ -18,8 +18,8 @@
 package com.wultra.signercloud.server.signer;
 
 import com.wultra.core.rest.client.base.RestClientException;
-import com.wultra.signercloud.server.callback.CallbackNotificationService;
-import com.wultra.signercloud.server.callback.CallbackType;
+import com.wultra.signercloud.server.callback.api.CallbackType;
+import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;

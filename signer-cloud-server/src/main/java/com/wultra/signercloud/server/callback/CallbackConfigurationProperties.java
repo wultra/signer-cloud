@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.callback;
 
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;

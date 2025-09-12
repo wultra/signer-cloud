@@ -20,6 +20,7 @@ package com.wultra.signercloud.server.callback;
 
 import com.wultra.core.rest.client.base.RestClient;
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.utils.TransactionUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

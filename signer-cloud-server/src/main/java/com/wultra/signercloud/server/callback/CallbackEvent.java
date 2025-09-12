@@ -18,6 +18,7 @@
 
 package com.wultra.signercloud.server.callback;
 
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Sequence;

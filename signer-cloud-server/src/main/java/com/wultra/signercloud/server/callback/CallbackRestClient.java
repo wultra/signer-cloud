@@ -18,6 +18,7 @@
 package com.wultra.signercloud.server.callback;
 
 import com.wultra.core.rest.client.base.RestClient;
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import lombok.Builder;
 
 import java.time.LocalDateTime;

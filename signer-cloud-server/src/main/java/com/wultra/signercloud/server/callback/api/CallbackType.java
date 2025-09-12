@@ -16,10 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.wultra.signercloud.server.callback;
+package com.wultra.signercloud.server.callback.api;
 
 /**
- * Possible types of a {@link CallbackEvent}.
+ * Possible types of a {@code CallbackEvent}.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */

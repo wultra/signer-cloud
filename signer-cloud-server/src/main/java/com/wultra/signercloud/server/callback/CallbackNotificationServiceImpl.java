@@ -17,6 +17,8 @@
  */
 package com.wultra.signercloud.server.callback;
 
+import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.utils.TransactionUtils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,31 +27,20 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
- * Callback notification service.
+ * Implementation of {@link CallbackNotificationService}.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
- * @implNote Public class exposed for other modules.
  */
 @Service
 @AllArgsConstructor
 @Slf4j
-public class CallbackNotificationService {
+class CallbackNotificationServiceImpl implements CallbackNotificationService {
 
     private final CallbackService callbackService;
     private final CallbackQueueService callbackQueueService;
     private final CallbackConvertor callbackConvertor;
 
-    /**
-     * Notify the system about a new Callback Event. The event is created and saved to the database, then it is
-     * submitted to a task executor for processing. If the executor rejects the event, it remains in the database
-     * with PENDING status and will be processed later by a scheduled job.
-     * <p>
-     * If the failure threshold for the given Callback Type has been reached, no event is created and saved,
-     * instead a failed event is created.
-     *
-     * @param callbackType Type of the callback.
-     * @param callbackData Data associated with the callback, will be stored as JSON.
-     */
+    @Override
     public void notify(final CallbackType callbackType, final String callbackData) {
         if (callbackService.failureThresholdReached(callbackType)) {
             logger.warn("Callback has reached failure threshold, associated events are not dispatched: callbackType={}", callbackType);

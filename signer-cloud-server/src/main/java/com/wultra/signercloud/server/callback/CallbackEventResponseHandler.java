@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.callback;
 
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
