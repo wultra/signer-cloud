@@ -132,8 +132,8 @@ class SignerService {
                     .certificateFromX509(x509Certificate)
                     .build());
         } catch (final CertificateEncodingException e) {
-            logger.warn("Exception when encoding certificate to base64");
-            throw new CertificateEnrollmentException("Certificate could not be encoded", e);
+            logger.warn("Exception when encoding certificate to base64 during renewal, externalSignerId: {}", signer.getExternalSignerId());
+            throw new CertificateEnrollmentException("Certificate could not be encoded during renewal", e);
         }
 
         if (configurationProperties.getRenewal().callbackEnabled()) {
@@ -221,8 +221,8 @@ class SignerService {
                     .build();
             signerRepository.save(signer);
         } catch (final CertificateEncodingException e) {
-            logger.warn("Exception when encoding certificate to base64");
-            throw new CertificateEnrollmentException("Certificate could not be encoded", e);
+            logger.warn("Exception when encoding certificate to base64 during creation/update, externalSignerId: {}", externalSignerId);
+            throw new CertificateEnrollmentException("Certificate could not be encoded during creation/update", e);
         }
     }
 

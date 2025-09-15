@@ -225,7 +225,7 @@ class SignerServiceTest {
         assertErrorResult(
                 result,
                 CertificateEnrollmentException.class,
-                "Certificate could not be encoded"
+                "Certificate could not be encoded during creation/update"
         );
     }
 
