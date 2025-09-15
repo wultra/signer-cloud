@@ -18,17 +18,15 @@
 package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.utils.CertificateUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 
 /**
  * Service for calling EJBCA functionality.
@@ -60,7 +58,7 @@ public class EjbcaService {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
         }
 
-        return convertDerToX509Certificate(certificateResponse.certificate());
+        return CertificateUtils.base64ToX509Certificate(certificateResponse.certificate());
     }
 
     private EjbcaRestClient.CertificateRequest convert(final CertificateRequest source) {
@@ -74,22 +72,14 @@ public class EjbcaService {
                 .build();
     }
 
-    private static X509Certificate convertDerToX509Certificate(final String derCertificateBase64) throws IOException, CertificateException {
-        final byte[] derCertificate = Base64.getDecoder().decode(derCertificateBase64);
-        final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        try (final ByteArrayInputStream inputStream = new ByteArrayInputStream(derCertificate)) {
-            return (X509Certificate) certificateFactory.generateCertificate(inputStream);
-        }
-    }
-
     /**
-     * Revokes all certificates associated with the given {@link com.wultra.signercloud.server.signer.Signer#externalSignerId}.
+     * Revokes a specific certificate identified by its serial number and issuer DN.
      *
-     * @param externalSignerId the external signer ID to identify the signer whose certificates should be revoked
+     * @param request the request containing the serial number and issuer DN of the certificate to be revoked
      * @throws RestClientException if an error occurs during the revocation process
      */
-    public void revokeCertificates(final String externalSignerId) throws RestClientException {
-        ejbcaRestClient.revokeCertificates(externalSignerId);
+    public void revokeCertificate(final RevokeCertificateRequest request) throws RestClientException {
+        ejbcaRestClient.revokeCertificate(request);
     }
 
     /**
@@ -101,4 +91,12 @@ public class EjbcaService {
      */
     @Builder
     public record CertificateRequest(String userId, String externalSignerId, String csr){}
+
+    /**
+     * Parameter object for revoking a certificate.
+     *
+     * @param serialNumber certificate serial number
+     * @param issuerDN certificate issuer distinguished name
+     */
+    public record RevokeCertificateRequest(String serialNumber, String issuerDN) {}
 }

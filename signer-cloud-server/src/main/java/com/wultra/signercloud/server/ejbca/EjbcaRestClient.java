@@ -31,7 +31,6 @@ import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 import org.springframework.web.util.UriComponentsBuilder;
 
 /**
@@ -75,12 +74,15 @@ class EjbcaRestClient {
         return response.getBody();
     }
 
-    void revokeCertificates(final String externalSignerId) throws RestClientException {
-        final String url = UriComponentsBuilder.fromPath("/v1/endentity/{external_signer_id}/revoke")
-                .buildAndExpand(externalSignerId)
+    void revokeCertificate(final EjbcaService.RevokeCertificateRequest request) throws RestClientException {
+        final var serialNumber = request.serialNumber();
+        final var issuerDN = request.issuerDN();
+
+        final String url = UriComponentsBuilder.fromPath("/v1/certificate/{issuer_dn}/{certificate_serial_number}/revoke")
+                .buildAndExpand(issuerDN, serialNumber)
                 .toUriString();
 
-        logger.info("Revoking certificates, externalSignerId: {}", externalSignerId);
+        logger.info("Revoking certificate, serialNumber: {}, issuerDN: {}", request.serialNumber(), request.issuerDN());
         restClient.put(url, null, ParameterizedTypeReference.forType(Void.class));
     }
 

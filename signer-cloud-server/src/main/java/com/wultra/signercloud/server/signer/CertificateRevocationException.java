@@ -17,22 +17,13 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import org.springframework.data.jdbc.repository.query.Query;
-import org.springframework.data.repository.CrudRepository;
-
-import java.time.Instant;
-import java.util.List;
-
 /**
- * Repository for accessing a {@link IssuedCertificate}.
+ * Exception thrown when certificate revocation fails.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-interface IssuedCertificateRepository extends CrudRepository<IssuedCertificate, Long> {
-
-    @Query("""
-        SELECT * FROM sc_issued_certificate
-        WHERE signer_id = :signerId AND timestamp_certificate_expiration < :now
-        """)
-    List<IssuedCertificate> findForRevocation(final long signerId, final Instant now);
+public class CertificateRevocationException extends RuntimeException {
+    public CertificateRevocationException(final String message) {
+        super(message);
+    }
 }
