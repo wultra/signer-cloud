@@ -19,6 +19,7 @@ package com.wultra.signercloud.server.powerauth;
 
 import com.wultra.security.powerauth.client.PowerAuthClient;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
+import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
 import com.wultra.security.powerauth.client.model.response.VerifyECDSASignatureResponse;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,23 +51,26 @@ class PowerAuthServiceTest {
     @Test
     void testIsSignatureValidWhenClientThrowsExceptionThenExceptionIsPropagated() throws Exception {
         // given
-        when(powerAuthClient.verifyECDSASignature(REGISTRATION_ID, DATA, SIGNATURE))
+        final var request = buildPowerAuthRequest();
+
+        when(powerAuthClient.verifyECDSASignature(request))
                 .thenThrow(new PowerAuthClientException());
 
         // when / then
-        assertThrows(PowerAuthClientException.class, () -> tested.isSignatureValid(REGISTRATION_ID, DATA, SIGNATURE));
+        assertThrows(PowerAuthClientException.class, () -> tested.isSignatureValid(request));
     }
 
     @Test
     void testIsSignatureValidWhenSignatureIsNotValidThenFalseIsReturned() throws Exception {
         // given
+        final var request = buildPowerAuthRequest();
         final var powerAuthResponse = VerifyECDSASignatureResponse.builder()
                         .build();
 
-        when(powerAuthClient.verifyECDSASignature(REGISTRATION_ID, DATA, SIGNATURE)).thenReturn(powerAuthResponse);
+        when(powerAuthClient.verifyECDSASignature(request)).thenReturn(powerAuthResponse);
 
         // when
-        final var response = tested.isSignatureValid(REGISTRATION_ID, DATA, SIGNATURE);
+        final var response = tested.isSignatureValid(request);
 
         // then
         assertFalse(response);
@@ -75,16 +79,25 @@ class PowerAuthServiceTest {
     @Test
     void testIsSignatureValidWhenSignatureIsValidThenTrueIsReturned() throws Exception {
         // given
+        final var request = buildPowerAuthRequest();
         final var powerAuthResponse = VerifyECDSASignatureResponse.builder()
                 .signatureValid(true)
                 .build();
 
-        when(powerAuthClient.verifyECDSASignature(REGISTRATION_ID, DATA, SIGNATURE)).thenReturn(powerAuthResponse);
+        when(powerAuthClient.verifyECDSASignature(request)).thenReturn(powerAuthResponse);
 
         // when
-        final var response = tested.isSignatureValid(REGISTRATION_ID, DATA, SIGNATURE);
+        final var response = tested.isSignatureValid(request);
 
         // then
         assertTrue(response);
+    }
+
+    private VerifyECDSASignatureRequest buildPowerAuthRequest() {
+        final var request = new VerifyECDSASignatureRequest();
+        request.setActivationId(REGISTRATION_ID);
+        request.setData(DATA);
+        request.setSignature(SIGNATURE);
+        return request;
     }
 }

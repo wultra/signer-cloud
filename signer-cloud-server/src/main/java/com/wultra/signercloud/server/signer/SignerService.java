@@ -19,6 +19,7 @@ package com.wultra.signercloud.server.signer;
 
 import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
+import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
 import com.wultra.signercloud.server.callback.CallbackEvent;
 import com.wultra.signercloud.server.callback.CallbackEventStatus;
 import com.wultra.signercloud.server.callback.CallbackService;
@@ -161,7 +162,12 @@ class SignerService {
                     .getEncoded();
             final var dataBase64 = Base64.getEncoder().encodeToString(data);
 
-            final var isSignatureValid = powerAuthService.isSignatureValid(externalSignerId, dataBase64, signatureBase64);
+            final var request = new VerifyECDSASignatureRequest();
+            request.setActivationId(externalSignerId);
+            request.setData(dataBase64);
+            request.setSignature(signatureBase64);
+
+            final var isSignatureValid = powerAuthService.isSignatureValid(request);
             if (!isSignatureValid) {
                 throw new SignatureVerificationException("Signature is not valid");
             }

@@ -19,6 +19,7 @@ package com.wultra.signercloud.server.powerauth;
 
 import com.wultra.security.powerauth.client.PowerAuthClient;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
+import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -38,15 +39,13 @@ public class PowerAuthService {
     /**
      * Checks signature validity of the provided data.
      *
-     * @param registrationId the unique identifier of the registration
-     * @param data the signed data
-     * @param signature the signature to verify
+     * @param request Request containing registrationId, data and signature to verify
      * @return true if the signature is valid, false otherwise
      * @throws PowerAuthClientException in case of communication or processing error
      */
-    public boolean isSignatureValid(final String registrationId, final String data, final String signature) throws PowerAuthClientException {
-        logger.info("Verifying ECDSA signature for registrationId: {}", registrationId);
-        final var response = powerAuthClient.verifyECDSASignature(registrationId, data, signature);
+    public boolean isSignatureValid(final VerifyECDSASignatureRequest request) throws PowerAuthClientException {
+        logger.info("Verifying ECDSA signature for registrationId: {}", request.getActivationId());
+        final var response = powerAuthClient.verifyECDSASignature(request);
         final var isSignatureValid = response.isSignatureValid();
         logger.info("Signature is valid: {}", isSignatureValid);
         return isSignatureValid;
