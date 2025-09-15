@@ -100,10 +100,10 @@ class SignerService {
     }
 
     /**
-     * Renew all signers is about to expire and creates renewal callbacks if configured.
+     * Renew all signers that are about to expire and creates renewal callbacks if configured.
      *
-     * @param limit Maximum number of signers to mark as expired.
-     * @return Number of expired signers.
+     * @param limit Maximum number of signers to be renewed.
+     * @return Number of renewed signers.
      */
     long renewSigners(final int limit) {
         final Instant expirationThreshold = Instant.now().plus(configurationProperties.getRenewal().threshold());
