@@ -15,23 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
-package com.wultra.signercloud.server.callback;
+package com.wultra.signercloud.server.signer;
 
 /**
- * Possible types of a {@link CallbackEvent}.
+ * Exception thrown when certificate enrollment fails.
  *
- * @author Lubos Racansky, lubos.racansky@wultra.com
+ * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public enum CallbackType {
-
-    /**
-     * A callback when the certificate expired.
-     */
-    EXPIRED,
-
-    /**
-     * A callback when the certificate was renewed.
-     */
-    RENEWED
+public class CertificateEnrollmentException extends RuntimeException {
+    public CertificateEnrollmentException(final String message) {
+        super(message);
+    }
 }

@@ -35,7 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @RestController
-@RequestMapping("api/documents")
+@RequestMapping("documents")
 @AllArgsConstructor
 @Slf4j
 public class DocumentController {
@@ -78,7 +78,7 @@ public class DocumentController {
 
     @Operation(
             summary = "Signs an uploaded document",
-            description = "Verifies whether the document can be signed, if so, verifies the {@code signature} and creates a signed document.",
+            description = "Verifies whether the document can be signed, if so, verifies the `signature` and creates a signed document.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -107,8 +107,8 @@ public class DocumentController {
 
     @Operation(
             summary = "Downloads signed document",
-            description = "Downloads the full content of the signed document, or a partial segment if the {@code Range} header is provided. " +
-                    "In the case of multiple ranges, the server does not process the {@code Range} header but instead splits the response into parts exactly as requested by the client.",
+            description = "Downloads the full content of the signed document, or a partial segment if the `Range` header is provided. " +
+                    "In the case of multiple ranges, the server does not process the `Range` header but instead splits the response into parts exactly as requested by the client.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -117,7 +117,7 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "206",
-                            description = "Partial document content according to the {@code Range} header.",
+                            description = "Partial document content according to the `Range` header.",
                             content = @Content(schema = @Schema(implementation = Resource.class))
                     ),
                     @ApiResponse(

@@ -3,6 +3,7 @@ hide circle
 
 class sc_signer <<table>>{
     ID bigint PK
+    --
     timestamp_created timestamp(6) NN
     timestamp_last_updated timestamp(6)
     external_signer_id varchar(255) U NN
@@ -15,6 +16,7 @@ class sc_signer <<table>>{
 
 class sc_document <<table>> {
     ID bigint PK
+    --
     timestamp_created timestamp(6) NN I
     timestamp_last_updated timestamp(6)
     document_id varchar(255) U NN
@@ -31,11 +33,13 @@ class sc_document <<table>> {
 
 class sc_document_content <<table>>{
     ID bigint PK
+    --
     content BLOB NN
 }
 
 class sc_callback_event <<table>> {
     ID bigint PK
+    --
     callback_type varchar(32) NN I (EXPIRED/RENEWED)
     callback_data text NN
     status varchar(32) NN I (PROCESSING/PENDING/FAILED/COMPLETED)

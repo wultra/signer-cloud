@@ -18,8 +18,11 @@
 package com.wultra.signercloud.server.signer;
 
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
+import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
+import com.wultra.signercloud.server.restapi.Try;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -51,10 +54,19 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class SignerServiceTest {
 
+    private static final String EXTERNAL_SIGNER_ID = "2f36dcf7-3d21-4c46-93f4-f487b41e7ab7";
+    private static final String USER_ID = "testUser1";
+    private static final String CSR_BASE64 = "MIHxMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATr1DIu9x22bSEkt1lJP4hf6AgxHz2TyuiATaBW19huKMRB1XQKzdDd/ZKKL7fGaNmZCUEM2kmuCIv4W7eWnrZJoAAwCgYIKoZIzj0EAwIDSAAwRQIgbfepkGuhZMjVQ4alNWkD8xbDP6aufd9dWPfPTvKpaRcCIQDZu9uyj+tYEyPja0/D8Xk8HvDtkkVxpfoxbA2IMINiQA==";
+
+    private static final String CSR_SIGNED_DATA_BASE64 = "MIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATr1DIu9x22bSEkt1lJP4hf6AgxHz2TyuiATaBW19huKMRB1XQKzdDd/ZKKL7fGaNmZCUEM2kmuCIv4W7eWnrZJoAA=";
+    private static final String CSR_SIGNATURE_BASE64 = "MEUCIG33qZBroWTI1UOGpTVpA/MWwz+mrn3fXVj3z07yqWkXAiEA2bvbso/rWBMj42tPw/F5PB7w7ZJFcaX6MWwNiDCDYkA=";
     private static final long DUMMY_ID = 1L;
     private static final String DUMMY_EXTERNAL_SIGNER_ID = "dummyExternalSignerId";
     private static final String DUMMY_USER_ID = "dummyUserId";
     private static final String DUMMY_CSR = "dummyCsr";
+
+    private static final String CERTIFICATE_DER_BASE64 = "MIIB+DCCAX6gAwIBAgIUQxSMGsgB+szrQpOV2AdlwcaPajwwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MDkxMTA4NDIxOFoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABOvUMi73HbZtISS3WUk/iF/oCDEfPZPK6IBNoFbX2G4oxEHVdArN0N39koovt8Zo2ZkJQQzaSa4Ii/hbt5aetkmjgYswgYgwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAoBgNVHSUEITAfBggrBgEFBQcDAgYIKwYBBQUHAwQGCSqGSIb3LwEBBTAdBgNVHQ4EFgQU2PPiHgo5PGWHUhQNiylNjvsHIOIwDgYDVR0PAQH/BAQDAgXgMAoGCCqGSM49BAMDA2gAMGUCMQDKry6RV3+/65yDZA8o2Zib1iSYP3npwhUW+yJkNprn+vYoLpicCmNnxcRt3IEzx68CMCLZMBKfpPDQdo4jiO9OCNZstX2yUtFcHWN7Akvg+CyvFwFClfCWxr73icr2MYrxDw==";
+    //private static final Date CERTIFICATE_EXPIRATION_DATE = new Date();
 
     private static final String CERTIFICATE_DER_BASE64 = "MIIB+DCCAX6gAwIBAgIUQxSMGsgB+szrQpOV2AdlwcaPajwwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MDkxMTA4NDIxOFoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABOvUMi73HbZtISS3WUk/iF/oCDEfPZPK6IBNoFbX2G4oxEHVdArN0N39koovt8Zo2ZkJQQzaSa4Ii/hbt5aetkmjgYswgYgwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAoBgNVHSUEITAfBggrBgEFBQcDAgYIKwYBBQUHAwQGCSqGSIb3LwEBBTAdBgNVHQ4EFgQU2PPiHgo5PGWHUhQNiylNjvsHIOIwDgYDVR0PAQH/BAQDAgXgMAoGCCqGSM49BAMDA2gAMGUCMQDKry6RV3+/65yDZA8o2Zib1iSYP3npwhUW+yJkNprn+vYoLpicCmNnxcRt3IEzx68CMCLZMBKfpPDQdo4jiO9OCNZstX2yUtFcHWN7Akvg+CyvFwFClfCWxr73icr2MYrxDw==";
     private static final Instant CERTIFICATE_EXPIRATION_TIMESTAMP = Instant.ofEpochMilli(1817975686000L);
@@ -62,6 +74,13 @@ class SignerServiceTest {
     private static final String CERTIFICATE_ISSUER_DN = "CN=IssuingCA";
 
     private static final int MILLISECONDS_DELTA = 1_000;
+
+
+    private X509Certificate x509Certificate;
+    private VerifyECDSASignatureRequest powerAuthRequest;
+
+    @Mock
+    private X509Certificate x509CertificateMock;
 
     private X509Certificate x509Certificate;
 
@@ -88,43 +107,47 @@ class SignerServiceTest {
         final var certificateBytes = Base64.getDecoder().decode(CERTIFICATE_DER_BASE64);
         x509Certificate = (X509Certificate) CertificateFactory.getInstance("X.509")
                 .generateCertificate(new java.io.ByteArrayInputStream(certificateBytes));
+
+        powerAuthRequest = buildPowerAuthRequest();
     }
 
     @Test
-    void testCreateUpdateSignerWhenExternalSignerIdIsNotActiveThenFailResultIsReturned() {
+    void testCreateUpdateSignerWhenPowerAuthClientThrowsExceptionThenFailResultIsReturned() throws PowerAuthClientException {
         // given
-        final var request = new CreateUpdateSignerRequest(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_USER_ID, DUMMY_CSR);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
+
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenThrow(new PowerAuthClientException("PowerAuth client test exception"));
 
         // when
-        final var response = signerService.createUpdateSigner(request);
+        final var result = signerService.createUpdateSigner(request);
 
         // then
-        assertFalse(response.isSuccess());
+        assertErrorResult(
+                result,
+                SignatureVerificationException.class,
+                "Signature could not be verified due to PowerAuth error: PowerAuth client test exception"
+        );
     }
 
     @Test
-    void testCreateUpdateSignerWhenExceptionIsThrownByEjbcaServiceThenFailResultIsReturned() throws RestClientException, CertificateException, IOException {
+    void testCreateUpdateSignerWhenCsrIsMalformedThenFailResultIsReturned() {
         // given
-        final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(DUMMY_CSR)
-                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
-                .userId(DUMMY_USER_ID)
-                .build();
-
-        when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(certificateRequest)).thenThrow(new RestClientException("Exception from test"));
-
-        final var request = new CreateUpdateSignerRequest(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_USER_ID, DUMMY_CSR);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, "malformedCsr");
 
         // when
-        final var response = signerService.createUpdateSigner(request);
+        final var result = signerService.createUpdateSigner(request);
 
         // then
-        assertFalse(response.isSuccess());
+        assertErrorResult(
+                result,
+                SignatureVerificationException.class,
+                "Error when processing CSR: long form definite-length more than 31 bits"
+        );
     }
 
     @Test
-    void testCreateUpdateSignerWhenSignerIsCreatedThenOkResultIsReturned() throws RestClientException, CertificateException, IOException {
+    void testCreateUpdateSignerWhenSignatureIsNotValidThenFailResultIsReturned() throws PowerAuthClientException {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
 
@@ -133,6 +156,7 @@ class SignerServiceTest {
                 .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
                 .userId(DUMMY_USER_ID)
                 .build();
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
 
         when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
         when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(x509Certificate);
@@ -140,12 +164,18 @@ class SignerServiceTest {
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
 
         final var request = new CreateUpdateSignerRequest(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_USER_ID, DUMMY_CSR);
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(false);
 
         // when
-        final var response = signerService.createUpdateSigner(request);
+        final var result = signerService.createUpdateSigner(request);
 
         // then
-        assertTrue(response.isSuccess());
+        assertErrorResult(
+                result,
+                SignatureVerificationException.class,
+                "Signature is not valid. External signer ID: " + EXTERNAL_SIGNER_ID
+        );
     }
 
     @Test
@@ -159,7 +189,7 @@ class SignerServiceTest {
                 .userId(DUMMY_USER_ID)
                 .build();
 
-        when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
+        when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
         when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(x509Certificate);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
@@ -174,28 +204,164 @@ class SignerServiceTest {
     }
 
     @Test
-    void testCreateUpdateSignerWhenSignerIsUpdatedThenOkResultIsReturned() throws RestClientException, CertificateException, IOException {
+    void testCreateUpdateSignerWhenEjbcaClientThrowsExceptionThenFailResultIsReturned() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
 
-        final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(DUMMY_CSR)
-                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
-                .userId(DUMMY_USER_ID)
-                .build();
-
-        when(powerAuthService.isRegistrationActive(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(x509Certificate);
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(true);
+        when(ejbcaService.enrollCertificate(request)).thenReturn(x509Certificate);
         when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
 
         final var request = new CreateUpdateSignerRequest(DUMMY_EXTERNAL_SIGNER_ID, DUMMY_USER_ID, DUMMY_CSR);
 
         // when
-        final var response = signerService.createUpdateSigner(request);
+        final var result = signerService.createUpdateSigner(request);
 
         // then
-        assertTrue(response.isSuccess());
+        assertErrorResult(
+                result,
+                CertificateEnrollmentException.class,
+                "Certificate could not be enrolled due to EJBCA error: Rest client test exception"
+        );
+    }
+
+    @Test
+    void testCreateUpdateSignerWhenCertificateProcessingThrowsExceptionThenFailResultIsReturned() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
+
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(true);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenThrow(new CertificateException("Certificate test exception"));
+
+        // when
+        final var result = signerService.createUpdateSigner(request);
+
+        // then
+        assertErrorResult(
+                result,
+                CertificateEnrollmentException.class,
+                "Certificate could not be processed: Certificate test exception"
+        );
+    }
+
+    @Test
+    void testCreateUpdateSignerWhenReadingCertificateThrowsExceptionThenFailResultIsReturned() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
+
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(true);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenThrow(new IOException("Certificate IO test exception"));
+
+        // when
+        final var result = signerService.createUpdateSigner(request);
+
+        // then
+        assertErrorResult(
+                result,
+                CertificateEnrollmentException.class,
+                "Certificate could not be read: Certificate IO test exception"
+        );
+    }
+
+    @Test
+    void testCreateUpdateSignerWhenEncodingCertificateThrowsExceptionThenFailResultIsReturned() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
+
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(true);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(x509CertificateMock);
+        when(x509CertificateMock.getEncoded()).thenThrow(new CertificateEncodingException("Certificate encoding test exception"));
+
+        // when
+        final var result = signerService.createUpdateSigner(request);
+
+        // then
+        assertErrorResult(
+                result,
+                CertificateEnrollmentException.class,
+                "Certificate could not be encoded: Certificate encoding test exception"
+        );
+    }
+
+    @Test
+    void testCreateUpdateSignerWhenSignerIsCreatedThenSuccessResultIsReturned() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
+
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(true);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(x509Certificate);
+
+        // when
+        final var result = signerService.createUpdateSigner(request);
+
+        // then
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
+    void testCreateUpdateSignerWhenSignerIsCreatedThenRepositoryIsCalled() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
+
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(true);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(x509Certificate);
+
+        // when
+        signerService.createUpdateSigner(request);
+
+        // then
+        verify(signerRepository).save(any(Signer.class));
+    }
+
+    @Test
+    void testCreateUpdateSignerWhenSignerIsUpdatedThenSuccessResultIsReturned() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
+        final var signer = Signer.builder().build();
+
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(true);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(x509Certificate);
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        // when
+        final var result = signerService.createUpdateSigner(request);
+
+        // then
+        assertTrue(result.isSuccess());
+    }
+
+    @Test
+    void testCreateUpdateSignerWhenSignerIsUpdatedThenRepositoryIsCalled() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
+        final var signer = Signer.builder().build();
+
+        when(powerAuthService.isSignatureValid(powerAuthRequest))
+                .thenReturn(true);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(x509Certificate);
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+
+        // when
+        final var result = signerService.createUpdateSigner(request);
+
+        // then
+        verify(signerRepository).save(any(Signer.class));
     }
 
     @Test
@@ -226,10 +392,10 @@ class SignerServiceTest {
     @Test
     void testUpdateStatusWhenSignerIsNotFoundThenFailResultIsReturned() {
         // given
-        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
 
         // when
-        final var response = signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+        final var response = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
 
         // then
         assertFalse(response.isSuccess());
@@ -240,10 +406,10 @@ class SignerServiceTest {
         // given
         final var signer = createSigner(SignerStatus.BLOCKED);
 
-        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        final var response = signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+        final var response = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
 
         // then
         assertTrue(response.isSuccess());
@@ -254,10 +420,10 @@ class SignerServiceTest {
         // given
         final var signer = createSigner(SignerStatus.REVOKED);
 
-        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        final var response = signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.ACTIVE));
+        final var response = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.ACTIVE));
 
         // then
         assertFalse(response.isSuccess());
@@ -268,10 +434,10 @@ class SignerServiceTest {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
 
-        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        final var response = signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+        final var response = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
 
         // then
         assertTrue(response.isSuccess());
@@ -282,22 +448,22 @@ class SignerServiceTest {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
 
-        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        signerService.updateStatus(DUMMY_EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED));
+        signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED));
 
         // then
-        verify(ejbcaService).revokeCertificates(DUMMY_EXTERNAL_SIGNER_ID);
+        verify(ejbcaService).revokeCertificates(EXTERNAL_SIGNER_ID);
     }
 
     @Test
     void testGetDetailWhenSignerIsNotFoundThenFailResultIsReturned() {
         // given
-        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
 
         // when
-        final var result = signerService.getDetail(DUMMY_EXTERNAL_SIGNER_ID);
+        final var result = signerService.getDetail(EXTERNAL_SIGNER_ID);
 
         // then
         assertFalse(result.isSuccess());
@@ -307,10 +473,10 @@ class SignerServiceTest {
     void testGetDetailWhenSignerIsFoundThenSuccessResultIsReturned() throws CertificateEncodingException {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
-        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        final var result = signerService.getDetail(DUMMY_EXTERNAL_SIGNER_ID);
+        final var result = signerService.getDetail(EXTERNAL_SIGNER_ID);
 
         // then
         assertTrue(result.isSuccess());
@@ -320,10 +486,10 @@ class SignerServiceTest {
     void testGetDetailWhenSignerIsFoundThenResponseContainsCorrectValues() throws CertificateEncodingException {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
-        when(signerRepository.findByExternalSignerId(DUMMY_EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        final var result = signerService.getDetail(DUMMY_EXTERNAL_SIGNER_ID);
+        final var result = signerService.getDetail(EXTERNAL_SIGNER_ID);
 
         // then
         assertSignerDetailResponse(result.getResponse());
@@ -332,9 +498,9 @@ class SignerServiceTest {
     private Signer createSigner(final SignerStatus status) throws CertificateEncodingException {
         return Signer.builder()
                 .id(DUMMY_ID)
-                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
-                .userId(DUMMY_USER_ID)
-                .csr(DUMMY_CSR)
+                .externalSignerId(EXTERNAL_SIGNER_ID)
+                .userId(USER_ID)
+                .csr(CSR_BASE64)
                 .certificate(Base64.getEncoder().encodeToString(x509Certificate.getEncoded()))
                 .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
                 .status(status)
@@ -343,9 +509,25 @@ class SignerServiceTest {
     }
 
     private void assertSignerDetailResponse(final SignerDetailResponse response) {
-        assertEquals(DUMMY_EXTERNAL_SIGNER_ID, response.externalSignerId());
-        assertEquals(DUMMY_USER_ID, response.userId());
+        assertEquals(EXTERNAL_SIGNER_ID, response.externalSignerId());
+        assertEquals(USER_ID, response.userId());
         assertEquals(SignerStatus.ACTIVE, response.signerStatus());
+    }
+
+    private static void assertErrorResult(final Try<Void> result, final Class<?> exceptionClass, final String errorMessage) {
+        assertFalse(result.isSuccess());
+
+        final var error = result.getError();
+        assertEquals(exceptionClass, error.getClass());
+        assertEquals(errorMessage, error.getMessage());
+    }
+
+    private VerifyECDSASignatureRequest buildPowerAuthRequest() {
+        final var request = new VerifyECDSASignatureRequest();
+        request.setActivationId(EXTERNAL_SIGNER_ID);
+        request.setData(CSR_SIGNED_DATA_BASE64);
+        request.setSignature(CSR_SIGNATURE_BASE64);
+        return request;
     }
 
     private void assertIssuedCertificateSave() {

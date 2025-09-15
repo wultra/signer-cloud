@@ -42,11 +42,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
@@ -64,7 +62,7 @@ import java.util.function.Consumer;
 @Transactional
 class DocumentService {
     private static final String CERTIFICATE_TYPE = "X.509";
-    private static final String DOCUMENT_DOWNLOAD_PATH = "/api/v1/documents/{documentId}/download";
+    private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/download";
 
     private final DocumentConfigurationProperties configurationProperties;
     private final DocumentRepository documentRepository;
@@ -118,7 +116,7 @@ class DocumentService {
     /**
      * Stores the {@link Document} for signing and calculates its SHA-256 hash.
      *
-     * @param externalSignerId {@link com.wultra.signercloud.server.signer.Signer#externalSignerId}
+     * @param externalSignerId {@link Signer#getExternalSignerId()}
      * @param externalDocumentId unique identifier of the document in the external system
      * @param documentName name of the document
      * @param file the PDF document to be stored for signing
@@ -255,7 +253,7 @@ class DocumentService {
         verifyDocumentCanBeSigned(signer, document);
 
         final var signature = requestBody.signature();
-        final var signedDocumentBytes = verifySignatureAndSignDocument(signer.getCertificate(),
+        final var signedDocumentBytes = verifySignatureAndSignDocument(signer.getX509Certificate(),
                 document.getHash(),
                 signature,
                 documentContent.getContent(),
@@ -299,13 +297,13 @@ class DocumentService {
     }
 
     private byte[] verifySignatureAndSignDocument(
-            final String certificateBase64,
+            final X509Certificate x509Certificate,
             final String hashBase64,
             final String hashSignatureBase64,
             final byte[] documentBytes,
-            final DigestAlgorithm signatureAlgorithm) throws CertificateException {
+            final DigestAlgorithm signatureAlgorithm) {
 
-        final var certificateToken = createCertificateToken(certificateBase64);
+        final var certificateToken = new CertificateToken(x509Certificate);
         final var signatureParams = createSignatureParameters(certificateToken, signatureAlgorithm);
 
         final var hashBytes = Base64.getDecoder().decode(hashBase64);
@@ -323,18 +321,6 @@ class DocumentService {
         final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
 
         return readSignedDocumentBytes(signedDocument);
-    }
-
-    private static CertificateToken createCertificateToken(final String certificateBase64) throws CertificateException {
-        try {
-            final var certificateBytes = Base64.getDecoder().decode(certificateBase64);
-            final var x509Certificate = (X509Certificate) CertificateFactory.getInstance(CERTIFICATE_TYPE)
-                    .generateCertificate(new ByteArrayInputStream(certificateBytes));
-            return new CertificateToken(x509Certificate);
-        } catch (final CertificateException e) {
-            logger.error("Exception when parsing certificate of type: {}", CERTIFICATE_TYPE, e);
-            throw e;
-        }
     }
 
     private static PAdESSignatureParameters createSignatureParameters(final CertificateToken certificateToken, final DigestAlgorithm algorithm) {

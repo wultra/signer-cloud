@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.*;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @RestController
-@RequestMapping("api/signers")
+@RequestMapping("signers")
 @AllArgsConstructor
 @Slf4j
 class SignerController {
@@ -41,9 +41,9 @@ class SignerController {
 
     @Operation(
             summary = "Create a new signer or update an existing one",
-            description = "Creates a new signer with the provided data. If a signer with the provided {@code externalSignerId} " +
-                    "already exists, it is updated. In both cases, activation is checked in PowerAuth, and a certificate " +
-                    "is generated in EJBCA from the provided {@code csr}.",
+            description = "Creates a new signer with the provided data. If a signer with the specified `externalSignerId` " +
+                    "already exists, it is updated. In both cases, the signature in `csr` is verified using PowerAuth, " +
+                    "and a certificate is generated in EJBCA.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -72,7 +72,7 @@ class SignerController {
 
     @Operation(
             summary = "Change status of a signer",
-            description = "Change status of Signer identified by {@code externalSignerId}. If status is changed to {@code REVOKED}, " +
+            description = "Change status of Signer identified by `externalSignerId`. If status is changed to `REVOKED`, " +
                     "then EJBCA is called and all certificates linked to the Signer are invalidated",
             responses = {
                     @ApiResponse(
@@ -102,7 +102,7 @@ class SignerController {
 
     @Operation(
             summary = "Gets details of a signer",
-            description = "Gets the details of a Signer, including {@code userId} and {@code signerStatus}.",
+            description = "Gets the details of a Signer, including `userId` and `signerStatus`.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -111,7 +111,7 @@ class SignerController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Signer for given {@code externalSignerId} not found"
+                            description = "Signer for given `externalSignerId` not found"
                     )
             }
     )

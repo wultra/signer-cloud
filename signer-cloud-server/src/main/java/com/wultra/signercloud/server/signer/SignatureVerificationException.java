@@ -17,25 +17,13 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-
 /**
- * Signer configuration properties.
+ * Exception thrown when verification of the signature in {@link CreateUpdateSignerRequest#csr} fails.
  *
- * @author Lubos Racansky, lubos.racansky@wultra.com
+ * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@ConfigurationProperties(prefix = "signer-cloud.server.signer")
-@Getter
-@Setter
-class SignerConfigurationProperties {
-
-    private Expiration expiration = new Expiration(false, new Job(1000));
-
-    record Job(int limit) {
-    }
-
-    record Expiration(boolean callbackEnabled, Job job) {
+public class SignatureVerificationException extends RuntimeException {
+    public SignatureVerificationException(final String message) {
+        super(message);
     }
 }

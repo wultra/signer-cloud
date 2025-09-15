@@ -18,14 +18,11 @@
 package com.wultra.signercloud.server.powerauth;
 
 import com.wultra.security.powerauth.client.PowerAuthClient;
-import com.wultra.security.powerauth.client.model.enumeration.ActivationStatus;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
-import com.wultra.security.powerauth.client.model.response.GetActivationStatusResponse;
+import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 /**
  * PowerAuth service.
@@ -40,27 +37,17 @@ public class PowerAuthService {
     private final PowerAuthClient powerAuthClient;
 
     /**
-     * Checks if the registration is currently active based on its status.
+     * Checks signature validity of the provided data.
      *
-     * @param registrationId the unique identifier of the registration to check
-     * @return {@code true} if the registration is active, {@code false} otherwise
+     * @param request Request containing registrationId, data and signature to verify
+     * @return true if the signature is valid, false otherwise
+     * @throws PowerAuthClientException in case of communication or processing error
      */
-    public boolean isRegistrationActive(final String registrationId){
-        return fetchActivationStatus(registrationId)
-                .filter(ActivationStatus.ACTIVE::equals)
-                .isPresent();
-    }
-
-    private Optional<ActivationStatus> fetchActivationStatus(final String registrationId) {
-        try {
-            logger.info("Retrieving status of registrationId: {}", registrationId);
-            final GetActivationStatusResponse response = powerAuthClient.getActivationStatus(registrationId);
-            final ActivationStatus activationStatus = response.getActivationStatus();
-            logger.info("Got status: {} of registrationId: {}", activationStatus, registrationId);
-            return Optional.of(activationStatus);
-        } catch (final PowerAuthClientException e) {
-            logger.warn("Unable to get activation status of registrationId: {}", registrationId, e);
-            return Optional.empty();
-        }
+    public boolean isSignatureValid(final VerifyECDSASignatureRequest request) throws PowerAuthClientException {
+        logger.info("Verifying ECDSA signature for registrationId: {}", request.getActivationId());
+        final var response = powerAuthClient.verifyECDSASignature(request);
+        final var isSignatureValid = response.isSignatureValid();
+        logger.info("Signature is valid: {}", isSignatureValid);
+        return isSignatureValid;
     }
 }

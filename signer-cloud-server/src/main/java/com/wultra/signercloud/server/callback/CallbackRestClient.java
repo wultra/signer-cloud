@@ -15,15 +15,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
+package com.wultra.signercloud.server.callback;
+
+import com.wultra.core.rest.client.base.RestClient;
+import com.wultra.signercloud.server.callback.api.CallbackType;
+import lombok.Builder;
+
+import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Exception thrown when an operation is attempted on an inactive signer.
+ * Wrapper for the {@link RestClient} to track the creation timestamp and failure statistics of a REST Client instance.
  *
- * @author Michal Rozehnal, michal.rozehnal@wultra.com
+ * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public class InactiveSignerException extends RuntimeException {
-    public InactiveSignerException(String message) {
-        super(message);
-    }
-}
+@Builder
+record CallbackRestClient(
+        RestClient restClient,
+        LocalDateTime timestampCreated,
+        AtomicInteger failureCount,
+        AtomicReference<LocalDateTime> timestampLastFailure,
+        CallbackType callbackType
+) { }
