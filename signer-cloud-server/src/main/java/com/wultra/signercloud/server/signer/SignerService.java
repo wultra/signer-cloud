@@ -20,6 +20,8 @@ package com.wultra.signercloud.server.signer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
+import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
 import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
 import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
@@ -28,11 +30,14 @@ import com.wultra.signercloud.server.restapi.Try;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.EnumSet;
@@ -61,23 +66,6 @@ class SignerService {
     private final SignerConfigurationProperties configurationProperties;
     private final CallbackNotificationService callbackNotificationService;
     private final ObjectMapper objectMapper;
-
-    /**
-     * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
-     * This method checks whether the registration in PowerAuth is active, then generates a certificate via the EJBCA service
-     * (based on {@link CreateUpdateSignerRequest#csr()}), and finally stores the signer in the database.
-     *
-     * @param request the request containing details of signer
-     * @return result of operation as {@link Try}
-     */
-    Try<Void> createUpdateSigner(final CreateUpdateSignerRequest request) {
-        try {
-            createUpdateSignerWithCertificate(request);
-            return Try.success();
-        } catch (final InactiveSignerException | RestClientException | CertificateException | IOException e) {
-            return Try.error(e);
-        }
-    }
 
     /**
      * Marks all signers that have expired as expired and creates expiration callbacks if configured.
@@ -130,25 +118,33 @@ class SignerService {
         }
     }
 
-    private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
-        final var externalSignerId = request.signerId();
-
-        final var isRegistrationActive = powerAuthService.isRegistrationActive(externalSignerId);
-        if (!isRegistrationActive) {
-            throw new InactiveSignerException("Signer registration is not active for external signer ID: " + externalSignerId);
+    /**
+     * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
+     * This method verifies signature in {@link CreateUpdateSignerRequest#csr()} via PowerAuth server, then generates
+     * a certificate via the EJBCA service and finally stores the signer in the database.
+     *
+     * @param request the request containing details of signer
+     * @return result of operation as {@link Try}
+     */
+    Try<Void> createUpdateSigner(final CreateUpdateSignerRequest request) {
+        try {
+            processCreateUpdateSigner(request);
+            return Try.success();
+        } catch (final SignatureVerificationException | CertificateEnrollmentException e) {
+            return Try.error(e);
         }
+    }
 
-        final var csr = request.csr();
+    private void processCreateUpdateSigner(final CreateUpdateSignerRequest request) {
+        final var externalSignerId = request.signerId();
         final var userId = request.userId();
-        final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(csr)
-                .externalSignerId(externalSignerId)
-                .userId(userId)
-                .build();
+        final var csr = request.csr();
 
-        final var x509Certificate = ejbcaService.enrollCertificate(certificateRequest);
+        verifySignature(externalSignerId, csr);
 
-        final var certificate = Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
+        final var x509Certificate = enrollCertificate(externalSignerId, userId, csr);
+
+        final var certificateBase64 = encodeCertificateToBase64(x509Certificate);
         final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
 
         final var signerBuilder = signerRepository.findByExternalSignerId(externalSignerId)
@@ -158,12 +154,73 @@ class SignerService {
         final var signer = signerBuilder
                 .userId(userId)
                 .csr(csr)
-                .certificate(certificate)
+                .certificate(certificateBase64)
                 .timestampCertificateExpiration(certificateExpiration)
                 .status(SignerStatus.ACTIVE)
                 .build();
 
         signerRepository.save(signer);
+    }
+
+    private void verifySignature(final String externalSignerId, final String csrBase64) {
+        try {
+            final var csrBytes = Base64.getDecoder().decode(csrBase64);
+            final var csr = new PKCS10CertificationRequest(csrBytes);
+
+            final var signature = csr.getSignature();
+            final var signatureBase64 = Base64.getEncoder().encodeToString(signature);
+
+            final var data = csr.toASN1Structure()
+                    .getCertificationRequestInfo()
+                    .getEncoded();
+            final var dataBase64 = Base64.getEncoder().encodeToString(data);
+
+            final var request = new VerifyECDSASignatureRequest();
+            request.setActivationId(externalSignerId);
+            request.setData(dataBase64);
+            request.setSignature(signatureBase64);
+
+            final var isSignatureValid = powerAuthService.isSignatureValid(request);
+            if (!isSignatureValid) {
+                throw new SignatureVerificationException("Signature is not valid. External signer ID: " + externalSignerId);
+            }
+        } catch (final PowerAuthClientException e) {
+            logger.warn("Error response from PowerAuth server", e);
+            throw new SignatureVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage());
+        } catch (final IOException e) {
+            logger.warn("Error when processing CSR", e);
+            throw new SignatureVerificationException("Error when processing CSR: " + e.getMessage());
+        }
+    }
+
+    private X509Certificate enrollCertificate(final String externalSignerId, final String userId, final String csr) {
+        try {
+            final var certificateRequest = EjbcaService.CertificateRequest.builder()
+                    .csr(csr)
+                    .externalSignerId(externalSignerId)
+                    .userId(userId)
+                    .build();
+
+            return ejbcaService.enrollCertificate(certificateRequest);
+        } catch (final RestClientException e) {
+            logger.warn("Error response from EJBCA server", e);
+            throw new CertificateEnrollmentException("Certificate could not be enrolled due to EJBCA error: " + e.getMessage());
+        } catch (final CertificateException e) {
+            logger.warn("Error when processing enrolled certificate", e);
+            throw new CertificateEnrollmentException("Certificate could not be processed: " + e.getMessage());
+        } catch (final IOException e) {
+            logger.warn("Error when reading enrolled certificate", e);
+            throw new CertificateEnrollmentException("Certificate could not be read: " + e.getMessage());
+        }
+    }
+
+    private static String encodeCertificateToBase64(final X509Certificate certificate) {
+        try {
+            return Base64.getEncoder().encodeToString(certificate.getEncoded());
+        } catch (final CertificateEncodingException e) {
+            logger.warn("Exception when encoding certificate to base64", e);
+            throw new CertificateEnrollmentException("Certificate could not be encoded: " + e.getMessage());
+        }
     }
 
     private Signer.SignerBuilder createSigner(final String externalSignerId) {

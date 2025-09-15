@@ -18,12 +18,12 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when an operation is attempted on an inactive signer.
+ * Exception thrown when certificate enrollment fails.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class InactiveSignerException extends RuntimeException {
-    public InactiveSignerException(String message) {
+public class CertificateEnrollmentException extends RuntimeException {
+    public CertificateEnrollmentException(final String message) {
         super(message);
     }
 }
