@@ -140,7 +140,7 @@ class SignerServiceTest {
         assertErrorResult(
                 result,
                 SignatureVerificationException.class,
-                "Signature is not valid"
+                "Signature is not valid. External signer ID: " + EXTERNAL_SIGNER_ID
         );
     }
 

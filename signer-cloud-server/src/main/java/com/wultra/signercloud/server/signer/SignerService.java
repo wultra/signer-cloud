@@ -169,7 +169,7 @@ class SignerService {
 
             final var isSignatureValid = powerAuthService.isSignatureValid(request);
             if (!isSignatureValid) {
-                throw new SignatureVerificationException("Signature is not valid");
+                throw new SignatureVerificationException("Signature is not valid. External signer ID: " + externalSignerId);
             }
         } catch (final PowerAuthClientException e) {
             logger.warn("Error response from PowerAuth server", e);
