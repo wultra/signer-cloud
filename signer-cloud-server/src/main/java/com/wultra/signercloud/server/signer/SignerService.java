@@ -124,13 +124,17 @@ class SignerService {
                 .build();
 
         final var x509Certificate = enrollCertificate(ejbcaCertificateRequest);
-        final String certificate = encodeCertificateToBase64(x509Certificate);
 
-        signerRepository.save(signer.toBuilder()
-                .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
-                .timestampLastUpdated(Instant.now())
-                .certificate(certificate)
-                .build());
+        try {
+            signerRepository.save(signer.toBuilder()
+                    .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
+                    .timestampLastUpdated(Instant.now())
+                    .certificateFromX509(x509Certificate)
+                    .build());
+        } catch (final CertificateEncodingException e) {
+            logger.warn("Exception when encoding certificate to base64");
+            throw new CertificateEnrollmentException("Certificate could not be encoded", e);
+        }
 
         if (configurationProperties.getRenewal().callbackEnabled()) {
             notifyRenewalCallback(signer, x509Certificate);
@@ -203,22 +207,23 @@ class SignerService {
 
         final var x509Certificate = enrollCertificate(ejbcaCertificateRequest);
 
-        final var certificateBase64 = encodeCertificateToBase64(x509Certificate);
-        final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
-
         final var signerBuilder = signerRepository.findByExternalSignerId(externalSignerId)
                 .map(this::updateSigner)
                 .orElse(createSigner(externalSignerId));
 
-        final var signer = signerBuilder
-                .userId(userId)
-                .csr(csr)
-                .certificate(certificateBase64)
-                .timestampCertificateExpiration(certificateExpiration)
-                .status(SignerStatus.ACTIVE)
-                .build();
-
-        signerRepository.save(signer);
+        try {
+            final var signer = signerBuilder
+                    .userId(userId)
+                    .csr(csr)
+                    .certificateFromX509(x509Certificate)
+                    .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
+                    .status(SignerStatus.ACTIVE)
+                    .build();
+            signerRepository.save(signer);
+        } catch (final CertificateEncodingException e) {
+            logger.warn("Exception when encoding certificate to base64");
+            throw new CertificateEnrollmentException("Certificate could not be encoded", e);
+        }
     }
 
     private void verifySignature(final String externalSignerId, final String csrBase64) {
@@ -264,15 +269,6 @@ class SignerService {
         } catch (final IOException e) {
             logger.warn("Error when reading enrolled certificate", e);
             throw new CertificateEnrollmentException("Certificate could not be read: " + e.getMessage());
-        }
-    }
-
-    private static String encodeCertificateToBase64(final X509Certificate certificate) {
-        try {
-            return Base64.getEncoder().encodeToString(certificate.getEncoded());
-        } catch (final CertificateEncodingException e) {
-            logger.warn("Exception when encoding certificate to base64", e);
-            throw new CertificateEnrollmentException("Certificate could not be encoded: " + e.getMessage());
         }
     }
 
