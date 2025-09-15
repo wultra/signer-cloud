@@ -78,29 +78,81 @@ class SignerService {
         final List<Signer> signers = signerRepository.markAsExpired(now, limit);
 
         if (configurationProperties.getExpiration().callbackEnabled()) {
-            notifyCallbacks(signers, CallbackType.EXPIRED);
+            logger.info("Creating {} expiration callbacks.", signers.size());
+            for (final Signer signer : signers) {
+                notifyExpiredCallback(signer);
+            }
         }
 
         return signers.size();
     }
 
-    private void notifyCallbacks(final List<Signer> signers, final CallbackType callbackType) {
-        logger.info("Creating {} expiration callbacks.", signers.size());
-
-        for (final Signer signer : signers) {
-            final String callbackData = createCallbackData(signer, callbackType);
-            callbackNotificationService.notify(callbackType, callbackData);
-        }
-    }
-
-    private String createCallbackData(final Signer signer, final CallbackType callbackType) {
+    private void notifyExpiredCallback(final Signer signer) {
+        final X509CertificateMetadata x509CertificateMetadata = convert(signer);
         final CallbackPayload payload = CallbackPayload.builder()
                 .externalSignerId(signer.getExternalSignerId())
                 .userId(signer.getUserId())
-                .callbackType(callbackType)
-                .certificateSerialNumber(convert(signer))
+                .callbackType(CallbackType.EXPIRED)
+                .certificateSerialNumber(x509CertificateMetadata.serialNumber())
+                .certificateExpiration(x509CertificateMetadata.expiration())
+                .build();
+        notifyCallback(payload);
+    }
+
+    /**
+     * Renew all signers is about to expire and creates renewal callbacks if configured.
+     *
+     * @param limit Maximum number of signers to mark as expired.
+     * @return Number of expired signers.
+     */
+    long renewSigners(final int limit) {
+        final Instant expirationThreshold = Instant.now().minus(configurationProperties.getRenewal().threshold());
+        final List<Signer> signers = signerRepository.findByExpirationOlderThan(expirationThreshold, limit);
+
+        for (final Signer signer : signers) {
+            renewSigner(signer);
+        }
+
+        return signers.size();
+    }
+
+    private void renewSigner(final Signer signer) {
+        final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(signer.getCsr())
+                .externalSignerId(signer.getExternalSignerId())
+                .userId(signer.getUserId())
                 .build();
 
+        final var x509Certificate = enrollCertificate(ejbcaCertificateRequest);
+        final String certificate = encodeCertificateToBase64(x509Certificate);
+
+        signerRepository.save(signer.toBuilder()
+                .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
+                .timestampLastUpdated(Instant.now())
+                .certificate(certificate)
+                .build());
+
+        if (configurationProperties.getRenewal().callbackEnabled()) {
+            notifyRenewalCallback(signer, x509Certificate);
+        }
+    }
+
+    private void notifyRenewalCallback(final Signer signer, final X509Certificate x509Certificate) {
+        final CallbackPayload payload = CallbackPayload.builder()
+                .externalSignerId(signer.getExternalSignerId())
+                .userId(signer.getUserId())
+                .callbackType(CallbackType.RENEWED)
+                .certificateSerialNumber(x509Certificate.getSerialNumber().toString())
+                .certificateExpiration(x509Certificate.getNotAfter().toInstant())
+                .build();
+        notifyCallback(payload);
+    }
+
+    private void notifyCallback(final CallbackPayload callbackPayload) {
+        callbackNotificationService.notify(callbackPayload.callbackType(), convert(callbackPayload));
+    }
+
+    private String convert(final CallbackPayload payload) {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
@@ -109,12 +161,13 @@ class SignerService {
         }
     }
 
-    private static String convert(final Signer signer) {
+    private static X509CertificateMetadata convert(final Signer signer) {
         try {
-            return signer.getX509Certificate().getSerialNumber().toString();
+            final X509Certificate x509Certificate = signer.getX509Certificate();
+            return new X509CertificateMetadata(x509Certificate.getSerialNumber().toString(), x509Certificate.getNotAfter().toInstant());
         } catch (final CertificateException e) {
             logger.error("Exception when parsing X509Certificate", e);
-            return null;
+            return new X509CertificateMetadata(null, null);
         }
     }
 
@@ -142,7 +195,13 @@ class SignerService {
 
         verifySignature(externalSignerId, csr);
 
-        final var x509Certificate = enrollCertificate(externalSignerId, userId, csr);
+        final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
+                .csr(csr)
+                .externalSignerId(externalSignerId)
+                .userId(userId)
+                .build();
+
+        final var x509Certificate = enrollCertificate(ejbcaCertificateRequest);
 
         final var certificateBase64 = encodeCertificateToBase64(x509Certificate);
         final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
@@ -193,14 +252,8 @@ class SignerService {
         }
     }
 
-    private X509Certificate enrollCertificate(final String externalSignerId, final String userId, final String csr) {
+    private X509Certificate enrollCertificate(final EjbcaService.CertificateRequest certificateRequest) {
         try {
-            final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                    .csr(csr)
-                    .externalSignerId(externalSignerId)
-                    .userId(userId)
-                    .build();
-
             return ejbcaService.enrollCertificate(certificateRequest);
         } catch (final RestClientException e) {
             logger.warn("Error response from EJBCA server", e);
@@ -293,5 +346,7 @@ class SignerService {
     }
 
     @Builder
-    record CallbackPayload(String externalSignerId, String userId, CallbackType callbackType, String certificateSerialNumber) { }
+    private record CallbackPayload(String externalSignerId, String userId, CallbackType callbackType, String certificateSerialNumber, Instant certificateExpiration) { }
+
+    private record X509CertificateMetadata(String serialNumber, Instant expiration) {}
 }
