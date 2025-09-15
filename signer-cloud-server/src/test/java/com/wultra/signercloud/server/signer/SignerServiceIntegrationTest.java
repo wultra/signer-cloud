@@ -1,8 +1,7 @@
 package com.wultra.signercloud.server.signer;
 
-import com.wultra.signercloud.server.callback.CallbackEventStatus;
-import com.wultra.signercloud.server.callback.CallbackType;
 import org.junit.jupiter.api.Test;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -33,16 +32,17 @@ class SignerServiceIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @Test
-    void testCleanupSigners() {
+    void testCleanupSigners() throws Exception {
         final long result = tested.cleanupSigners(1);
 
         assertEquals(1, result);
 
         final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM sc_callback_event ORDER BY timestamp_created DESC LIMIT 1");
         assertNotNull(callbackEvent);
-        assertEquals(CallbackType.EXPIRED.toString(), callbackEvent.get("CALLBACK_TYPE"));
-        assertEquals(CallbackEventStatus.PENDING.toString(), callbackEvent.get("STATUS"));
-        assertEquals("{\"externalSignerId\": \"signer1\", \"userId\": \"user1\"}", callbackEvent.get("CALLBACK_DATA"));
+        assertEquals("EXPIRED", callbackEvent.get("CALLBACK_TYPE"));
+        assertEquals("PROCESSING", callbackEvent.get("STATUS"));
+        JSONAssert.assertEquals("""
+                {"externalSignerId": "signer1", "userId": "user1", "callbackType": "EXPIRED", "certificateSerialNumber": "64309416018842723591211913217267439625813315032"}""", callbackEvent.get("CALLBACK_DATA").toString(), false);
         assertNotNull(callbackEvent.get("IDEMPOTENCY_KEY"));
         assertNotNull(callbackEvent.get("TIMESTAMP_CREATED"));
     }

@@ -74,8 +74,8 @@ class SignerControllerIntTest {
     private static final Instant CERTIFICATE_EXPIRATION_TIMESTAMP = Instant.ofEpochMilli(1817975686000L);
     private static final Instant TIMESTAMP_CREATED = Instant.now().minusSeconds(120);
 
-    private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/api/signers";
-    private static final String SIGNER_ENDPOINT_WITH_ID = "/api/signers/{externalSignerId}";
+    private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/signers";
+    private static final String SIGNER_ENDPOINT_WITH_ID = "/signers/{externalSignerId}";
 
     private X509Certificate x509Certificate;
     private VerifyECDSASignatureRequest powerAuthRequest;

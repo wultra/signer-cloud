@@ -54,6 +54,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -541,6 +542,45 @@ class DocumentServiceTest {
         assertRejectSuccessResult(result);
     }
 
+    @Test
+    void testDeleteDocumentWhenDocumentDoesNotExistThenNoExceptionIsThrown() {
+        // given
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
+
+        // when / then
+        assertDoesNotThrow(() -> documentService.deleteDocument(DOCUMENT_UUID));
+    }
+
+    @Test
+    void testDeleteDocumentWhenDocumentExistsThenNoExceptionIsThrown() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+
+        // when / then
+        assertDoesNotThrow(() -> documentService.deleteDocument(DOCUMENT_UUID));
+    }
+
+    @Test
+    void testDeleteDocumentWhenDocumentExistsThenDeleteActionIsCalledOnRepositories() {
+        // given
+        final var document = Document.builder()
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .build();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+
+        // when
+        documentService.deleteDocument(DOCUMENT_UUID);
+
+        // then
+        verify(documentRepository).delete(document);
+        verify(documentContentRepository).deleteById(DOCUMENT_CONTENT_ID);
+    }
+
     private void assertFailResult(final Try<?> result, final Class<? extends Throwable> exceptionType, final String expectedMessage) {
         assertFalse(result.isSuccess());
 
@@ -568,7 +608,7 @@ class DocumentServiceTest {
         final var response = result.getResponse();
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://signercloud.wultra.com:8080/api/v1/documents/%s/download",
+        final var expectedUri = String.format("https://signercloud.wultra.com:8080/documents/%s/download",
                 DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }

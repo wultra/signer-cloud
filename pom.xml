@@ -24,6 +24,7 @@
         <bouncycastle.version>1.81</bouncycastle.version>
         <dss.version>6.3</dss.version>
         <shedlock.version>6.10.0</shedlock.version>
+        <okhttp3.version>5.1.0</okhttp3.version>
 
         <logstash.version>8.1</logstash.version>
 
@@ -93,6 +94,13 @@
                 <groupId>net.logstash.logback</groupId>
                 <artifactId>logstash-logback-encoder</artifactId>
                 <version>${logstash.version}</version>
+            </dependency>
+
+            <!-- Testing -->
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>${okhttp3.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -4,14 +4,14 @@
 CloudSigner Server provides a RESTful API that allows to control specific parts of the signing process. 
 
 <!-- begin remove -->
-- `POST` [/api/cloudsigner/signers](#create-new-signer) - Create New Signer
-- `PUT` [/api/cloudsigner/signers/{signerId}](#change-signer-status) - Change Signer Status
-- `GET` [/api/cloudsigner/signers/{signerId}](#signer-details) - Signer Details
-- `POST` [/api/cloudsigner/documents](#upload-document) - Upload Document
-- `PUT` [/api/cloudsigner/documents/{documentId}](#reject-document) - Reject Document
-- `DELETE` [/api/cloudsigner/documents/{documentId}](#delete-document) - Delete Document
-- `POST` [/api/cloudsigner/documents/{documentId}/signature](#sign-document) - Sign Document
-- `GET` [/api/cloudsigner/documents/{documentId}/file](#download-document) - Download Document
+- `POST` [/signers](#create-new-signer) - Create New Signer
+- `PUT` [/signers/{signerId}](#change-signer-status) - Change Signer Status
+- `GET` [/signers/{signerId}](#signer-details) - Signer Details
+- `POST` [/documents](#upload-document) - Upload Document
+- `PUT` [/documents/{documentId}](#reject-document) - Reject Document
+- `DELETE` [/documents/{documentId}](#delete-document) - Delete Document
+- `POST` [/documents/{documentId}/signature](#sign-document) - Sign Document
+- `GET` [/documents/{documentId}/file](#download-document) - Download Document
 <!-- end -->
 
 ## Error Handling
@@ -37,7 +37,7 @@ All error responses that are produced by the CloudSigner Server have the followi
 
 ##  API Endpoints
 
-<!-- begin api POST /api/cloudsigner/signers -->
+<!-- begin api POST /signers -->
 ###  Create New Signer
 
 Create new signer and enroll for new certificate using CSR. System will track certificate expiration and starts auto-renewal job.
@@ -50,7 +50,7 @@ Create new signer and enroll for new certificate using CSR. System will track ce
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/api/cloudsigner/signers</code></td>
+        <td><code>/signers</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -90,7 +90,7 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 | `resultReason` | `String` | The reason is used when result is FAIL to disclose the reason of failed process.                                                                 |
 <!-- end -->
 
-<!-- begin api PUT /api/cloudsigner/signers/{signerId} -->
+<!-- begin api PUT /signers/{signerId} -->
 ###  Change Signer Status
 
 Change the status of an existing signer (e.g., activate, deactivate, suspend) identified by <code>signerId</code>.
@@ -103,7 +103,7 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/api/cloudsigner/signers/{signerId}</code></td>
+        <td><code>/signers/{signerId}</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -140,7 +140,7 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
 | `resultReason` | `String` | The reason is used when result is FAIL to disclose the reason of failed process.                                                                 |
 <!-- end -->
 
-<!-- begin api GET /api/cloudsigner/signers/{signerId} -->
+<!-- begin api GET /signers/{signerId} -->
 ###  Signer Details
 
 Get signer state.
@@ -153,7 +153,7 @@ Get signer state.
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/api/cloudsigner/signers/{signerId}</code></td>
+        <td><code>/signers/{signerId}</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -189,7 +189,7 @@ Get signer state.
 | `signerStatus` | `String` | Signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED, EXPIRED |
 <!-- end -->
 
-<!-- begin api POST /api/cloudsigner/documents -->
+<!-- begin api POST /documents -->
 ###  Upload Document
 
 Upload document as one file using multipart/form-data. Maximum file size depends on server configuration.
@@ -202,7 +202,7 @@ Upload document as one file using multipart/form-data. Maximum file size depends
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/api/cloudsigner/documents</code></td>
+        <td><code>/documents</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -277,7 +277,7 @@ Maximum file size limitations depends on server configuration (web/apps server, 
 Document mime-type validation is performed.
 <!-- end -->
 
-<!-- begin api PUT /api/cloudsigner/documents/{documentId} -->
+<!-- begin api PUT /documents/{documentId} -->
 ###  Reject Document
 
 Reject document and terminate signing process.
@@ -290,7 +290,7 @@ Reject document and terminate signing process.
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/api/cloudsigner/documents/{documentId}</code></td>
+        <td><code>/documents/{documentId}</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -323,7 +323,7 @@ Reject document and terminate signing process.
 ```
 <!-- end -->
 
-<!-- begin api DELETE /api/cloudsigner/documents/{documentId} -->
+<!-- begin api DELETE /documents/{documentId} -->
 ###  Delete Document
 
 Delete document, no matter if it’s only uploaded or signed document.
@@ -336,7 +336,7 @@ Delete document, no matter if it’s only uploaded or signed document.
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/api/cloudsigner/documents/{documentId}</code></td>
+        <td><code>/documents/{documentId}</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -360,7 +360,7 @@ Delete document, no matter if it’s only uploaded or signed document.
 ```
 <!-- end -->
 
-<!-- begin api POST /api/cloudsigner/documents/{documentId}/signature -->
+<!-- begin api POST /documents/{documentId}/signature -->
 ###  Sign Document
 
 Complete the signature with approved document hash.
@@ -373,7 +373,7 @@ Complete the signature with approved document hash.
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/api/cloudsigner/documents/{documentId}/signature</code></td>
+        <td><code>/documents/{documentId}/signature</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -398,12 +398,12 @@ Complete the signature with approved document hash.
 ```json
 {
   "documentId": "123abc",
-  "uri": "https://HOSTNAME/api/documents/{documentId}"
+  "uri": "https://HOSTNAME/documents/{documentId}"
 }
 ```
 <!-- end -->
 
-<!-- begin api GET /api/cloudsigner/documents/{documentId}/file -->
+<!-- begin api GET /documents/{documentId}/file -->
 ###  Download Document
 
 Download document.
@@ -418,7 +418,7 @@ As you can see from the Accept-Ranges: bytes response header, we support optiona
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/api/cloudsigner/documents/{documentId}/file</code></td>
+        <td><code>/documents/{documentId}/file</code></td>
     </tr>
 </table>
 <!-- end -->

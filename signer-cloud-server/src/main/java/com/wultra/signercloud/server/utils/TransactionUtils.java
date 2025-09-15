@@ -15,27 +15,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+package com.wultra.signercloud.server.utils;
+
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * Signer configuration properties.
+ * Utils class to handle transaction synchronization.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@ConfigurationProperties(prefix = "signer-cloud.server.signer")
-@Getter
-@Setter
-class SignerConfigurationProperties {
+public final class TransactionUtils {
 
-    private Expiration expiration = new Expiration(false, new Job(1000));
-
-    record Job(int limit) {
+    private TransactionUtils() {
+        throw new IllegalStateException("Utility class");
     }
 
-    record Expiration(boolean callbackEnabled, Job job) {
+    /**
+     * Execute a task after the current transaction commits.
+     *
+     * @param task Task to execute.
+     */
+    public static void executeAfterTransactionCommits(final Runnable task) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                task.run();
+            }
+        });
     }
 }

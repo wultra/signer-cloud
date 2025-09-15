@@ -35,7 +35,7 @@ import org.springframework.web.multipart.MultipartFile;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @RestController
-@RequestMapping("api/documents")
+@RequestMapping("documents")
 @AllArgsConstructor
 @Slf4j
 public class DocumentController {
@@ -169,5 +169,22 @@ public class DocumentController {
             logger.info("action: rejectDocument, state: failed, errorMessage: {}", error.getMessage());
             throw error;
         }
+    }
+
+    @Operation(
+            summary = "Deletes a document",
+            description = "Permanently deletes a document from the database, regardless of its state. This operation cannot be undone.",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Document deleted successfully"
+                    )
+            }
+    )
+    @DeleteMapping("/{documentId}")
+    void delete(@PathVariable final String documentId) {
+        logger.info("action: deleteDocument, state: initiated, documentId: {}", documentId);
+        documentService.deleteDocument(documentId);
+        logger.info("action: deleteDocument, state: succeeded");
     }
 }

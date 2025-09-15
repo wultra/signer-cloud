@@ -32,7 +32,7 @@ import org.springframework.web.bind.annotation.*;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @RestController
-@RequestMapping("api/signers")
+@RequestMapping("signers")
 @AllArgsConstructor
 @Slf4j
 class SignerController {

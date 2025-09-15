@@ -15,27 +15,31 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
+package com.wultra.signercloud.server.callback;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import lombok.Builder;
 
 /**
- * Signer configuration properties.
+ * Runnable action to be executed by an Executor.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-@ConfigurationProperties(prefix = "signer-cloud.server.signer")
-@Getter
-@Setter
-class SignerConfigurationProperties {
+@Builder
+record CallbackEventRunnable(Runnable dispatchAction, Runnable cancelAction) implements Runnable {
 
-    private Expiration expiration = new Expiration(false, new Job(1000));
-
-    record Job(int limit) {
+    /**
+     * Run the dispatching action called by an Executor.
+     */
+    @Override
+    public void run() {
+        dispatchAction.run();
     }
 
-    record Expiration(boolean callbackEnabled, Job job) {
+    /**
+     * Run the cancel action on shutdown of an Executor.
+     */
+    public void cancel() {
+        cancelAction.run();
     }
+
 }
