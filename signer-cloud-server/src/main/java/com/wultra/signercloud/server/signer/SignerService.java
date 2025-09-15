@@ -17,15 +17,16 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wultra.core.rest.client.base.RestClientException;
-import com.wultra.signercloud.server.callback.CallbackEvent;
-import com.wultra.signercloud.server.callback.CallbackEventStatus;
-import com.wultra.signercloud.server.callback.CallbackService;
-import com.wultra.signercloud.server.callback.CallbackType;
+import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,10 +34,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Base64;
+import java.util.EnumSet;
 import java.util.List;
-import java.util.UUID;
+import java.util.Map;
 
 /**
  * Service for {@link Signer} operations.
@@ -58,7 +59,8 @@ class SignerService {
     private final EjbcaService ejbcaService;
     private final SignerRepository signerRepository;
     private final SignerConfigurationProperties configurationProperties;
-    private final CallbackService callbackService;
+    private final CallbackNotificationService callbackNotificationService;
+    private final ObjectMapper objectMapper;
 
     /**
      * Creates a new {@link Signer} or updates an existing one if it already exists (based on {@link Signer#getExternalSignerId}).
@@ -87,36 +89,45 @@ class SignerService {
         final Instant now = Instant.now();
         final List<Signer> signers = signerRepository.markAsExpired(now, limit);
 
-        if (configurationProperties.getExpiration().callback().enabled()) {
-            createCallbacks(signers);
+        if (configurationProperties.getExpiration().callbackEnabled()) {
+            notifyCallbacks(signers, CallbackType.EXPIRED);
         }
 
         return signers.size();
     }
 
-    private void createCallbacks(final List<Signer> signers) {
+    private void notifyCallbacks(final List<Signer> signers, final CallbackType callbackType) {
         logger.info("Creating {} expiration callbacks.", signers.size());
-        final LocalDateTime now = LocalDateTime.now();
-        final List<CallbackEvent> callbackEvents = signers.stream()
-                .map(signer -> createCallback(signer, now))
-                .toList();
-        callbackService.save(callbackEvents);
+
+        for (final Signer signer : signers) {
+            final String callbackData = createCallbackData(signer, callbackType);
+            callbackNotificationService.notify(callbackType, callbackData);
+        }
     }
 
-    private static CallbackEvent createCallback(final Signer signer, final LocalDateTime now) {
-        return CallbackEvent.builder()
-                .status(CallbackEventStatus.PENDING)
-                .callbackData(createCallbackData(signer))
-                .callbackType(CallbackType.EXPIRED)
-                .timestampCreated(now)
-                .idempotencyKey(UUID.randomUUID().toString())
+    private String createCallbackData(final Signer signer, final CallbackType callbackType) {
+        final CallbackPayload payload = CallbackPayload.builder()
+                .externalSignerId(signer.getExternalSignerId())
+                .userId(signer.getUserId())
+                .callbackType(callbackType)
+                .certificateSerialNumber(convert(signer))
                 .build();
+
+        try {
+            return objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            logger.warn("Unable to serialize {} to JSON.", payload, e);
+            return "{}";
+        }
     }
 
-    @SuppressWarnings("java:S5663")
-    private static String createCallbackData(final Signer signer) {
-        return """
-                {"externalSignerId": "%s", "userId": "%s"}""".formatted(signer.getExternalSignerId(), signer.getUserId());
+    private static String convert(final Signer signer) {
+        try {
+            return signer.getX509Certificate().getSerialNumber().toString();
+        } catch (final CertificateException e) {
+            logger.error("Exception when parsing X509Certificate", e);
+            return null;
+        }
     }
 
     private void createUpdateSignerWithCertificate(final CreateUpdateSignerRequest request) throws RestClientException, CertificateException, IOException {
@@ -223,4 +234,7 @@ class SignerService {
                 .map(Try::success)
                 .orElse(Try.error(new SignerNotFoundException("Signer not found: " + externalSignerId)));
     }
+
+    @Builder
+    record CallbackPayload(String externalSignerId, String userId, CallbackType callbackType, String certificateSerialNumber) { }
 }
