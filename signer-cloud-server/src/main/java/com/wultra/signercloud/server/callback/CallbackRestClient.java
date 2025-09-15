@@ -15,23 +15,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-
 package com.wultra.signercloud.server.callback;
 
+import com.wultra.core.rest.client.base.RestClient;
+import com.wultra.signercloud.server.callback.api.CallbackType;
+import lombok.Builder;
+
+import java.time.LocalDateTime;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
- * Possible types of a {@link CallbackEvent}.
+ * Wrapper for the {@link RestClient} to track the creation timestamp and failure statistics of a REST Client instance.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
-public enum CallbackType {
-
-    /**
-     * A callback when the certificate expired.
-     */
-    EXPIRED,
-
-    /**
-     * A callback when the certificate was renewed.
-     */
-    RENEWED
-}
+@Builder
+record CallbackRestClient(
+        RestClient restClient,
+        LocalDateTime timestampCreated,
+        AtomicInteger failureCount,
+        AtomicReference<LocalDateTime> timestampLastFailure,
+        CallbackType callbackType
+) { }

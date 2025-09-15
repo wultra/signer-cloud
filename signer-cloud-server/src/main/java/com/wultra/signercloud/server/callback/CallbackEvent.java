@@ -18,6 +18,7 @@
 
 package com.wultra.signercloud.server.callback;
 
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Sequence;
@@ -32,9 +33,9 @@ import java.time.LocalDateTime;
  */
 @Table("sc_callback_event")
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @ToString
-public class CallbackEvent {
+class CallbackEvent {
 
     @Id
     @Sequence("sc_callback_event_seq")
