@@ -61,8 +61,8 @@ import java.util.function.Consumer;
 @Slf4j
 @Transactional
 class DocumentService {
-
-    private static final String DOCUMENT_DOWNLOAD_PATH = "/api/v1/documents/{documentId}/download";
+    private static final String CERTIFICATE_TYPE = "X.509";
+    private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/download";
 
     private final DocumentConfigurationProperties configurationProperties;
     private final DocumentRepository documentRepository;
