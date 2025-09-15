@@ -74,8 +74,7 @@ class SignerService {
      * @return Number of expired signers.
      */
     long cleanupSigners(final int limit) {
-        final Instant now = Instant.now();
-        final List<Signer> signers = signerRepository.markAsExpired(now, limit);
+        final List<Signer> signers = signerRepository.markAsExpired(limit);
 
         if (configurationProperties.getExpiration().callbackEnabled()) {
             logger.info("Creating {} expiration callbacks.", signers.size());
@@ -107,7 +106,7 @@ class SignerService {
      */
     long renewSigners(final int limit) {
         final Instant expirationThreshold = Instant.now().plus(configurationProperties.getRenewal().threshold());
-        final List<Signer> signers = signerRepository.findByExpirationOlderThan(expirationThreshold, limit);
+        final List<Signer> signers = signerRepository.findForRenewal(expirationThreshold, limit);
 
         for (final Signer signer : signers) {
             renewSigner(signer);

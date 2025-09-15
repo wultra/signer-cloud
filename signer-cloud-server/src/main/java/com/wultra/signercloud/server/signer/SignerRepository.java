@@ -35,20 +35,34 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
     Optional<Signer> findByExternalSignerId(String externalSignerId);
 
     /**
-     * Find signers by expiration.
+     * Find signers for expiration.
      *
-     * @param expirationThreshold Limit signers to older than this expiration threshold.
+     * @param limit Limit of signers to return.
+     * @return List of signers.
+     * @apiNote Internal API, use {@link #markAsExpired(int)} instead.
+     * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
+     */
+    @Query("""
+        SELECT * FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration < NOW()
+                ORDER BY timestamp_certificate_expiration
+                FETCH FIRST :limit ROWS ONLY
+        """)
+    List<Signer> findForExpiration(int limit);
+
+    /**
+     * Find signers for renewal.
+     *
+     * @param expirationThreshold Limit signers to this expiration threshold.
      * @param limit Limit of signers to return.
      * @return List of signers.
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-        SELECT * FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration < :expirationThreshold
+        SELECT * FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration BETWEEN NOW() AND :expirationThreshold
                 ORDER BY timestamp_certificate_expiration
                 FETCH FIRST :limit ROWS ONLY
         """)
-    List<Signer> findByExpirationOlderThan(Instant expirationThreshold, int limit);
-
+    List<Signer> findForRenewal(Instant expirationThreshold, int limit);
 
     /**
      * Marks signers as expired.
@@ -56,29 +70,27 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
      *
      * @param ids Signer IDs to mark as expired.
-     * @param now Current time.
-     * @apiNote Internal API, use {@link #markAsExpired(Instant, int)} instead.
+     * @apiNote Internal API, use {@link #markAsExpired(int)} instead.
      */
     @Modifying
-    @Query("UPDATE sc_signer SET timestamp_last_updated = :now, status = 'EXPIRED' WHERE id IN (:ids)")
-    void markAsExpired(List<Long> ids, Instant now);
+    @Query("UPDATE sc_signer SET timestamp_last_updated = NOW(), status = 'EXPIRED' WHERE id IN (:ids)")
+    void markAsExpired(List<Long> ids);
 
     /**
      * Marks signers as expired.
      * <p>
      * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
      *
-     * @param now Current time.
      * @param limit Limit of signers to mark as expired in a single query.
      * @return List of signers marked as expired.
      * @implSpec Unfortunately, usage of Common Table Expressions is limited to PostgreSQL only.
      */
-    default List<Signer> markAsExpired(Instant now, int limit) {
-        final List<Signer> signers = findByExpirationOlderThan(now, limit);
+    default List<Signer> markAsExpired(int limit) {
+        final List<Signer> signers = findForExpiration(limit);
         final List<Long> ids = signers.stream()
                 .map(Signer::getId)
                 .toList();
-        markAsExpired(ids, now);
+        markAsExpired(ids);
         return signers;
     }
 }

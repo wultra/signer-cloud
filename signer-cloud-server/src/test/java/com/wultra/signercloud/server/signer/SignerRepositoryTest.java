@@ -49,8 +49,7 @@ class SignerRepositoryTest {
 
     @Test
     void testMarkAsExpired() {
-        final Instant now = Instant.now();
-        final List<Signer> result = signerRepository.markAsExpired(now, 1);
+        final List<Signer> result = signerRepository.markAsExpired(1);
 
         assertEquals(1, result.size());
         final Long id = result.get(0).getId();
@@ -60,6 +59,6 @@ class SignerRepositoryTest {
                 .orElseThrow(() -> new AssertionFailedError("Signer ID: %s does not exist".formatted(id)));
         assertEquals(SignerStatus.EXPIRED, signer.getStatus());
         assertNotNull(signer.getTimestampLastUpdated());
-        assertEquals(now.truncatedTo(ChronoUnit.SECONDS), signer.getTimestampLastUpdated().truncatedTo(ChronoUnit.SECONDS));
+        assertEquals(Instant.now().truncatedTo(ChronoUnit.SECONDS), signer.getTimestampLastUpdated().truncatedTo(ChronoUnit.SECONDS));
     }
 }
