@@ -68,7 +68,7 @@ class SignerServiceIntegrationTest {
     }
 
     @Test
-    void testRenewSigners   () throws Exception {
+    void testRenewSigners() throws Exception {
         final var certificateBytes = Base64.getDecoder().decode(CERTIFICATE_DER_BASE64);
         final var x509Certificate = (X509Certificate) CertificateFactory.getInstance("X.509")
                 .generateCertificate(new java.io.ByteArrayInputStream(certificateBytes));
