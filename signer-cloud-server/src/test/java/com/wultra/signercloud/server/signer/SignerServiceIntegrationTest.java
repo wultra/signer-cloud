@@ -68,18 +68,20 @@ class SignerServiceIntegrationTest {
     }
 
     @Test
-    void testRenewSingers() throws Exception {
+    void testRenewSigners   () throws Exception {
         final var certificateBytes = Base64.getDecoder().decode(CERTIFICATE_DER_BASE64);
         final var x509Certificate = (X509Certificate) CertificateFactory.getInstance("X.509")
                 .generateCertificate(new java.io.ByteArrayInputStream(certificateBytes));
 
-        when(ejbcaService.enrollCertificate(any())).thenReturn(x509Certificate);
+        when(ejbcaService.enrollCertificate(any()))
+                .thenReturn(x509Certificate);
 
         final long result = tested.renewSigners(3);
 
         assertEquals(1, result);
 
         verify(ejbcaService).enrollCertificate(argumentCaptor.capture());
+
         final var certificateRequest = argumentCaptor.getValue();
         assertEquals("signer2", certificateRequest.externalSignerId());
         assertEquals("user1", certificateRequest.userId());
