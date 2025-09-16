@@ -79,3 +79,14 @@ jobs:
           echo '${{ vars.ACR_REGISTRY_URL }}/signer-cloud-server:${{ env.REVISION }}${{ env.TIMESTAMP }}-${{ github.sha }}' >> $GITHUB_STEP_SUMMARY
       - if: inputs.push_to_registry == true && vars.DISTRIBUTION_REGISTRY_URL != ''
         run: echo '${{ vars.DISTRIBUTION_REGISTRY_URL }}/signer-cloud-server:${{ env.REVISION }}${{ env.TIMESTAMP }}-${{ github.sha }}' >> $GITHUB_STEP_SUMMARY
+    outputs:
+      image_name:  ${{ vars.ACR_REGISTRY_URL }}/signer-cloud-server:${{ env.REVISION }}${{ env.TIMESTAMP }}-${{ github.sha }}
+
+  deployment:
+    needs: build
+    if: ${{ inputs.push_to_registry == true || (github.ref == 'refs/heads/develop' && github.actor != 'dependabot[bot]' && github.event_name == 'push')}}
+    uses: ./.github/workflows/deploy-docker-image.yml
+    secrets: inherit
+    with:
+      environment: azure-smoke
+      image_name: ${{ needs.build.outputs.image_name }}
