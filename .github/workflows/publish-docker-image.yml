@@ -1,3 +1,4 @@
+---
 name: Build and publish docker image
 
 on:
@@ -16,10 +17,33 @@ on:
       - 'develop'
       - 'main'
       - 'releases/*'
+  push:
+    branches:
+      - 'develop'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
+  set-environment:
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set-env.outputs.environment }}
+    steps:
+      - name: Set environment output
+        id: set-env
+        run: |
+          if [ -z "${{ inputs.environment }}" ]; then
+            echo "environment=docker-internal" >> $GITHUB_OUTPUT
+          else
+            echo "environment=${{ inputs.environment }}" >> $GITHUB_OUTPUT
+          fi
+
   build:
     runs-on: 'ubuntu-latest'
+    needs: set-environment
+    environment: ${{ needs.set-environment.outputs.environment }}
     env:
       # these are global secrets - for readonly access to artifactory
       INTERNAL_USERNAME: ${{ secrets.JFROG_USERNAME }}
@@ -38,8 +62,12 @@ jobs:
         run: echo "TIMESTAMP=-$(date +%Y.%m.%d)" >> $GITHUB_ENV
       - name: Get Signer Cloud Server version
         run: |
-          REVISION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
+          REVISION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           echo "REVISION=$REVISION" >> $GITHUB_ENV
+          IMAGE_VERSION=$REVISION${{ env.TIMESTAMP }}-${{ github.sha }}
+          IMAGE_NAME=signer-cloud-server:${IMAGE_VERSION}
+          echo "IMAGE_VERSION=$IMAGE_VERSION" >> $GITHUB_ENV
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
       - name: Prepare wars and libs
         run: |
           mvn -U -DuseInternalRepo=true --no-transfer-progress clean package
@@ -47,17 +75,15 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-        with:
-          install: true
       - name: Log in to ACR
-        if: vars.ACR_REGISTRY_URL != ''
+        if: vars.ACR_REGISTRY_URL != '' && github.actor != 'dependabot[bot]'
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.ACR_REGISTRY_URL }}
           username: ${{ vars.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
       - name: Log in to Distribution registry
-        if: vars.DISTRIBUTION_REGISTRY_URL != ''
+        if: vars.DISTRIBUTION_REGISTRY_URL != '' && github.actor != 'dependabot[bot]'
         uses: docker/login-action@v3
         with:
           registry: ${{ vars.DISTRIBUTION_REGISTRY_URL }}
@@ -66,21 +92,15 @@ jobs:
       - name: Build and push container image to registry
         uses: docker/build-push-action@v6
         with:
-          push: ${{ inputs.push_to_registry == true }}
+          push: ${{ inputs.push_to_registry == true || (github.ref == 'refs/heads/develop' && github.actor != 'dependabot[bot]' && github.event_name == 'push')}}
           platforms: linux/amd64,linux/arm64
           tags: |
-            ${{ vars.ACR_REGISTRY_URL != ''  && format('{0}/signer-cloud-server:{1}{2}-{3}', vars.ACR_REGISTRY_URL, env.REVISION, env.TIMESTAMP,  github.sha) || '' }}
-            ${{ vars.DISTRIBUTION_REGISTRY_URL != '' && format('{0}/signer-cloud-server:{1}{2}-{3}', vars.DISTRIBUTION_REGISTRY_URL, env.REVISION, env.TIMESTAMP,  github.sha) || '' }}
+            ${{ vars.ACR_REGISTRY_URL != ''  && format('{0}/{1}', vars.ACR_REGISTRY_URL, env.IMAGE_NAME) || '' }}
+            ${{ vars.DISTRIBUTION_REGISTRY_URL != '' && format('{0}/{1}', vars.DISTRIBUTION_REGISTRY_URL, env.IMAGE_NAME) || '' }}
           file: ./Dockerfile
           context: .
-      - run: echo '### 🚀 Published images' >> $GITHUB_STEP_SUMMARY
-      - if: inputs.push_to_registry == true && vars.ACR_REGISTRY_URL != ''
-        run: |
-          echo '${{ vars.ACR_REGISTRY_URL }}/signer-cloud-server:${{ env.REVISION }}${{ env.TIMESTAMP }}-${{ github.sha }}' >> $GITHUB_STEP_SUMMARY
-      - if: inputs.push_to_registry == true && vars.DISTRIBUTION_REGISTRY_URL != ''
-        run: echo '${{ vars.DISTRIBUTION_REGISTRY_URL }}/signer-cloud-server:${{ env.REVISION }}${{ env.TIMESTAMP }}-${{ github.sha }}' >> $GITHUB_STEP_SUMMARY
     outputs:
-      image_name:  ${{ vars.ACR_REGISTRY_URL }}/signer-cloud-server:${{ env.REVISION }}${{ env.TIMESTAMP }}-${{ github.sha }}
+      image_name:  ${{ vars.ACR_REGISTRY_URL != ''  && format('{0}/{1}', vars.ACR_REGISTRY_URL, env.IMAGE_NAME) || '' }}
 
   deployment:
     needs: build
