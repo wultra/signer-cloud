@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
@@ -612,14 +613,14 @@ class DocumentControllerIntTest {
         final var document = Document.builder()
                 .timestampCreated(creationTime)
                 .documentId(DOCUMENT_UUID)
-                .signerId(signerId)
+                .signer(AggregateReference.to(signerId))
                 .externalId(DUMMY_EXTERNAL_DOCUMENT_ID)
                 .documentName(DUMMY_DOCUMENT_NAME)
                 .fileName(FILENAME)
                 .fileSize(UPLOADED_FILE_SIZE)
                 .hash(HASH)
                 .status(status)
-                .documentContentId(documentContentId)
+                .documentContent(AggregateReference.to(documentContentId))
                 .build();
 
         final var savedDocument = documentRepository.save(document);
@@ -640,7 +641,7 @@ class DocumentControllerIntTest {
         assertNotEquals(0, document.getId());
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(expectedDocumentId, document.getDocumentId());
-        assertTrue(signerRepository.existsById(document.getSignerId()));
+        assertTrue(signerRepository.existsById(document.getSigner().getId()));
         assertEquals(DUMMY_EXTERNAL_DOCUMENT_ID, document.getExternalId());
         assertEquals(DUMMY_DOCUMENT_NAME, document.getDocumentName());
         assertEquals(FILENAME, document.getFileName());
@@ -649,7 +650,7 @@ class DocumentControllerIntTest {
         assertEquals(DocumentStatus.WAITING, document.getStatus());
         assertNull(document.getSignature());
 
-        final var documentContent = documentContentRepository.findById(document.getDocumentContentId()).orElseThrow();
+        final var documentContent = documentContentRepository.findById(document.getDocumentContent().getId()).orElseThrow();
         assertArrayEquals(uploadedDocumentContent, documentContent.getContent());
     }
 
@@ -665,17 +666,17 @@ class DocumentControllerIntTest {
         assertEquals(Instant.now().minusSeconds(30).toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(DOCUMENT_UUID, document.getDocumentId());
-        assertEquals(signerId, document.getSignerId());
+        assertEquals(signerId, document.getSigner().getId());
         assertEquals(DUMMY_EXTERNAL_DOCUMENT_ID, document.getExternalId());
         assertEquals(DUMMY_DOCUMENT_NAME, document.getDocumentName());
         assertEquals(FILENAME, document.getFileName());
         assertEquals(SIGNED_FILE_SIZE, document.getFileSize());
-        assertEquals(documentContentId, document.getDocumentContentId());
+        assertEquals(documentContentId, document.getDocumentContent().getId());
         assertEquals(HASH, document.getHash());
         assertEquals(DocumentStatus.SIGNED, document.getStatus());
         assertEquals(SIGNATURE, document.getSignature());
 
-        final var documentContent = documentContentRepository.findById(document.getDocumentContentId()).orElseThrow();
+        final var documentContent = documentContentRepository.findById(document.getDocumentContent().getId()).orElseThrow();
         final var fileContent = documentContent.getContent();
         assertTrue(UPLOADED_FILE_SIZE < fileContent.length);
     }
