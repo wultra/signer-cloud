@@ -17,7 +17,10 @@
  */
 package com.wultra.signercloud.server.document;
 
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.data.repository.CrudRepository;
+
+import java.util.Optional;
 
 /**
  * Repository for accessing a {@link DocumentContent}.
@@ -25,4 +28,8 @@ import org.springframework.data.repository.CrudRepository;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public interface DocumentContentRepository extends CrudRepository<DocumentContent, Long> {
+
+    Optional<DocumentContent> findById(AggregateReference<DocumentContent, Long> reference);
+
+    void deleteById(AggregateReference<DocumentContent, Long> reference);
 }

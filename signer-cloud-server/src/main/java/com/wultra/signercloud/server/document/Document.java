@@ -17,9 +17,12 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.signer.Signer;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -45,10 +48,8 @@ public class Document {
 
     private String documentId;
 
-    /**
-     * {@link com.wultra.signercloud.server.signer.Signer#id}
-     */
-    private long signerId;
+    @Column("signer_id")
+    private AggregateReference<Signer, Long> signer;
 
     private String externalId;
 
@@ -58,10 +59,8 @@ public class Document {
 
     private int fileSize;
 
-    /**
-     * {@link DocumentContent#id}
-     */
-    private long documentContentId;
+    @Column("document_content_id")
+    private AggregateReference<DocumentContent, Long> documentContent;
 
     private String hash;
 
