@@ -21,6 +21,8 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 /**
  * Signer configuration properties.
  *
@@ -31,11 +33,16 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Setter
 class SignerConfigurationProperties {
 
-    private Expiration expiration = new Expiration(false, new Job(1000));
+    private ExpirationJob expiration = new ExpirationJob(false, new Job(1000));
+
+    private RenewalJob renewal = new RenewalJob(false, new Job(25), Duration.ofDays(14));
 
     record Job(int limit) {
     }
 
-    record Expiration(boolean callbackEnabled, Job job) {
+    record ExpirationJob(boolean callbackEnabled, Job job) {
+    }
+
+    record RenewalJob(boolean callbackEnabled, Job job, Duration threshold) {
     }
 }
