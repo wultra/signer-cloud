@@ -226,7 +226,7 @@ class DocumentServiceTest {
                 .build();
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.empty());
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.empty());
 
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -249,9 +249,9 @@ class DocumentServiceTest {
 
         final var documentContent = DocumentContent.builder().build();
 
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.empty());
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.empty());
 
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -277,8 +277,8 @@ class DocumentServiceTest {
         final var signer = createSigner(SignerStatus.BLOCKED);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
-        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
 
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -305,8 +305,8 @@ class DocumentServiceTest {
         final var signer = createSigner(SignerStatus.ACTIVE);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
-        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
 
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -335,8 +335,8 @@ class DocumentServiceTest {
         waitingDuration.setTimeout(WAITING_TIMEOUT);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
-        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
 
         final var request = new SignDocumentRequest(SIGNATURE);
@@ -371,8 +371,8 @@ class DocumentServiceTest {
         final var request = new SignDocumentRequest("invalidSignature");
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
-        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
         when(documentConfigurationProperties.getSignatureHashAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
 
@@ -405,8 +405,8 @@ class DocumentServiceTest {
         waitingDuration.setTimeout(WAITING_TIMEOUT);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
-        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
         when(documentConfigurationProperties.getSignatureHashAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
         when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
@@ -444,7 +444,7 @@ class DocumentServiceTest {
                 .build();
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.empty());
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.empty());
 
         // when
         final var result = documentService.downloadDocument(DOCUMENT_UUID);
@@ -464,7 +464,7 @@ class DocumentServiceTest {
         final var documentContent = DocumentContent.builder().build();
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
 
         // when
         final var result = documentService.downloadDocument(DOCUMENT_UUID);
@@ -486,7 +486,7 @@ class DocumentServiceTest {
                 .build();
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
 
         // when
         final var result = documentService.downloadDocument(DOCUMENT_UUID);
@@ -579,7 +579,7 @@ class DocumentServiceTest {
 
         // then
         verify(documentRepository).delete(document);
-        verify(documentContentRepository).deleteById(DOCUMENT_CONTENT_ID);
+        verify(documentContentRepository).deleteById(AggregateReference.to(DOCUMENT_CONTENT_ID));
     }
 
     private void assertFailResult(final Try<?> result, final Class<? extends Throwable> exceptionType, final String expectedMessage) {

@@ -245,12 +245,10 @@ class DocumentService {
         final var document = documentRepository.findByDocumentId(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
 
-        // TODO Lubos use reference
-        final var documentContent = documentContentRepository.findById(document.getDocumentContent().getId())
+        final var documentContent = documentContentRepository.findById(document.getDocumentContent())
                 .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentId));
 
-        // TODO Lubos use reference
-        final var signer = signerRepository.findById(document.getSigner().getId())
+        final var signer = signerRepository.findById(document.getSigner())
                 .orElseThrow(() -> new SignerNotFoundException("Signer not found for document ID: " + documentId));
 
         verifyDocumentCanBeSigned(signer, document);
@@ -371,8 +369,7 @@ class DocumentService {
         final var document = documentRepository.findByDocumentId(documentUuid)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
 
-        // TODO Lubos use reference
-        final var documentContent = documentContentRepository.findById(document.getDocumentContent().getId())
+        final var documentContent = documentContentRepository.findById(document.getDocumentContent())
                 .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentUuid));
 
         if (document.getStatus() != DocumentStatus.SIGNED) {
@@ -441,8 +438,7 @@ class DocumentService {
 
         final var document = documentOpt.get();
         documentRepository.delete(document);
-        // TODO Lubos use reference
-        documentContentRepository.deleteById(document.getDocumentContent().getId());
+        documentContentRepository.deleteById(document.getDocumentContent());
     }
 
     @Builder

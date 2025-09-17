@@ -650,7 +650,7 @@ class DocumentControllerIntTest {
         assertEquals(DocumentStatus.WAITING, document.getStatus());
         assertNull(document.getSignature());
 
-        final var documentContent = documentContentRepository.findById(document.getDocumentContent().getId()).orElseThrow();
+        final var documentContent = documentContentRepository.findById(document.getDocumentContent()).orElseThrow();
         assertArrayEquals(uploadedDocumentContent, documentContent.getContent());
     }
 
@@ -676,7 +676,7 @@ class DocumentControllerIntTest {
         assertEquals(DocumentStatus.SIGNED, document.getStatus());
         assertEquals(SIGNATURE, document.getSignature());
 
-        final var documentContent = documentContentRepository.findById(document.getDocumentContent().getId()).orElseThrow();
+        final var documentContent = documentContentRepository.findById(document.getDocumentContent()).orElseThrow();
         final var fileContent = documentContent.getContent();
         assertTrue(UPLOADED_FILE_SIZE < fileContent.length);
     }
