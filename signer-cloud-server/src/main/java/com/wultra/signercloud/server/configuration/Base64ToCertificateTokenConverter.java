@@ -34,7 +34,7 @@ import java.security.cert.CertificateException;
  */
 @Component
 @ConfigurationPropertiesBinding
-public class Base64ToCertificateTokenConverter implements Converter<String, CertificateToken> {
+class Base64ToCertificateTokenConverter implements Converter<String, CertificateToken> {
 
     @Override
     public CertificateToken convert(@NonNull final String source) {

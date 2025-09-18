@@ -22,6 +22,7 @@ import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
+import com.wultra.signercloud.server.utils.CertificateUtils;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
@@ -33,9 +34,7 @@ import org.apache.hc.core5.http.ContentType;
 import org.bouncycastle.util.Arrays;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
+import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -46,9 +45,12 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -83,6 +85,10 @@ class DocumentServiceTest {
     private static final String MULTIPART_FILE_FIELD_NAME = "content";
 
     private static final Duration WAITING_TIMEOUT = Duration.ofSeconds(60);
+    private static final List<String> CERTIFICATE_CHAIN_BASE64 = List.of(
+            "MIIBxzCCAU2gAwIBAgIUE0be+N9+2stvvu7y3BKDiHPWBVkwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTQ0N1oXDTI3MDgxMTA5MTQ0NlowFDESMBAGA1UEAwwJSXNzdWluZ0NBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvq7LXohpIAISl1vcnH+8zMGFAyfEnyTOqTZAP40b9PzYmMLBbHGoDxvuJwdmF/mrXxfaQ9+Ki1/QRpkoLc6Ugsywu9agdA3Zu+54GPyxmTo8MvU/txcuRt1+7UMPxTAUo2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDaAAwZQIwMlzNpdVjPFt5/sac/ZVu/56n+vNiNFOywD8Ho8SjdDNnXeBBf3zoQ2aTwPdHtgCXAjEAkNCSl2buX5U3dsxavP2gcgjrxszNQGiQJ1AcRPL1ATHnaFrHwVGNqiFX5r9QQ7ud",
+            "MIIBwzCCAUqgAwIBAgIUBiKRFuSkQ2w0B+eLnFGNCVBLTfwwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTMxMFoXDTM1MDgwOTA5MTMwOVowETEPMA0GA1UEAwwGUm9vdENBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGTbosZgh/n+FWrbU7u05huRtjxUT8PE+fuFFHBtbcKNXYSl5Jf51gMBDn2dJKbM5oRsDLpl/nwscEvRKtibnw8AsIxXZYmyzBVA9meE5FGXswp6kAb/Sc4zQYo/O8RT5o2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBQ0YPm2cX21iY8xSP6EVfPBM2RNwTAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDZwAwZAIxAKsQhZDkBpxdGzn/gxDtqbtl5VtJFl3IJzXb36hWRf26P5Vha2vLAcFipD7koHF6bwIvYJHWRuq+SAzVYue9oId39+8AGKFXvzY+xDiSb/q7+ll/CwwQwcnoRundq8TSVYE="
+    );
 
     @Mock
     private SignerRepository signerRepository;
@@ -101,6 +107,9 @@ class DocumentServiceTest {
 
     @InjectMocks
     private DocumentService documentService;
+
+    @Captor
+    private ArgumentCaptor<PAdESSignatureParameters> signatureParamsArgumentCaptor;
 
     @Test
     void testUploadDocumentWhenUnsupportedFileTypeIsReceivedThenFailResultWithCorrectMessageIsReturned() throws NoSuchAlgorithmException {
@@ -424,6 +433,53 @@ class DocumentServiceTest {
     }
 
     @Test
+    void testSignDocumentWhenCertificateChainIsSetThenPadesServiceIsCalledWithTheChain() throws CertificateException {
+        // given
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentContentId(DOCUMENT_CONTENT_ID)
+                .signerId(SIGNER_ID)
+                .status(DocumentStatus.WAITING)
+                .hash(DOCUMENT_HASH)
+                .documentId(DOCUMENT_UUID)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(UPLOADED_DOCUMENT_CONTENT)
+                .build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
+        waitingDuration.setTimeout(WAITING_TIMEOUT);
+
+        final var certificateChain = buildCertificateChain();
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
+        when(documentConfigurationProperties.getSignatureHashAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
+        when(documentConfigurationProperties.getCertificateChain()).thenReturn(certificateChain);
+        when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
+                .thenReturn(true);
+        when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
+                .thenReturn(new InMemoryDocument(SIGNED_DOCUMENT_CONTENT));
+
+        prepareRequestContext();
+        final var request = new SignDocumentRequest(SIGNATURE);
+
+        // when
+        documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        verify(pAdESService).signDocument(any(InMemoryDocument.class), signatureParamsArgumentCaptor.capture(), any(SignatureValue.class));
+
+        final var signatureParams = signatureParamsArgumentCaptor.getValue();
+        assertCertificateChain(signatureParams.getCertificateChain());
+    }
+
+    @Test
     void testDownloadDocumentWhenDocumentIsNotFoundThenFailResultWithCorrectMessageIsReturned() {
         // given
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
@@ -647,5 +703,33 @@ class DocumentServiceTest {
         assertEquals(DUMMY_FILE_NAME, response.filename());
         assertEquals(UPLOADED_DOCUMENT_CONTENT.length, response.size());
         assertEquals(DOCUMENT_HASH, response.hash());
+    }
+
+    private List<CertificateToken> buildCertificateChain() {
+        return CERTIFICATE_CHAIN_BASE64.stream()
+                .map(certificateBase64 -> {
+                    try {
+                        return CertificateUtils.base64ToX509Certificate(certificateBase64);
+                    } catch (final CertificateException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .map(CertificateToken::new)
+                .toList();
+    }
+
+    private void assertCertificateChain(final List<CertificateToken> certificateChain) {
+        final var certificateChainBase64 = certificateChain.stream()
+                .map(certificateToken -> {
+                    try {
+                        return certificateToken.getCertificate().getEncoded();
+                    } catch (final CertificateEncodingException e) {
+                        return fail("Error when encoding certificate", e);
+                    }
+                })
+                .map(certificateBytes -> Base64.getEncoder().encodeToString(certificateBytes))
+                .toList();
+
+        assertEquals(CERTIFICATE_CHAIN_BASE64, certificateChainBase64);
     }
 }
