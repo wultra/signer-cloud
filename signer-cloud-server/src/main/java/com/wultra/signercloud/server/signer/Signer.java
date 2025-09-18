@@ -17,16 +17,17 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import com.wultra.signercloud.server.utils.CertificateUtils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.util.Assert;
 
-import java.io.ByteArrayInputStream;
-import java.security.cert.*;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Base64;
 
@@ -40,8 +41,6 @@ import java.util.Base64;
 @Table("sc_signer")
 @Slf4j
 public class Signer {
-
-    private static final String CERTIFICATE_TYPE = "X.509";
 
     @Id
     @Sequence("sc_signer_seq")
@@ -73,11 +72,7 @@ public class Signer {
      * @throws CertificateException in case of an error during certificate parsing.
      */
     public X509Certificate getX509Certificate() throws CertificateException {
-        final var certificateBytes = Base64.getDecoder().decode(certificate);
-        final Certificate result = CertificateFactory.getInstance(CERTIFICATE_TYPE)
-                .generateCertificate(new ByteArrayInputStream(certificateBytes));
-        Assert.isInstanceOf(X509Certificate.class, result, "Certificate is must be of type X509Certificate");
-        return (X509Certificate) result;
+        return CertificateUtils.base64ToX509Certificate(certificate);
     }
 
     public static class SignerBuilder {

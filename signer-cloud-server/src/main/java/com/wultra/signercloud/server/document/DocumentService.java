@@ -49,6 +49,7 @@ import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Consumer;
 /**
@@ -61,7 +62,6 @@ import java.util.function.Consumer;
 @Slf4j
 @Transactional
 class DocumentService {
-    private static final String CERTIFICATE_TYPE = "X.509";
     private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/download";
 
     private final DocumentConfigurationProperties configurationProperties;
@@ -304,7 +304,7 @@ class DocumentService {
             final DigestAlgorithm signatureAlgorithm) {
 
         final var certificateToken = new CertificateToken(x509Certificate);
-        final var signatureParams = createSignatureParameters(certificateToken, signatureAlgorithm);
+        final var signatureParams = createSignatureParameters(certificateToken, signatureAlgorithm, configurationProperties.getCertificateChain());
 
         final var hashBytes = Base64.getDecoder().decode(hashBase64);
         final var hash = new ToBeSigned(hashBytes);
@@ -323,12 +323,16 @@ class DocumentService {
         return readSignedDocumentBytes(signedDocument);
     }
 
-    private static PAdESSignatureParameters createSignatureParameters(final CertificateToken certificateToken, final DigestAlgorithm algorithm) {
+    private static PAdESSignatureParameters createSignatureParameters(
+            final CertificateToken certificateToken,
+            final DigestAlgorithm algorithm,
+            final List<CertificateToken> certificateChain
+    ) {
         final var params = new PAdESSignatureParameters();
         params.setDigestAlgorithm(algorithm);
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         params.setSigningCertificate(certificateToken);
-        //TODO (michalrozehnal, 02.09.2025): add setCertificateChain(...), make it configurable and set it by default
+        params.setCertificateChain(certificateChain);
 
         return params;
     }
