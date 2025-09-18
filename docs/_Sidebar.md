@@ -10,4 +10,4 @@
 - [Configuration](./Configuration.md)
 
 **REST APIs**
-- [CloudSigner API](./CloudSigner-API.md)
+- [Signer Cloud API](./Signer-Cloud-API.md)

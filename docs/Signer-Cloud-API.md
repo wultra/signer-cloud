@@ -1,7 +1,7 @@
-# CloudSigner API
+# Signer Cloud API
 <!-- template api -->
 
-CloudSigner Server provides a RESTful API that allows to control specific parts of the signing process. 
+Signer Cloud Server provides a RESTful API that allows to control specific parts of the signing process. 
 
 <!-- begin remove -->
 - `POST` [/signers](#create-new-signer) - Create New Signer
@@ -16,14 +16,14 @@ CloudSigner Server provides a RESTful API that allows to control specific parts 
 
 ## Error Handling
 
-CloudSigner Server uses following format for error response body, accompanied by an appropriate HTTP status code. Besides the HTTP error codes that application server may return regardless of server application (such as 404 when resource is not found or 503 when server is down), following ERROR codes may be returned:
+Signer Cloud Server uses following format for error response body, accompanied by an appropriate HTTP status code. Besides the HTTP error codes that application server may return regardless of server application (such as 404 when resource is not found or 503 when server is down), following ERROR codes may be returned:
 
 | Error Code         | HTTP Code | Description                                                |
 |:-------------------|:----------|:-----------------------------------------------------------|
 | ERROR_GENERIC      | 400       | Issue with a request format or issue of the business logic |
 | ERROR_UNAUTHORIZED | 401       | Unauthorized request                                       |
 
-All error responses that are produced by the CloudSigner Server have the following body:
+All error responses that are produced by the Signer Cloud Server have the following body:
 
 ```json
 {
