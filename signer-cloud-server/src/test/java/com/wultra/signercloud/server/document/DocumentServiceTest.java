@@ -434,12 +434,12 @@ class DocumentServiceTest {
     }
 
     @Test
-    void testSignDocumentWhenCertificateChainIsSetThenPadesServiceIsCalledWithTheChain() throws CertificateException {
+    void testSignDocumentWhenCertificateChainIsSetThenPadesServiceIsCalledWithTheChain() {
         // given
         final var document = Document.builder()
                 .timestampCreated(Instant.now())
-                .documentContentId(DOCUMENT_CONTENT_ID)
-                .signerId(SIGNER_ID)
+                .documentContent(AggregateReference.to(DOCUMENT_CONTENT_ID))
+                .signer(AggregateReference.to(SIGNER_ID))
                 .status(DocumentStatus.WAITING)
                 .hash(DOCUMENT_HASH)
                 .documentId(DOCUMENT_UUID)
@@ -457,8 +457,8 @@ class DocumentServiceTest {
         final var certificateChain = buildCertificateChain();
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
-        when(documentContentRepository.findById(DOCUMENT_CONTENT_ID)).thenReturn(Optional.of(documentContent));
-        when(signerRepository.findById(SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
         when(documentConfigurationProperties.getSignatureHashAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
         when(documentConfigurationProperties.getCertificateChain()).thenReturn(certificateChain);
