@@ -24,15 +24,15 @@ import java.time.Instant;
 import java.util.List;
 
 /**
- * Repository for accessing a {@link IssuedCertificate}.
+ * Repository for accessing a {@link IssuedCertificateMetadata}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-interface IssuedCertificateRepository extends CrudRepository<IssuedCertificate, Long> {
+interface IssuedCertificateRepository extends CrudRepository<IssuedCertificateMetadata, Long> {
 
     @Query("""
         SELECT * FROM sc_issued_certificate
         WHERE signer_id = :signerId AND timestamp_certificate_expiration < :now
         """)
-    List<IssuedCertificate> findForRevocation(final long signerId, final Instant now);
+    List<IssuedCertificateMetadata> findForRevocation(final long signerId, final Instant now);
 }

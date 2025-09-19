@@ -102,7 +102,7 @@ class SignerServiceTest {
     private ArgumentCaptor<Signer> signerCaptor;
 
     @Captor
-    private ArgumentCaptor<IssuedCertificate> issuedCertificateCaptor;
+    private ArgumentCaptor<IssuedCertificateMetadata> issuedCertificateCaptor;
 
     @BeforeEach
     void setUp() throws CertificateException, IOException {

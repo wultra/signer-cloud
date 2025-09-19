@@ -287,7 +287,7 @@ class SignerService {
         final var serialNumber = x509Certificate.getSerialNumber().toString();
         final var issuerDn = x509Certificate.getIssuerX500Principal().getName();
 
-        final var issuedCertificate = IssuedCertificate.builder()
+        final var issuedCertificate = IssuedCertificateMetadata.builder()
                 .signerId(signerId)
                 .timestampCreated(Instant.now())
                 .serialNumber(serialNumber)

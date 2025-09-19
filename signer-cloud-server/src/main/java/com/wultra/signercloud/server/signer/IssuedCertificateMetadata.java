@@ -32,11 +32,11 @@ import java.time.Instant;
  */
 @Getter
 @Builder(toBuilder = true)
-@Table("sc_issued_certificate")
-public class IssuedCertificate {
+@Table("sc_issued_certificate_metadata")
+public class IssuedCertificateMetadata {
 
     @Id
-    @Sequence("sc_issued_certificate_seq")
+    @Sequence("sc_issued_certificate_metadata_seq")
     private long id;
 
     /**
