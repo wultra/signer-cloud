@@ -50,7 +50,7 @@ public final class CertificateUtils {
         final var certificateBytes = Base64.getDecoder().decode(certificateBase64);
         final Certificate result = CertificateFactory.getInstance(CERTIFICATE_TYPE)
                 .generateCertificate(new ByteArrayInputStream(certificateBytes));
-        Assert.isInstanceOf(X509Certificate.class, result, "Certificate is must be of type X509Certificate");
+        Assert.isInstanceOf(X509Certificate.class, result, "Certificate must be of type X509Certificate");
         return (X509Certificate) result;
     }
 }
