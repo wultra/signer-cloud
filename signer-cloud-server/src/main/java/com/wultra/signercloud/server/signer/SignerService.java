@@ -76,7 +76,7 @@ class SignerService {
     long cleanupSigners(final int limit) {
         final List<Signer> signers = signerRepository.markAsExpired(limit);
 
-        if (configurationProperties.getExpiration().callbackEnabled()) {
+        if (callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)) {
             logger.info("Creating {} expiration callbacks.", signers.size());
             for (final Signer signer : signers) {
                 notifyExpiredCallback(signer);
@@ -135,7 +135,7 @@ class SignerService {
             throw new CertificateEnrollmentException("Certificate could not be encoded during renewal", e);
         }
 
-        if (configurationProperties.getRenewal().callbackEnabled()) {
+        if (callbackNotificationService.isCallbackEnabled(CallbackType.RENEWED)) {
             notifyRenewalCallback(signer, x509Certificate);
         }
     }

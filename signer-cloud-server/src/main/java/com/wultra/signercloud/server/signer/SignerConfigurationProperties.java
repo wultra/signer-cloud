@@ -33,16 +33,16 @@ import java.time.Duration;
 @Setter
 class SignerConfigurationProperties {
 
-    private ExpirationJob expiration = new ExpirationJob(false, new Job(1000));
+    private ExpirationJob expiration = new ExpirationJob(new Job(1000));
 
-    private RenewalJob renewal = new RenewalJob(false, new Job(25), Duration.ofDays(14));
+    private RenewalJob renewal = new RenewalJob(new Job(25), Duration.ofDays(14));
 
     record Job(int limit) {
     }
 
-    record ExpirationJob(boolean callbackEnabled, Job job) {
+    record ExpirationJob(Job job) {
     }
 
-    record RenewalJob(boolean callbackEnabled, Job job, Duration threshold) {
+    record RenewalJob(Job job, Duration threshold) {
     }
 }
