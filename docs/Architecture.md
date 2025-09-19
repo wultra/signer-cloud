@@ -1,6 +1,6 @@
 # Architecture
 
-CloudSigner consists of two main backend components: The CloudSigner Server and the Certification Authority (CA). The solution relies on PowerAuth.
+Signer Cloud consists of two main backend components: The Signer Cloud Server and the Certification Authority (CA). The solution relies on PowerAuth.
 
 Integrators must implement both the mobile application and the orchestrator service. Wultra, however, provides software development kits (SDKs) to help with the integration on mobile application.
 
@@ -26,7 +26,7 @@ PowerAuth solution provides backend device management and works as an SCA provid
 
 Preconfigured Certification Authority. The authority provides standard certificate enrollment. The authority root certificate can be configured to ensure trust for signed PDFs in the bank (or even by the public). The CA provides REST API for easy integration. Open Source EJBCA is used as a proven and reliable solution. 
 
-### CloudSigner Server
+### Signer Cloud Server
 
 The component enrolls users and assembles signed PDFs with user certificates. The Signer component works in two basic modes. External Mode utilizes signatures provided by another component (typically PowerAuth). In Cloud Mode, it generates public and private key pairs and creates digital signatures itself.
 

@@ -6,7 +6,7 @@ The schema illustrates the process the user must undergo to sign documents.
 
 **Device Activation**
 
-You can understand this step as prerequisite for using CloudSigner. During the user onboarding, the mobile device is connected to the user’s identity and security keys are generated. These keys are necessary for next phases.
+You can understand this step as prerequisite for using Signer Cloud. During the user onboarding, the mobile device is connected to the user’s identity and security keys are generated. These keys are necessary for next phases.
 
 **Certificate Enrollment**
 
@@ -26,7 +26,7 @@ Certificate is issued by Certification Authority (CA) based on Certificate Signi
 
 1. To assemble CSR we need User Data, Public Key and Signature (made using Private Key). App needs to provide missing User Data, the remaining two points are covered by activated device. 
 2. CSR is created.
-3. CSR is sent from mobile device to the CloudSigner to generate (using Certification Authority) and store certificate.
+3. CSR is sent from mobile device to the Signer Cloud to generate (using Certification Authority) and store certificate.
 
 **User Journey**
 
@@ -36,7 +36,7 @@ Certificate is issued by Certification Authority (CA) based on Certificate Signi
 
 1. Start enrollment process and include User Data (it will be included in the certificate). You can start your process right after the activation or later, for example on user’s request.
 2. User enters the PIN so app can sign certificate request with device’s private key. In this step, so called CSR file is created. Read more about CSR here.
-3. CSR is passed to the CloudSigner and certificate is generated. Process should be quick, so this screen is not strictly necessary.
+3. CSR is passed to the Signer Cloud and certificate is generated. Process should be quick, so this screen is not strictly necessary.
 4. Certificate is created and user is ready to sign documents. Continue to the app or target user directly into your custom flow.
 
 NOTE: If enrollment is placed right after device activation, PIN confirmation from activation can be used. In this case, Step 2 can be omitted.
@@ -68,7 +68,7 @@ Multiple documents
 **Steps**
 
 1. This step is completely on the application. In general, user should be able to read the document and select what he wants to sign. For example, you can also allow signing only if the user opened/read the file.
-2. After the confirmation, you need to send PDF files to the CloudSigner. It stores the file and calculates hash.
+2. After the confirmation, you need to send PDF files to the Signer Cloud. It stores the file and calculates hash.
 3. User enters the PIN so app can sign document hash generated in the previous step.
 4. Document hash is checked and if everything is OK, we will include user’s certificate into the document stored in step 2.
 5. Result is presented to the user so he can download signed document.

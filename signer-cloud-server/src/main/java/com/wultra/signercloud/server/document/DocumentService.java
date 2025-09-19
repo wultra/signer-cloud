@@ -37,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.hc.core5.http.ContentType;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -165,11 +166,11 @@ class DocumentService {
                 .timestampCreated(Instant.now())
                 .documentId(UUID.randomUUID().toString())
                 .externalId(externalDocumentId)
-                .signerId(signer.getId())
+                .signer(AggregateReference.to(signer.getId()))
                 .documentName(documentName)
                 .fileName(fileName)
                 .fileSize(fileSize)
-                .documentContentId(savedDocumentContent.getId())
+                .documentContent(AggregateReference.to(savedDocumentContent.getId()))
                 .hash(hash)
                 .status(DocumentStatus.WAITING)
                 .build();
@@ -244,10 +245,10 @@ class DocumentService {
         final var document = documentRepository.findByDocumentId(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
 
-        final var documentContent = documentContentRepository.findById(document.getDocumentContentId())
+        final var documentContent = documentContentRepository.findById(document.getDocumentContent())
                 .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentId));
 
-        final var signer = signerRepository.findById(document.getSignerId())
+        final var signer = signerRepository.findById(document.getSigner())
                 .orElseThrow(() -> new SignerNotFoundException("Signer not found for document ID: " + documentId));
 
         verifyDocumentCanBeSigned(signer, document);
@@ -372,7 +373,7 @@ class DocumentService {
         final var document = documentRepository.findByDocumentId(documentUuid)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
 
-        final var documentContent = documentContentRepository.findById(document.getDocumentContentId())
+        final var documentContent = documentContentRepository.findById(document.getDocumentContent())
                 .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentUuid));
 
         if (document.getStatus() != DocumentStatus.SIGNED) {
@@ -441,7 +442,7 @@ class DocumentService {
 
         final var document = documentOpt.get();
         documentRepository.delete(document);
-        documentContentRepository.deleteById(document.getDocumentContentId());
+        documentContentRepository.deleteById(document.getDocumentContent());
     }
 
     @Builder
