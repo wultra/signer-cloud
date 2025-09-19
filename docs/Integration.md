@@ -9,8 +9,8 @@ Steps
 1. Prepare the CSR on the mobile device. User data is required, so an external call to the Orchestrator Service may be necessary.
 2. Sign the CSR using the PowerAuth SDK on the mobile device.
 3. Send the result to the Orchestrator Service (the bank's service that manages business logic).
-4. The Orchestrator Service passes the signed CSR to the CloudSigner via the REST API.
-5. The CloudSigner will verify the user against PowerAuth, generate the certificate via the CA, and store the certificate for signing. The result is returned immediately.
+4. The Orchestrator Service passes the signed CSR to the Signer Cloud via the REST API.
+5. The Signer Cloud will verify the user against PowerAuth, generate the certificate via the CA, and store the certificate for signing. The result is returned immediately.
 
 ## Document Signing
 
@@ -19,10 +19,10 @@ Steps
 Steps
 
 1. Present the document to the user. It needs to be downloaded from the bank's storage, and then let the user select which document should be signed. Then, pass the document (or document ID) from the mobile app to the orchestrator service.
-2. Send the document from the Orchestrator Service to CloudSigner via the REST API method "Upload Document." CloudSigner will store the file and return its hash in the response.
+2. Send the document from the Orchestrator Service to Signer Cloud via the REST API method "Upload Document." Signer Cloud will store the file and return its hash in the response.
 3. Use the PowerAuth SDK to sign the document hash on an activated mobile device.
 4. Send the result to the Orchestrator Service.
-5. Send the signed hash from the Orchestrator Service to CloudSigner via the REST API. After signature verification, the document is complete and the result is returned immediately.
+5. Send the signed hash from the Orchestrator Service to Signer Cloud via the REST API. After signature verification, the document is complete and the result is returned immediately.
 
 ## Application States
 

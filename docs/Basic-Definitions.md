@@ -18,4 +18,4 @@ Specially formatted file sent to a Certificate Authority (CA) to request the iss
 
 **Certification Authority (CA)**
 
-A trusted entity that issues digital certificates to verify the identity. In CloudSigner context, CA is one of the software component that issues and manages certificates.
+A trusted entity that issues digital certificates to verify the identity. In Signer Cloud context, CA is one of the software component that issues and manages certificates.
