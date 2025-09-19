@@ -27,11 +27,9 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Test for {@link SignerRepository}.
@@ -49,8 +47,9 @@ class SignerRepositoryTest {
 
     @Test
     void testMarkAsExpired() {
-        final Instant now = Instant.now();
-        final List<Signer> result = signerRepository.markAsExpired(now, 1);
+        final Instant start = Instant.now();
+        final List<Signer> result = signerRepository.markAsExpired(1);
+        final Instant end = Instant.now();
 
         assertEquals(1, result.size());
         final Long id = result.get(0).getId();
@@ -59,7 +58,8 @@ class SignerRepositoryTest {
         final Signer signer = signerRepository.findById(id)
                 .orElseThrow(() -> new AssertionFailedError("Signer ID: %s does not exist".formatted(id)));
         assertEquals(SignerStatus.EXPIRED, signer.getStatus());
-        assertNotNull(signer.getTimestampLastUpdated());
-        assertEquals(now.truncatedTo(ChronoUnit.SECONDS), signer.getTimestampLastUpdated().truncatedTo(ChronoUnit.SECONDS));
+        final Instant timestampLastUpdated = signer.getTimestampLastUpdated();
+        assertNotNull(timestampLastUpdated);
+        assertTrue(timestampLastUpdated.isAfter(start) && timestampLastUpdated.isBefore(end));
     }
 }

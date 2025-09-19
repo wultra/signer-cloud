@@ -26,10 +26,7 @@ import org.springframework.data.relational.core.mapping.Table;
 import org.springframework.util.Assert;
 
 import java.io.ByteArrayInputStream;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
+import java.security.cert.*;
 import java.time.Instant;
 import java.util.Base64;
 
@@ -81,5 +78,19 @@ public class Signer {
                 .generateCertificate(new ByteArrayInputStream(certificateBytes));
         Assert.isInstanceOf(X509Certificate.class, result, "Certificate is must be of type X509Certificate");
         return (X509Certificate) result;
+    }
+
+    public static class SignerBuilder {
+
+        /**
+         * Set {@code certificate} from {@link X509Certificate}.
+         *
+         * @param x509Certificate X509Certificate to set
+         * @return builder instance
+         */
+        public SignerBuilder certificateFromX509(final X509Certificate x509Certificate) throws CertificateEncodingException {
+            this.certificate = Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
+            return this;
+        }
     }
 }

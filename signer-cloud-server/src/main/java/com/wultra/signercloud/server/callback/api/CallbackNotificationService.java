@@ -25,15 +25,15 @@ package com.wultra.signercloud.server.callback.api;
 public interface CallbackNotificationService {
 
     /**
-     * Notify the system about a new Callback Event. The event is created and saved to the database, then it is
-     * submitted to a task executor for processing. If the executor rejects the event, it remains in the database
-     * with PENDING status and will be processed later by a scheduled job.
+     * Notify the system about a new Callback Event. The event is enqueued <strong>after the current transaction commits</strong>.
      * <p>
-     * If the failure threshold for the given Callback Type has been reached, no event is created and saved,
-     * instead a failed event is created.
+     * The event is created and saved to the database, then it is submitted to a task executor for processing.
+     * If the executor rejects the event, it remains in the database with PENDING status and will be processed later by a scheduled job.
+     * <p>
+     * If the failure threshold for the given Callback Type has been reached, no event is created and saved, instead a failed event is created.
      *
      * @param callbackType Type of the callback.
-     * @param callbackData Data associated with the callback, will be stored as JSON.
+     * @param callbackData Data associated with the callback will be stored as JSON.
      */
     void notify(CallbackType callbackType, String callbackData);
 }
