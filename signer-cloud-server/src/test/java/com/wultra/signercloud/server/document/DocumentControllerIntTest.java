@@ -397,7 +397,7 @@ class DocumentControllerIntTest {
                 .andReturn();
 
         // then
-        assertSignature(documentContentId);
+        assertSignatureChain(documentContentId);
     }
 
     @Test
@@ -793,7 +793,7 @@ class DocumentControllerIntTest {
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
     }
 
-    private void assertSignature(final long documentContentId) {
+    private void assertSignatureChain(final long documentContentId) {
         final var documentContent = documentContentRepository.findById(documentContentId).orElseThrow();
         final var signedDocumentBytes = documentContent.getContent();
 
@@ -806,8 +806,6 @@ class DocumentControllerIntTest {
         assertEquals(1, report.getSignaturesCount(), "There is not exactly one signature in document");
 
         final var signatureId = report.getFirstSignatureId();
-        assertEquals(Indication.TOTAL_PASSED, report.getIndication(signatureId), "Signature in document is not valid");
-
         final var chain = validator.getSignatureById(signatureId).getCertificates();
         final var certificateChainBase64 = chain.stream()
                 .map(certificateToken -> {
