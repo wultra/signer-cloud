@@ -6,21 +6,21 @@
     <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
         <preConditions onFail="MARK_RAN">
             <not>
-                <sequenceExists sequenceName="sc_issued_certificate_seq"/>
+                <sequenceExists sequenceName="sc_issued_certificate_metadata_seq"/>
             </not>
         </preConditions>
-        <comment>Create a new sequence sc_issued_certificate_seq</comment>
-        <createSequence sequenceName="sc_issued_certificate_seq" startValue="1" incrementBy="1" cacheSize="50"/>
+        <comment>Create a new sequence sc_issued_certificate_metadata_seq</comment>
+        <createSequence sequenceName="sc_issued_certificate_metadata_seq" startValue="1" incrementBy="1" cacheSize="50"/>
     </changeSet>
 
     <changeSet id="2" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
         <preConditions onFail="MARK_RAN">
             <not>
-                <tableExists tableName="sc_issued_certificate" />
+                <tableExists tableName="sc_issued_certificate_metadata" />
             </not>
         </preConditions>
-        <comment>Create a new table sc_callback_event</comment>
-        <createTable tableName="sc_issued_certificate">
+        <comment>Create a new table sc_issued_certificate_metadata</comment>
+        <createTable tableName="sc_issued_certificate_metadata">
             <column name="id" type="bigint">
                 <constraints primaryKey="true" />
             </column>
@@ -28,7 +28,7 @@
                 <constraints nullable="false" />
             </column>
             <column name="signer_id" type="bigint">
-                <constraints nullable="false" foreignKeyName="sc_issued_certificate_signer_id_fk" referencedTableName="sc_signer" referencedColumnNames="id" />
+                <constraints nullable="false" foreignKeyName="sc_issued_certificate_metadata_signer_id_fk" referencedTableName="sc_signer" referencedColumnNames="id" />
             </column>
             <column name="serial_number" type="varchar(64)">
                 <constraints nullable="false"/>
@@ -45,11 +45,11 @@
     <changeSet id="3" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
         <preConditions onFail="MARK_RAN">
             <not>
-                <indexExists indexName="sc_issued_certificate_signer_id_idx"/>
+                <indexExists indexName="sc_issued_certificate_metadata_signer_id_idx"/>
             </not>
         </preConditions>
-        <comment>Create a new index sc_issued_certificate_signer_id_idx</comment>
-        <createIndex tableName="sc_issued_certificate" indexName="sc_issued_certificate_signer_id_idx">
+        <comment>Create a new index sc_issued_certificate_metadata_signer_id_idx</comment>
+        <createIndex tableName="sc_issued_certificate_metadata" indexName="sc_issued_certificate_metadata_signer_id_idx">
             <column name="signer_id"/>
         </createIndex>
     </changeSet>
@@ -57,11 +57,11 @@
     <changeSet id="4" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
         <preConditions onFail="MARK_RAN">
             <not>
-                <indexExists indexName="sc_issued_certificate_timestamp_certificate_expiration_idx"/>
+                <indexExists indexName="sc_issued_certificate_metadata_timestamp_certificate_expiration_idx"/>
             </not>
         </preConditions>
-        <comment>Create a new index sc_issued_certificate_signer_id_idx</comment>
-        <createIndex tableName="sc_issued_certificate" indexName="sc_issued_certificate_timestamp_certificate_expiration_idx">
+        <comment>Create a new index sc_issued_certificate_metadata_timestamp_certificate_expiration_idx</comment>
+        <createIndex tableName="sc_issued_certificate_metadata" indexName="sc_issued_certificate_metadata_timestamp_certificate_expiration_idx">
             <column name="timestamp_certificate_expiration"/>
         </createIndex>
     </changeSet>
