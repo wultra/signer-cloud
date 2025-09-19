@@ -18,13 +18,11 @@
 package com.wultra.signercloud.server.document;
 
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
-import eu.europa.esig.dss.model.x509.CertificateToken;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.time.Duration;
-import java.util.List;
 
 /**
  * Document configuration properties.
@@ -44,7 +42,6 @@ class DocumentConfigurationProperties {
 
     private DigestAlgorithm contentHashAlgorithm;
     private DigestAlgorithm signatureHashAlgorithm;
-    private List<CertificateToken> certificateChain;
 
     @Getter
     @Setter

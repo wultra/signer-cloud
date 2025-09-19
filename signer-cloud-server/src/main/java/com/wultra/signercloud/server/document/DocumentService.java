@@ -22,6 +22,7 @@ import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
+import com.wultra.signercloud.server.utils.CertificateUtils;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
@@ -46,9 +47,9 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -235,12 +236,12 @@ class DocumentService {
         try {
             final var response = processSignDocument(documentId, requestBody);
             return Try.success(response);
-        } catch (final CertificateException | DocumentNotFoundException | SignerNotFoundException | SignDocumentException e) {
+        } catch (final DocumentNotFoundException | SignerNotFoundException | SignDocumentException e) {
             return Try.error(e);
         }
     }
 
-    private SignDocumentResponse processSignDocument(final String documentId, final SignDocumentRequest requestBody) throws CertificateException {
+    private SignDocumentResponse processSignDocument(final String documentId, final SignDocumentRequest requestBody) {
 
         final var document = documentRepository.findByDocumentId(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
@@ -254,7 +255,7 @@ class DocumentService {
         verifyDocumentCanBeSigned(signer, document);
 
         final var signature = requestBody.signature();
-        final var signedDocumentBytes = verifySignatureAndSignDocument(signer.getX509Certificate(),
+        final var signedDocumentBytes = verifySignatureAndSignDocument(signer,
                 document.getHash(),
                 signature,
                 documentContent.getContent(),
@@ -298,14 +299,16 @@ class DocumentService {
     }
 
     private byte[] verifySignatureAndSignDocument(
-            final X509Certificate x509Certificate,
+            final Signer signer,
             final String hashBase64,
             final String hashSignatureBase64,
             final byte[] documentBytes,
             final DigestAlgorithm signatureAlgorithm) {
 
-        final var certificateToken = new CertificateToken(x509Certificate);
-        final var signatureParams = createSignatureParameters(certificateToken, signatureAlgorithm, configurationProperties.getCertificateChain());
+        final var certificate = convertCertificate(signer);
+        final var certificateChain = convertCertificateChain(signer);
+
+        final var signatureParams = createSignatureParameters(certificate, signatureAlgorithm, certificateChain);
 
         final var hashBytes = Base64.getDecoder().decode(hashBase64);
         final var hash = new ToBeSigned(hashBytes);
@@ -313,7 +316,7 @@ class DocumentService {
         final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
         final var signatureValue = new SignatureValue(signatureParams.getSignatureAlgorithm(), signatureBytes);
 
-        final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificateToken);
+        final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificate);
         if (!isSignatureValid) {
             throw new SignDocumentException("Invalid signature");
         }
@@ -322,6 +325,32 @@ class DocumentService {
         final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
 
         return readSignedDocumentBytes(signedDocument);
+    }
+
+    private static CertificateToken convertCertificate(final Signer signer) {
+        try {
+            final var x509Certificate = signer.getX509Certificate();
+            return new CertificateToken(x509Certificate);
+        } catch (final CertificateException e) {
+            logger.warn("Exception when processing certificate ", e);
+            throw new SignDocumentException("Exception when processing certificate: " + e.getMessage());
+        }
+    }
+
+    private static List<CertificateToken> convertCertificateChain(final Signer signer) {
+        try {
+            final var chain = new ArrayList<CertificateToken>();
+
+            for (final var base64Certificate : signer.getCertificateChain()) {
+                final var x509Certificate = CertificateUtils.base64ToX509Certificate(base64Certificate);
+                chain.add(new CertificateToken(x509Certificate));
+            }
+
+            return chain;
+        } catch (final CertificateException e) {
+            logger.warn("Exception when processing certificate chain", e);
+            throw new SignDocumentException("Exception when processing certificate chain: " + e.getMessage());
+        }
     }
 
     private static PAdESSignatureParameters createSignatureParameters(

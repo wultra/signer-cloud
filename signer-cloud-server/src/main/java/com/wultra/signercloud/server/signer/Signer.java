@@ -29,7 +29,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.Base64;
+import java.util.*;
 
 /**
  * Data Access Object for the {@code sc_signer} table.
@@ -41,6 +41,8 @@ import java.util.Base64;
 @Table("sc_signer")
 @Slf4j
 public class Signer {
+
+    private static final String CERTIFICATES_SEPARATOR = ",";
 
     @Id
     @Sequence("sc_signer_seq")
@@ -65,6 +67,8 @@ public class Signer {
 
     private SignerStatus status;
 
+    private String certificateChain;
+
     /**
      * Returns {@link #getCertificate()} as {@link X509Certificate}.
      *
@@ -73,6 +77,13 @@ public class Signer {
      */
     public X509Certificate getX509Certificate() throws CertificateException {
         return CertificateUtils.base64ToX509Certificate(certificate);
+    }
+
+    public List<String> getCertificateChain() {
+        return Optional.of(certificateChain)
+                .map(i -> i.split(CERTIFICATES_SEPARATOR))
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
     }
 
     public static class SignerBuilder {
@@ -85,6 +96,17 @@ public class Signer {
          */
         public SignerBuilder certificateFromX509(final X509Certificate x509Certificate) throws CertificateEncodingException {
             this.certificate = Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
+            return this;
+        }
+
+        /**
+         * Sets the {@link Signer#certificateChain} from a {@code List<String>}, where each item is a Base64-encoded certificate in DER format.
+         *
+         * @param certificateChain chain to set
+         * @return builder instance
+         */
+        public SignerBuilder certificateChainFromList(final List<String> certificateChain) {
+            this.certificateChain = String.join(CERTIFICATES_SEPARATOR, certificateChain);
             return this;
         }
     }
