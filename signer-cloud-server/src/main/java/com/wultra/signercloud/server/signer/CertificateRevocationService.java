@@ -37,7 +37,7 @@ import java.time.Instant;
 @Slf4j
 class CertificateRevocationService {
 
-    private final IssuedCertificateRepository issuedCertificateRepository;
+    private final IssuedCertificateMetadataRepository issuedCertificateMetadataRepository;
     private final EjbcaService ejbcaService;
 
     /**
@@ -58,7 +58,7 @@ class CertificateRevocationService {
                     .status(IssuedCertificateStatus.REVOKED)
                     .build();
 
-            issuedCertificateRepository.save(updatedCertificateMetadata);
+            issuedCertificateMetadataRepository.save(updatedCertificateMetadata);
             logger.info("Certificate successfully revoked");
         } catch (final RestClientException e) {
             logger.warn("Exception when revoking certificate: {}", e.getResponse(), e);

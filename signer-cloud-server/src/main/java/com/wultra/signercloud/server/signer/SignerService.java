@@ -67,7 +67,7 @@ class SignerService {
     private final SignerConfigurationProperties configurationProperties;
     private final CallbackNotificationService callbackNotificationService;
     private final ObjectMapper objectMapper;
-    private final IssuedCertificateRepository issuedCertificateRepository;
+    private final IssuedCertificateMetadataRepository issuedCertificateMetadataRepository;
     private final CertificateRevocationService certificateRevocationService;
 
     /**
@@ -306,7 +306,7 @@ class SignerService {
                 .status(IssuedCertificateStatus.ISSUED)
                 .build();
 
-        issuedCertificateRepository.save(issuedCertificate);
+        issuedCertificateMetadataRepository.save(issuedCertificate);
     }
 
     /**
@@ -320,7 +320,7 @@ class SignerService {
         try {
             updateStatus(externalSignerId, request.signerStatus());
             return Try.success();
-        } catch (SignerNotFoundException | SignerStatusTransitionException e) {
+        } catch (final SignerNotFoundException | SignerStatusTransitionException | CertificateRevocationException e) {
             return Try.error(e);
         }
     }
@@ -357,7 +357,7 @@ class SignerService {
     private void revokeCertificates(final Signer signer) {
         final var signerId = signer.getId();
 
-        final var certificatesMetadata = issuedCertificateRepository.findForRevocation(signerId);
+        final var certificatesMetadata = issuedCertificateMetadataRepository.findForRevocation(signerId);
         final var certificatesToRevokeCount = certificatesMetadata.size();
 
         for (var i = 0; i < certificatesToRevokeCount; i++) {

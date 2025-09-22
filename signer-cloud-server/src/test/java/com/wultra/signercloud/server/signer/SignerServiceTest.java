@@ -32,6 +32,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
@@ -44,8 +45,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests for {@link SignerService}.
@@ -79,6 +79,7 @@ class SignerServiceTest {
             "MIIBxzCCAU2gAwIBAgIUE0be+N9+2stvvu7y3BKDiHPWBVkwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTQ0N1oXDTI3MDgxMTA5MTQ0NlowFDESMBAGA1UEAwwJSXNzdWluZ0NBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvq7LXohpIAISl1vcnH+8zMGFAyfEnyTOqTZAP40b9PzYmMLBbHGoDxvuJwdmF/mrXxfaQ9+Ki1/QRpkoLc6Ugsywu9agdA3Zu+54GPyxmTo8MvU/txcuRt1+7UMPxTAUo2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDaAAwZQIwMlzNpdVjPFt5/sac/ZVu/56n+vNiNFOywD8Ho8SjdDNnXeBBf3zoQ2aTwPdHtgCXAjEAkNCSl2buX5U3dsxavP2gcgjrxszNQGiQJ1AcRPL1ATHnaFrHwVGNqiFX5r9QQ7ud"
     );
 
+    private static final long ISSUED_CERTIFICATE_METADATA_ID = 10L;
     private static final String CERTIFICATE_ISSUER_DN = "CN=IssuingCA";
 
     private static final int MILLISECONDS_DELTA = 1_000;
@@ -102,7 +103,10 @@ class SignerServiceTest {
     private SignerRepository signerRepository;
 
     @Mock
-    private IssuedCertificateRepository issuedCertificateRepository;
+    private IssuedCertificateMetadataRepository issuedCertificateMetadataRepository;
+
+    @Mock
+    private CertificateRevocationService certificateRevocationService;
 
     @InjectMocks
     private SignerService signerService;
@@ -468,20 +472,38 @@ class SignerServiceTest {
         assertTrue(response.isSuccess());
     }
 
-    // TODO (michalrozehnal, 16.09.2025): Fix and add tests when certificate is revoked in EJBCA
-//    @Test
-//    void testUpdateStatusWhenStatusIsSetToRevokedThenEjbcaIsCalled() throws RestClientException, CertificateEncodingException {
-//        // given
-//        final var signer = buildSigner(SignerStatus.ACTIVE);
-//
-//        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-//
-//        // when
-//        signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED));
-//
-//        // then
-//        verify(ejbcaService).revokeCertificates(EXTERNAL_SIGNER_ID);
-//    }
+    @Test
+    void testUpdateStatusWhenStatusIsSetToRevokedAndEjbcaReturnsErrorThenFailResultIsReturned() throws RestClientException, CertificateEncodingException {
+        // given
+        final var signer = buildSigner(SignerStatus.ACTIVE);
+        final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
+
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+        doThrow(new CertificateRevocationException("Test", new RuntimeException())).when(certificateRevocationService).revokeCertificate(issuedCertificateMetadata);
+
+        // when
+        final var result = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED));
+
+        // then
+        assertErrorResult(result, CertificateRevocationException.class, "Test");
+    }
+
+    @Test
+    void testUpdateStatusWhenStatusIsSetToRevokedThenEjbcaIsCalled() throws RestClientException, CertificateEncodingException {
+        // given
+        final var signer = buildSigner(SignerStatus.ACTIVE);
+        final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
+
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+
+        // when
+        final var result = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED));
+
+        // then
+        verify(certificateRevocationService).revokeCertificate(issuedCertificateMetadata);
+    }
 
     @Test
     void testGetDetailWhenSignerIsNotFoundThenFailResultIsReturned() {
@@ -597,11 +619,11 @@ class SignerServiceTest {
     }
 
     private void assertIssuedCertificateSave(final String expectedSerialNumber, final Instant expectedExpirationTimestamp) {
-        verify(issuedCertificateRepository).save(issuedCertificateCaptor.capture());
+        verify(issuedCertificateMetadataRepository).save(issuedCertificateCaptor.capture());
 
         final var savedIssuedCertificate = issuedCertificateCaptor.getValue();
         assertEquals(0, savedIssuedCertificate.getId());
-        assertEquals(SIGNER_ID, savedIssuedCertificate.getId());
+        assertEquals(SIGNER_ID, savedIssuedCertificate.getSigner().getId());
         assertEquals(
                 Instant.now().toEpochMilli(),
                 savedIssuedCertificate.getTimestampCreated().toEpochMilli(),
@@ -614,5 +636,17 @@ class SignerServiceTest {
                 savedIssuedCertificate.getTimestampCertificateExpiration().toEpochMilli(),
                 MILLISECONDS_DELTA
         );
+    }
+
+    private IssuedCertificateMetadata buildIssuedCertificateMetadata() {
+        return IssuedCertificateMetadata.builder()
+                .id(ISSUED_CERTIFICATE_METADATA_ID)
+                .signer(AggregateReference.to(SIGNER_ID))
+                .timestampCreated(Instant.now())
+                .serialNumber(CERTIFICATE_1_SERIAL_NUMBER)
+                .issuerDn(CERTIFICATE_ISSUER_DN)
+                .timestampCertificateExpiration(CERTIFICATE_1_EXPIRATION_TIMESTAMP)
+                .status(IssuedCertificateStatus.ISSUED)
+                .build();
     }
 }

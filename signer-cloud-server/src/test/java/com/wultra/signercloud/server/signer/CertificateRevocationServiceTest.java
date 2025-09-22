@@ -55,7 +55,7 @@ class CertificateRevocationServiceTest {
     private EjbcaService ejbcaService;
 
     @Mock
-    private IssuedCertificateRepository issuedCertificateRepository;
+    private IssuedCertificateMetadataRepository issuedCertificateMetadataRepository;
 
     @InjectMocks
     private CertificateRevocationService certificateRevocationService;
@@ -94,7 +94,7 @@ class CertificateRevocationServiceTest {
         certificateRevocationService.revokeCertificate(issuedCertificateMetadata);
 
         // then
-        verify(issuedCertificateRepository).save(issuedCertificateMetadataArgumentCaptor.capture());
+        verify(issuedCertificateMetadataRepository).save(issuedCertificateMetadataArgumentCaptor.capture());
 
         final var issuedCertificate = issuedCertificateMetadataArgumentCaptor.getValue();
         assertSavedIssuedCertificateMetadata(issuedCertificate);

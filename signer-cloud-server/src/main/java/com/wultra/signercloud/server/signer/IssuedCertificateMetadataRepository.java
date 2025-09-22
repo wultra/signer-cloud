@@ -27,7 +27,7 @@ import java.util.List;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-interface IssuedCertificateRepository extends CrudRepository<IssuedCertificateMetadata, Long> {
+interface IssuedCertificateMetadataRepository extends CrudRepository<IssuedCertificateMetadata, Long> {
 
     @Query("""
         SELECT * FROM sc_issued_certificate_metadata
