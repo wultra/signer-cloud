@@ -62,6 +62,7 @@ class sc_issued_certificate_metadata <<table>> {
     serial_number varchar(64) NN
     issuer_dn varchar(512) NN
     timestamp_certificate_expiration timestamp(6) I
+    status varchar(50) NN I (ISSUED/REVOKED)
 }
 
 class sc_signer_seq <<sequence>>

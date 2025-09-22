@@ -40,6 +40,9 @@
             <column name="timestamp_certificate_expiration" type="timestamp(6)">
                 <constraints nullable="false" />
             </column>
+            <column name="status" type="varchar(50)">
+                <constraints nullable="false" />
+            </column>
         </createTable>
     </changeSet>
 
@@ -64,6 +67,18 @@
         <comment>Create a new index sc_issued_certificate_metadata_timestamp_certificate_expiration_idx</comment>
         <createIndex tableName="sc_issued_certificate_metadata" indexName="sc_issued_certificate_metadata_timestamp_certificate_expiration_idx">
             <column name="timestamp_certificate_expiration"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="5" logicalFilePath="signer-cloud-server/1.0.x/20250912-issued-certificate.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="sc_issued_certificate_metadata_status_idx"/>
+            </not>
+        </preConditions>
+        <comment>Create a new index sc_issued_certificate_metadata_status_idx</comment>
+        <createIndex tableName="sc_issued_certificate_metadata" indexName="sc_issued_certificate_metadata_status_idx">
+            <column name="status"/>
         </createIndex>
     </changeSet>
 
