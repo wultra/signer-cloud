@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -40,7 +41,16 @@ class IssuedCertificateMetadataIntTest {
     private static final long SIGNER_ID = 1L;
 
     @Autowired
+    private SignerRepository signerRepository;
+
+    @Autowired
     private IssuedCertificateMetadataRepository repository;
+
+    @AfterEach
+    void tearDown() {
+        repository.deleteAll();
+        signerRepository.deleteAll();
+    }
 
     @Test
     void testFindForRevocation() {
