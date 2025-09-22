@@ -27,11 +27,11 @@ import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.Try;
-import com.wultra.signercloud.server.utils.CertificateUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,7 +40,10 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.*;
+import java.util.Base64;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Service for {@link Signer} operations.
@@ -65,6 +68,7 @@ class SignerService {
     private final CallbackNotificationService callbackNotificationService;
     private final ObjectMapper objectMapper;
     private final IssuedCertificateRepository issuedCertificateRepository;
+    private final CertificateRevocationService certificateRevocationService;
 
     /**
      * Marks all signers that have expired as expired and creates expiration callbacks if configured.
@@ -294,7 +298,7 @@ class SignerService {
         final var issuerDn = x509Certificate.getIssuerX500Principal().getName();
 
         final var issuedCertificate = IssuedCertificateMetadata.builder()
-                .signerId(signerId)
+                .signer(AggregateReference.to(signerId))
                 .timestampCreated(Instant.now())
                 .serialNumber(serialNumber)
                 .issuerDn(issuerDn)
@@ -315,12 +319,12 @@ class SignerService {
         try {
             updateStatus(externalSignerId, request.signerStatus());
             return Try.success();
-        } catch (SignerNotFoundException | SignerStatusTransitionException | RestClientException e) {
+        } catch (SignerNotFoundException | SignerStatusTransitionException e) {
             return Try.error(e);
         }
     }
 
-    private void updateStatus(final String externalSignerId, final SignerStatus newStatus) throws RestClientException {
+    private void updateStatus(final String externalSignerId, final SignerStatus newStatus) {
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
 
@@ -350,38 +354,15 @@ class SignerService {
     }
 
     private void revokeCertificates(final Signer signer) {
-        try {
-            final var currentCertificate = CertificateUtils.base64ToX509Certificate(signer.getCertificate());
-            revokeCertificates(signer, currentCertificate);
-        } catch (final CertificateException | IOException e) {
-            logger.warn("Error when parsing current certificate", e);
-            throw new CertificateRevocationException("Certificate could not be revoked: " + e.getMessage());
-        }
-    }
+        final var signerId = signer.getId();
 
-    private void revokeCertificates(final Signer signer, final X509Certificate currentCertificate) {
-        final var certificatesToRevoke = issuedCertificateRepository.findForRevocation(signer.getId(), Instant.now());
+        final var certificatesMetadata = issuedCertificateRepository.findForRevocation(signerId);
+        final var certificatesToRevokeCount = certificatesMetadata.size();
 
-        final var certificatesCount = certificatesToRevoke.size();
-        var counter = 1;
-        for (final var certificate : certificatesToRevoke) {
-            logger.info("Revoking certificate {}/{} for externalSignerId={}", counter++, certificatesCount, signer.getExternalSignerId());
-
-            final var request = new EjbcaService.RevokeCertificateRequest(
-                    certificate.getSerialNumber(),
-                    certificate.getIssuerDn());
-
-            try {
-                ejbcaService.revokeCertificate(request);
-                logger.info("Certificate revoked");
-            } catch (final RestClientException e) {
-                logger.warn("Exception when revoking certificate", e);
-
-                if (Objects.equals(certificate.getSerialNumber(), currentCertificate.getSerialNumber().toString()) &&
-                        Objects.equals(certificate.getIssuerDn(), currentCertificate.getIssuerX500Principal().getName())) {
-                    throw new CertificateRevocationException("Certificate could not be revoked because of EJBCA client error: " + e.getMessage());
-                }
-            }
+        for (var i = 0; i < certificatesToRevokeCount; i++) {
+            logger.info("Revoking certificate {}/{} in EJBCA", i + 1, certificatesToRevokeCount);
+            final var certificateMetadata = certificatesMetadata.get(i);
+            certificateRevocationService.revokeCertificate(certificateMetadata);
         }
     }
 

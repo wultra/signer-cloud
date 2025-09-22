@@ -20,6 +20,7 @@ package com.wultra.signercloud.server.signer;
 import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -39,17 +40,18 @@ public class IssuedCertificateMetadata {
     @Sequence("sc_issued_certificate_metadata_seq")
     private long id;
 
-    /**
-     * {@link Signer#id}
-     */
-    private long signerId;
+    private AggregateReference<Signer, Long> signer;
 
     private Instant timestampCreated;
+
+    private Instant timestampLastUpdated;
 
     private String serialNumber;
 
     private String issuerDn;
 
     private Instant timestampCertificateExpiration;
+
+    private IssuedCertificateStatus status;
 
 }

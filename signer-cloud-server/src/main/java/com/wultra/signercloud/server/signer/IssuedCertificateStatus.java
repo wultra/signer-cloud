@@ -17,21 +17,19 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import org.springframework.data.jdbc.repository.query.Query;
-import org.springframework.data.repository.CrudRepository;
-
-import java.util.List;
-
 /**
- * Repository for accessing a {@link IssuedCertificateMetadata}.
+ * Enumeration representing status of issued certificate.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-interface IssuedCertificateRepository extends CrudRepository<IssuedCertificateMetadata, Long> {
+public enum IssuedCertificateStatus {
+    /**
+     * The certificate was issued and not revoked. It may be expired.
+     */
+    ISSUED,
 
-    @Query("""
-        SELECT * FROM sc_issued_certificate
-        WHERE signer_id = :signerId AND timestamp_certificate_expiration < NOW() AND status != 'REVOKED'
-        """)
-    List<IssuedCertificateMetadata> findForRevocation(final long signerId);
+    /**
+     * Certificate was revoked.
+     */
+    REVOKED
 }
