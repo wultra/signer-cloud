@@ -14,9 +14,7 @@
         </preConditions>
         <comment>Create a new index column certificate_chain</comment>
         <addColumn tableName="sc_signer">
-            <column name="certificate_chain" type="clob">
-                <constraints nullable="false" />
-            </column>
+            <column name="certificate_chain" type="clob" />
         </addColumn>
     </changeSet>
 </databaseChangeLog>

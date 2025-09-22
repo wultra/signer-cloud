@@ -22,7 +22,6 @@ import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
-import com.wultra.signercloud.server.utils.CertificateUtils;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
@@ -47,7 +46,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
@@ -454,14 +452,11 @@ class DocumentServiceTest {
         final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
         waitingDuration.setTimeout(WAITING_TIMEOUT);
 
-        final var certificateChain = buildCertificateChain();
-
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
         when(documentConfigurationProperties.getSignatureHashAlgorithm()).thenReturn(DigestAlgorithm.SHA384);
-        when(documentConfigurationProperties.getCertificateChain()).thenReturn(certificateChain);
         when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
                 .thenReturn(true);
         when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
@@ -676,6 +671,7 @@ class DocumentServiceTest {
                 .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
                 .certificate(CERTIFICATE)
                 .status(status)
+                .certificateChainFromList(CERTIFICATE_CHAIN_BASE64)
                 .build();
     }
 
@@ -704,19 +700,6 @@ class DocumentServiceTest {
         assertEquals(DUMMY_FILE_NAME, response.filename());
         assertEquals(UPLOADED_DOCUMENT_CONTENT.length, response.size());
         assertEquals(DOCUMENT_HASH, response.hash());
-    }
-
-    private List<CertificateToken> buildCertificateChain() {
-        return CERTIFICATE_CHAIN_BASE64.stream()
-                .map(certificateBase64 -> {
-                    try {
-                        return CertificateUtils.base64ToX509Certificate(certificateBase64);
-                    } catch (final CertificateException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
-                .map(CertificateToken::new)
-                .toList();
     }
 
     private void assertCertificateChain(final List<CertificateToken> certificateChain) {

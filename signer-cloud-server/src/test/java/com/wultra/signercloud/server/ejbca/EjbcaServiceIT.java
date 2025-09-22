@@ -75,10 +75,12 @@ class EjbcaServiceIT {
                 .build();
 
         try {
-            final X509Certificate result = ejbcaService.enrollCertificate(request);
-            logger.info("Got certificate: {}", result);
-            assertEquals("C=CZ,O=Wultra SMOKE,CN=John Doe", result.getSubjectX500Principal().getName());
-            assertEquals("SHA384withECDSA", result.getSigAlgName());
+            final var response = ejbcaService.enrollCertificate(request);
+            final var certificate = response.certificate();
+
+            logger.info("Got certificate: {}", certificate);
+            assertEquals("C=CZ,O=Wultra SMOKE,CN=John Doe", certificate.getSubjectX500Principal().getName());
+            assertEquals("SHA384withECDSA", certificate.getSigAlgName());
         } catch (final RestClientException e) {
             fail(e.getResponse());
         }

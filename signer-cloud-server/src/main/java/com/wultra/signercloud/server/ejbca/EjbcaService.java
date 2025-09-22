@@ -112,5 +112,6 @@ public class EjbcaService {
      * @param certificate enrolled end certificate
      * @param chain certificate chain, without the end certificate.
      */
+    @Builder
     public record CertificateResponse(X509Certificate certificate, List<String> chain){}
 }
