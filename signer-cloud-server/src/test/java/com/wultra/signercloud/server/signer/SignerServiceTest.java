@@ -601,7 +601,7 @@ class SignerServiceTest {
 
         final var savedIssuedCertificate = issuedCertificateCaptor.getValue();
         assertEquals(0, savedIssuedCertificate.getId());
-        assertEquals(SIGNER_ID, savedIssuedCertificate.getSignerId());
+        assertEquals(SIGNER_ID, savedIssuedCertificate.getId());
         assertEquals(
                 Instant.now().toEpochMilli(),
                 savedIssuedCertificate.getTimestampCreated().toEpochMilli(),

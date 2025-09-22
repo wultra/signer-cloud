@@ -111,5 +111,6 @@ public class EjbcaService {
      * @param serialNumber certificate serial number
      * @param issuerDN certificate issuer distinguished name
      */
+    @Builder
     public record RevokeCertificateRequest(String serialNumber, String issuerDN) {}
 }
