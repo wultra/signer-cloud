@@ -136,6 +136,8 @@ class SignerService {
                     .certificateFromX509(x509Certificate)
                     .certificateChainFromList(chain)
                     .build());
+
+            saveIssuedCertificate(signer.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
             logger.warn("Exception when encoding certificate to base64 during renewal, externalSignerId: {}", signer.getExternalSignerId());
             throw new CertificateEnrollmentException("Certificate could not be encoded during renewal", e);
