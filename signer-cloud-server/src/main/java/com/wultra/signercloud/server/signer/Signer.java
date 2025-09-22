@@ -80,7 +80,7 @@ public class Signer {
     }
 
     public List<String> getCertificateChain() {
-        return Optional.of(certificateChain)
+        return Optional.ofNullable(certificateChain)
                 .map(i -> i.split(CERTIFICATES_SEPARATOR))
                 .map(Arrays::asList)
                 .orElse(Collections.emptyList());
