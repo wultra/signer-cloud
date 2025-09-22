@@ -12,6 +12,7 @@ class sc_signer <<table>>{
     certificate CLOB
     timestamp_certificate_expiration timestamp(6) I
     status varchar(50) NN I (ACTIVE/BLOCKED/REMOVED/REVOKED/EXPIRED)
+    certificate_chain
 }
 
 class sc_document <<table>> {
