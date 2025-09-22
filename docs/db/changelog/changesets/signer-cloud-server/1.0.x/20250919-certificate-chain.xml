@@ -5,12 +5,9 @@
 
     <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20250919-certificate-chain.xml" author="Michal Rozehnal">
         <preConditions onFail="MARK_RAN">
-            <and>
-                <tableExists tableName="sc_signer"/>
-                <not>
-                    <columnExists tableName="sc_signer" columnName="certificate_chain"/>
-                </not>
-            </and>
+            <not>
+                <columnExists tableName="sc_signer" columnName="certificate_chain"/>
+            </not>
         </preConditions>
         <comment>Create a new column certificate_chain</comment>
         <addColumn tableName="sc_signer">
