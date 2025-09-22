@@ -18,9 +18,12 @@
 package com.wultra.signercloud.server.callback;
 
 import com.wultra.signercloud.server.callback.api.CallbackType;
+import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.Assert;
 
 import java.time.Duration;
 
@@ -129,6 +132,12 @@ class CallbackConfigurationProperties {
      */
     private int threadPoolQueueCapacity = 1000;
 
+    @PostConstruct
+    void validate() {
+        Assert.isTrue(!expired.enabled() || StringUtils.isNotBlank(expired.url()), "If expired callback is enabled, URL must not be blank.");
+        Assert.isTrue(!renewed.enabled() || StringUtils.isNotBlank(renewed.url()), "If renewed callback is enabled, URL must not be blank.");
+    }
+
     boolean failureStatsDisabled() {
         return failureThreshold == -1;
     }
@@ -154,14 +163,16 @@ class CallbackConfigurationProperties {
      * @param initialBackoff Initial backoff before the next sending attempt.
      * @param retentionPeriod Duration for which the callback event is stored.
      * @param authentication Callback authentication.
+     * @param enabled Whether the callback is enabled.
      */
-    record CallbackConfiguration(String url, Integer maxAttempts, Duration initialBackoff, Duration retentionPeriod, CallbackAuthentication authentication) {
+    record CallbackConfiguration(String url, Integer maxAttempts, Duration initialBackoff, Duration retentionPeriod, CallbackAuthentication authentication, boolean enabled) {
         @Override
         public String toString() {
             return "CallbackConfiguration{" +
                     "retentionPeriod=" + retentionPeriod +
                     ", initialBackoff=" + initialBackoff +
                     ", maxAttempts=" + maxAttempts +
+                    ", enabled=" + enabled +
                     ", url='" + url + '\'' +
                     // authentication omitted on purpose
                     '}';

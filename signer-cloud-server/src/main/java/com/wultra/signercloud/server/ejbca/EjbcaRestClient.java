@@ -33,6 +33,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.List;
+
 /**
  * Rest client for EJBCA.
  *
@@ -102,7 +104,8 @@ class EjbcaRestClient {
             String certificateRequest,
             String certificateProfileName,
             String endEntityProfileName,
-            String certificateAuthorityName
+            String certificateAuthorityName,
+            boolean includeChain
     ) {
     }
 
@@ -113,7 +116,7 @@ class EjbcaRestClient {
             String responseFormat,
             String certificate,
             String serialNumber,
-            String certificate_chain
+            List<String> certificateChain
     ) {
     }
 }

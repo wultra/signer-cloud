@@ -17,8 +17,10 @@
  */
 package com.wultra.signercloud.server.utils;
 
+import org.springframework.util.Assert;
+
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -31,6 +33,8 @@ import java.util.Base64;
  */
 public final class CertificateUtils {
 
+    private static final String CERTIFICATE_TYPE = "X.509";
+
     private CertificateUtils() {
         throw new IllegalStateException("Utility class");
     }
@@ -40,14 +44,13 @@ public final class CertificateUtils {
      *
      * @param certificateBase64 the Base64-encoded X.509 certificate string in DER format
      * @return the X509Certificate object
-     * @throws CertificateException if there is an error in the certificate format
-     * @throws IOException if there is an I/O error during the conversion
+     * @throws CertificateException in case of an error during certificate parsing
      */
-    public static X509Certificate base64ToX509Certificate(final String certificateBase64) throws CertificateException, IOException {
+    public static X509Certificate base64ToX509Certificate(final String certificateBase64) throws CertificateException {
         final var certificateBytes = Base64.getDecoder().decode(certificateBase64);
-        final var certificateFactory = CertificateFactory.getInstance("X.509");
-        try (final var inputStream = new ByteArrayInputStream(certificateBytes)) {
-            return (X509Certificate) certificateFactory.generateCertificate(inputStream);
-        }
+        final Certificate result = CertificateFactory.getInstance(CERTIFICATE_TYPE)
+                .generateCertificate(new ByteArrayInputStream(certificateBytes));
+        Assert.isInstanceOf(X509Certificate.class, result, "Certificate must be of type X509Certificate");
+        return (X509Certificate) result;
     }
 }

@@ -39,6 +39,7 @@ class CallbackNotificationServiceInternal implements CallbackNotificationService
     private final CallbackService callbackService;
     private final CallbackQueueService callbackQueueService;
     private final CallbackConvertor callbackConvertor;
+    private final CallbackConfigurationProperties configuration;
 
     @Override
     public void notify(final CallbackType callbackType, final String callbackData) {
@@ -51,6 +52,11 @@ class CallbackNotificationServiceInternal implements CallbackNotificationService
         final CallbackEvent callbackEvent = callbackService.createAndSaveEventForProcessing(callbackType, callbackData);
         final CallbackEventData callbackEventData = callbackConvertor.convert(callbackEvent);
         TransactionUtils.executeAfterTransactionCommits(() -> enqueue(callbackEventData));
+    }
+
+    @Override
+    public boolean isCallbackEnabled(final CallbackType callbackType) {
+        return configuration.callbackConfigurationFor(callbackType).enabled();
     }
 
     /**

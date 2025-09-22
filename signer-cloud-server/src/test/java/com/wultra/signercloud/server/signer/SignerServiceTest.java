@@ -39,6 +39,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -65,10 +66,18 @@ class SignerServiceTest {
     private static final String CERTIFICATE_1_DER_BASE64 = "MIIB+DCCAX6gAwIBAgIUQxSMGsgB+szrQpOV2AdlwcaPajwwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MDkxMTA4NDIxOFoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABOvUMi73HbZtISS3WUk/iF/oCDEfPZPK6IBNoFbX2G4oxEHVdArN0N39koovt8Zo2ZkJQQzaSa4Ii/hbt5aetkmjgYswgYgwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAoBgNVHSUEITAfBggrBgEFBQcDAgYIKwYBBQUHAwQGCSqGSIb3LwEBBTAdBgNVHQ4EFgQU2PPiHgo5PGWHUhQNiylNjvsHIOIwDgYDVR0PAQH/BAQDAgXgMAoGCCqGSM49BAMDA2gAMGUCMQDKry6RV3+/65yDZA8o2Zib1iSYP3npwhUW+yJkNprn+vYoLpicCmNnxcRt3IEzx68CMCLZMBKfpPDQdo4jiO9OCNZstX2yUtFcHWN7Akvg+CyvFwFClfCWxr73icr2MYrxDw==";
     private static final Instant CERTIFICATE_1_EXPIRATION_TIMESTAMP = Instant.ofEpochMilli(1817975686000L);
     private static final String CERTIFICATE_1_SERIAL_NUMBER = "382960601382395725256979170171623638043940842044";
+    private static final List<String> CERTIFICATE_1_CHAIN_BASE64 = List.of(
+            "MIIBxzCCAU2gAwIBAgIUE0be+N9+2stvvu7y3BKDiHPWBVkwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTQ0N1oXDTI3MDgxMTA5MTQ0NlowFDESMBAGA1UEAwwJSXNzdWluZ0NBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvq7LXohpIAISl1vcnH+8zMGFAyfEnyTOqTZAP40b9PzYmMLBbHGoDxvuJwdmF/mrXxfaQ9+Ki1/QRpkoLc6Ugsywu9agdA3Zu+54GPyxmTo8MvU/txcuRt1+7UMPxTAUo2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDaAAwZQIwMlzNpdVjPFt5/sac/ZVu/56n+vNiNFOywD8Ho8SjdDNnXeBBf3zoQ2aTwPdHtgCXAjEAkNCSl2buX5U3dsxavP2gcgjrxszNQGiQJ1AcRPL1ATHnaFrHwVGNqiFX5r9QQ7ud",
+            "MIIBwzCCAUqgAwIBAgIUBiKRFuSkQ2w0B+eLnFGNCVBLTfwwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTMxMFoXDTM1MDgwOTA5MTMwOVowETEPMA0GA1UEAwwGUm9vdENBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGTbosZgh/n+FWrbU7u05huRtjxUT8PE+fuFFHBtbcKNXYSl5Jf51gMBDn2dJKbM5oRsDLpl/nwscEvRKtibnw8AsIxXZYmyzBVA9meE5FGXswp6kAb/Sc4zQYo/O8RT5o2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBQ0YPm2cX21iY8xSP6EVfPBM2RNwTAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDZwAwZAIxAKsQhZDkBpxdGzn/gxDtqbtl5VtJFl3IJzXb36hWRf26P5Vha2vLAcFipD7koHF6bwIvYJHWRuq+SAzVYue9oId39+8AGKFXvzY+xDiSb/q7+ll/CwwQwcnoRundq8TSVYE="
+    );
 
     private static final String CERTIFICATE_2_DER_BASE64 = "MIIB+DCCAX6gAwIBAgIUC+gOMA9uasVxNZQ/ch4FIMgLhBMwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MDkxNTA3MTAwNFoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABOvUMi73HbZtISS3WUk/iF/oCDEfPZPK6IBNoFbX2G4oxEHVdArN0N39koovt8Zo2ZkJQQzaSa4Ii/hbt5aetkmjgYswgYgwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAoBgNVHSUEITAfBggrBgEFBQcDAgYIKwYBBQUHAwQGCSqGSIb3LwEBBTAdBgNVHQ4EFgQU2PPiHgo5PGWHUhQNiylNjvsHIOIwDgYDVR0PAQH/BAQDAgXgMAoGCCqGSM49BAMDA2gAMGUCMQCzaeNiZl+rT9IUQPeUIp742ofTM6AgvXh5byd2AdbmoS+kVe5Vy4kC4vgUaozvcG0CMFQmA/I6of0+lJQNKgKzoMiTvv6JtRRIGTgYQqboZM389OP6qGXcjW/8/ffG8LcQCg==";
     private static final Instant CERTIFICATE_2_EXPIRATION_TIMESTAMP = Instant.ofEpochMilli(1817975686000L);
     private static final String CERTIFICATE_2_SERIAL_NUMBER = "67973907291189734353515319050300227960917689363";
+    private static final List<String> CERTIFICATE_2_CHAIN_BASE64 = List.of(
+            "MIIBwzCCAUqgAwIBAgIUBiKRFuSkQ2w0B+eLnFGNCVBLTfwwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTMxMFoXDTM1MDgwOTA5MTMwOVowETEPMA0GA1UEAwwGUm9vdENBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGTbosZgh/n+FWrbU7u05huRtjxUT8PE+fuFFHBtbcKNXYSl5Jf51gMBDn2dJKbM5oRsDLpl/nwscEvRKtibnw8AsIxXZYmyzBVA9meE5FGXswp6kAb/Sc4zQYo/O8RT5o2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBQ0YPm2cX21iY8xSP6EVfPBM2RNwTAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDZwAwZAIxAKsQhZDkBpxdGzn/gxDtqbtl5VtJFl3IJzXb36hWRf26P5Vha2vLAcFipD7koHF6bwIvYJHWRuq+SAzVYue9oId39+8AGKFXvzY+xDiSb/q7+ll/CwwQwcnoRundq8TSVYE=",
+            "MIIBxzCCAU2gAwIBAgIUE0be+N9+2stvvu7y3BKDiHPWBVkwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTQ0N1oXDTI3MDgxMTA5MTQ0NlowFDESMBAGA1UEAwwJSXNzdWluZ0NBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvq7LXohpIAISl1vcnH+8zMGFAyfEnyTOqTZAP40b9PzYmMLBbHGoDxvuJwdmF/mrXxfaQ9+Ki1/QRpkoLc6Ugsywu9agdA3Zu+54GPyxmTo8MvU/txcuRt1+7UMPxTAUo2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDaAAwZQIwMlzNpdVjPFt5/sac/ZVu/56n+vNiNFOywD8Ho8SjdDNnXeBBf3zoQ2aTwPdHtgCXAjEAkNCSl2buX5U3dsxavP2gcgjrxszNQGiQJ1AcRPL1ATHnaFrHwVGNqiFX5r9QQ7ud"
+    );
 
     private static final String CERTIFICATE_ISSUER_DN = "CN=IssuingCA";
 
@@ -238,10 +247,15 @@ class SignerServiceTest {
         // given
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
 
+        final var certificateResponse = EjbcaService.CertificateResponse.builder()
+                .certificate(x509CertificateMock)
+                .chain(CERTIFICATE_1_CHAIN_BASE64)
+                .build();
+
         when(powerAuthService.isSignatureValid(powerAuthRequest))
                 .thenReturn(true);
-        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest))
-                .thenReturn(x509CertificateMock);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(certificateResponse);
         when(x509CertificateMock.getEncoded()).thenThrow(new CertificateEncodingException("Certificate encoding test exception"));
 
         // when
@@ -261,10 +275,15 @@ class SignerServiceTest {
         final var signer = buildSigner(SignerStatus.ACTIVE);
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
 
+        final var certificateResponse = EjbcaService.CertificateResponse.builder()
+                .certificate(x509Certificate1)
+                .chain(CERTIFICATE_1_CHAIN_BASE64)
+                .build();
+
         when(powerAuthService.isSignatureValid(powerAuthRequest))
                 .thenReturn(true);
-        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest))
-                .thenReturn(x509Certificate1);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(certificateResponse);
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
 
         // when
@@ -280,10 +299,15 @@ class SignerServiceTest {
         final var signer = buildSigner(SignerStatus.ACTIVE);
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
 
+        final var certificateResponse = EjbcaService.CertificateResponse.builder()
+                .certificate(x509Certificate1)
+                .chain(CERTIFICATE_1_CHAIN_BASE64)
+                .build();
+
         when(powerAuthService.isSignatureValid(powerAuthRequest))
                 .thenReturn(true);
-        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest))
-                .thenReturn(x509Certificate1);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(certificateResponse);
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
 
         // when
@@ -298,8 +322,13 @@ class SignerServiceTest {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
 
+        final var certificateResponse = EjbcaService.CertificateResponse.builder()
+                .certificate(x509Certificate1)
+                .chain(CERTIFICATE_1_CHAIN_BASE64)
+                .build();
+
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest)).thenReturn(x509Certificate1);
+        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest)).thenReturn(certificateResponse);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
 
@@ -318,10 +347,15 @@ class SignerServiceTest {
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_BASE64);
         final var signer = Signer.builder().build();
 
+        final var certificateResponse = EjbcaService.CertificateResponse.builder()
+                .certificate(x509Certificate1)
+                .chain(CERTIFICATE_1_CHAIN_BASE64)
+                .build();
+
         when(powerAuthService.isSignatureValid(powerAuthRequest))
                 .thenReturn(true);
-        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest))
-                .thenReturn(x509Certificate2);
+        when(ejbcaService.enrollCertificate(new EjbcaService.CertificateRequest(USER_ID, EXTERNAL_SIGNER_ID, CSR_BASE64)))
+                .thenReturn(certificateResponse);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
 
@@ -337,8 +371,13 @@ class SignerServiceTest {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
 
+        final var certificateResponse = EjbcaService.CertificateResponse.builder()
+                .certificate(x509Certificate2)
+                .chain(CERTIFICATE_2_CHAIN_BASE64)
+                .build();
+
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest)).thenReturn(x509Certificate2);
+        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest)).thenReturn(certificateResponse);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
 
@@ -356,8 +395,13 @@ class SignerServiceTest {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
 
+        final var certificateResponse = EjbcaService.CertificateResponse.builder()
+                .certificate(x509Certificate2)
+                .chain(CERTIFICATE_2_CHAIN_BASE64)
+                .build();
+
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest)).thenReturn(x509Certificate2);
+        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest)).thenReturn(certificateResponse);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
         when(signerRepository.save(any(Signer.class))).thenReturn(signer);
 

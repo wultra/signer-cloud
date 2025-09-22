@@ -75,7 +75,7 @@ class SignerService {
     long cleanupSigners(final int limit) {
         final List<Signer> signers = signerRepository.markAsExpired(limit);
 
-        if (configurationProperties.getExpiration().callbackEnabled()) {
+        if (callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)) {
             logger.info("Creating {} expiration callbacks.", signers.size());
             for (final Signer signer : signers) {
                 notifyExpiredCallback(signer);
@@ -121,20 +121,23 @@ class SignerService {
                 .userId(signer.getUserId())
                 .build();
 
-        final var x509Certificate = enrollCertificate(ejbcaCertificateRequest);
+        final var certificateResponse = enrollCertificate(ejbcaCertificateRequest);
+        final var x509Certificate = certificateResponse.certificate();
+        final var chain = certificateResponse.chain();
 
         try {
             signerRepository.save(signer.toBuilder()
                     .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
                     .timestampLastUpdated(Instant.now())
                     .certificateFromX509(x509Certificate)
+                    .certificateChainFromList(chain)
                     .build());
         } catch (final CertificateEncodingException e) {
             logger.warn("Exception when encoding certificate to base64 during renewal, externalSignerId: {}", signer.getExternalSignerId());
             throw new CertificateEnrollmentException("Certificate could not be encoded during renewal", e);
         }
 
-        if (configurationProperties.getRenewal().callbackEnabled()) {
+        if (callbackNotificationService.isCallbackEnabled(CallbackType.RENEWED)) {
             notifyRenewalCallback(signer, x509Certificate);
         }
     }
@@ -203,7 +206,9 @@ class SignerService {
                 .userId(userId)
                 .build();
 
-        final var x509Certificate = enrollCertificate(ejbcaCertificateRequest);
+        final var certificateResponse = enrollCertificate(ejbcaCertificateRequest);
+        final var x509Certificate = certificateResponse.certificate();
+        final var chain = certificateResponse.chain();
 
         final var signerBuilder = signerRepository.findByExternalSignerId(externalSignerId)
                 .map(this::updateSigner)
@@ -216,6 +221,7 @@ class SignerService {
                     .certificateFromX509(x509Certificate)
                     .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
                     .status(SignerStatus.ACTIVE)
+                    .certificateChainFromList(chain)
                     .build();
             final var savedSigner = signerRepository.save(signer);
             saveIssuedCertificate(savedSigner.getId(), x509Certificate);
@@ -256,7 +262,7 @@ class SignerService {
         }
     }
 
-    private X509Certificate enrollCertificate(final EjbcaService.CertificateRequest certificateRequest) {
+    private EjbcaService.CertificateResponse enrollCertificate(final EjbcaService.CertificateRequest certificateRequest) {
         try {
             return ejbcaService.enrollCertificate(certificateRequest);
         } catch (final RestClientException e) {

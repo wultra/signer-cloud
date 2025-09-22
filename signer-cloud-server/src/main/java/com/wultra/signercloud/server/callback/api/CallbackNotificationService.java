@@ -36,4 +36,11 @@ public interface CallbackNotificationService {
      * @param callbackData Data associated with the callback will be stored as JSON.
      */
     void notify(CallbackType callbackType, String callbackData);
+
+    /**
+     * Check if the callback is enabled.
+     * @param callbackType Type of the callback.
+     * @return True if the callback is enabled, false otherwise.
+     */
+    boolean isCallbackEnabled(CallbackType callbackType);
 }

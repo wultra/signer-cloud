@@ -17,18 +17,19 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import com.wultra.signercloud.server.utils.CertificateUtils;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
-import org.springframework.util.Assert;
 
-import java.io.ByteArrayInputStream;
-import java.security.cert.*;
+import java.security.cert.CertificateEncodingException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.Base64;
+import java.util.*;
 
 /**
  * Data Access Object for the {@code sc_signer} table.
@@ -41,7 +42,7 @@ import java.util.Base64;
 @Slf4j
 public class Signer {
 
-    private static final String CERTIFICATE_TYPE = "X.509";
+    private static final String CERTIFICATES_SEPARATOR = ",";
 
     @Id
     @Sequence("sc_signer_seq")
@@ -66,6 +67,8 @@ public class Signer {
 
     private SignerStatus status;
 
+    private String certificateChain;
+
     /**
      * Returns {@link #getCertificate()} as {@link X509Certificate}.
      *
@@ -73,11 +76,14 @@ public class Signer {
      * @throws CertificateException in case of an error during certificate parsing.
      */
     public X509Certificate getX509Certificate() throws CertificateException {
-        final var certificateBytes = Base64.getDecoder().decode(certificate);
-        final Certificate result = CertificateFactory.getInstance(CERTIFICATE_TYPE)
-                .generateCertificate(new ByteArrayInputStream(certificateBytes));
-        Assert.isInstanceOf(X509Certificate.class, result, "Certificate is must be of type X509Certificate");
-        return (X509Certificate) result;
+        return CertificateUtils.base64ToX509Certificate(certificate);
+    }
+
+    public List<String> getCertificateChain() {
+        return Optional.ofNullable(certificateChain)
+                .map(i -> i.split(CERTIFICATES_SEPARATOR))
+                .map(Arrays::asList)
+                .orElse(Collections.emptyList());
     }
 
     public static class SignerBuilder {
@@ -90,6 +96,17 @@ public class Signer {
          */
         public SignerBuilder certificateFromX509(final X509Certificate x509Certificate) throws CertificateEncodingException {
             this.certificate = Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
+            return this;
+        }
+
+        /**
+         * Sets the {@link Signer#certificateChain} from a {@code List<String>}, where each item is a Base64-encoded certificate in DER format.
+         *
+         * @param certificateChain chain to set
+         * @return builder instance
+         */
+        public SignerBuilder certificateChainFromList(final List<String> certificateChain) {
+            this.certificateChain = String.join(CERTIFICATES_SEPARATOR, certificateChain);
             return this;
         }
     }

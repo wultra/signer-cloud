@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.io.IOException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.util.List;
 
 /**
  * Service for calling EJBCA functionality.
@@ -46,19 +47,21 @@ public class EjbcaService {
      * Enrolls a certificate using the provided Certificate Signing Request (CSR).
      *
      * @param request the request containing CSR and other metadata
-     * @return the enrolled certificate
+     * @return the enrolled certificate with chain
      * @throws IOException if an error occurs during the enrollment process
      * @throws CertificateException if an error occurs during the enrollment process
      * @throws RestClientException if an error occurs during the enrollment process
      */
-    public X509Certificate enrollCertificate(final CertificateRequest request) throws IOException, CertificateException, RestClientException {
+    public CertificateResponse enrollCertificate(final CertificateRequest request) throws IOException, CertificateException, RestClientException {
         final EjbcaRestClient.CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(convert(request));
         logger.info("Got certificate with serial number: {}", certificateResponse.serialNumber());
         if (!"DER".equals(certificateResponse.responseFormat())) {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
         }
 
-        return CertificateUtils.base64ToX509Certificate(certificateResponse.certificate());
+        final var x509Certificate = CertificateUtils.base64ToX509Certificate(certificateResponse.certificate());
+
+        return new CertificateResponse(x509Certificate, certificateResponse.certificateChain());
     }
 
     private EjbcaRestClient.CertificateRequest convert(final CertificateRequest source) {
@@ -69,6 +72,7 @@ public class EjbcaService {
                 .certificateProfileName(configurationProperties.getCertificateProfileName())
                 .certificateAuthorityName(configurationProperties.getCertificateAuthorityName())
                 .endEntityProfileName(configurationProperties.getEndEntityProfileName())
+                .includeChain(true)
                 .build();
     }
 
@@ -91,6 +95,15 @@ public class EjbcaService {
      */
     @Builder
     public record CertificateRequest(String userId, String externalSignerId, String csr){}
+
+    /**
+     * Enrolled certificate with chain.
+     *
+     * @param certificate enrolled end certificate
+     * @param chain certificate chain, without the end certificate.
+     */
+    @Builder
+    public record CertificateResponse(X509Certificate certificate, List<String> chain){}
 
     /**
      * Parameter object for revoking a certificate.
