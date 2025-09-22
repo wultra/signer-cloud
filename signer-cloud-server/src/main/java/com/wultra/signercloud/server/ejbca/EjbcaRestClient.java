@@ -74,6 +74,12 @@ class EjbcaRestClient {
         return response.getBody();
     }
 
+    /**
+     * Revokes single certificate in EJBCA.
+     *
+     * @param request metadata for certificate to be revoked
+     * @throws RestClientException in case of communication error with EJBCA
+     */
     void revokeCertificate(final EjbcaService.RevokeCertificateRequest request) throws RestClientException {
         final var serialNumber = request.serialNumber();
         final var issuerDN = request.issuerDN();
@@ -84,6 +90,7 @@ class EjbcaRestClient {
 
         logger.info("Revoking certificate, serialNumber: {}, issuerDN: {}", request.serialNumber(), request.issuerDN());
         restClient.put(url, null, ParameterizedTypeReference.forType(Void.class));
+        logger.info("Successful EJBCA certificate revoke call");
     }
 
     @Jacksonized

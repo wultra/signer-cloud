@@ -23,7 +23,7 @@ package com.wultra.signercloud.server.signer;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public class CertificateRevocationException extends RuntimeException {
-    public CertificateRevocationException(final String message) {
-        super(message);
+    public CertificateRevocationException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 }
