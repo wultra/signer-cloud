@@ -12,7 +12,7 @@
                 </not>
             </and>
         </preConditions>
-        <comment>Create a new index column certificate_chain</comment>
+        <comment>Create a new column certificate_chain</comment>
         <addColumn tableName="sc_signer">
             <column name="certificate_chain" type="clob" />
         </addColumn>
