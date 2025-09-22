@@ -21,6 +21,7 @@ import lombok.Builder;
 import lombok.Getter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
+import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -40,6 +41,7 @@ public class IssuedCertificateMetadata {
     @Sequence("sc_issued_certificate_metadata_seq")
     private long id;
 
+    @Column("signer_id")
     private AggregateReference<Signer, Long> signer;
 
     private Instant timestampCreated;

@@ -30,8 +30,8 @@ import java.util.List;
 interface IssuedCertificateRepository extends CrudRepository<IssuedCertificateMetadata, Long> {
 
     @Query("""
-        SELECT * FROM sc_issued_certificate
-        WHERE signer_id = :signerId AND timestamp_certificate_expiration < NOW() AND status != 'REVOKED'
+        SELECT * FROM sc_issued_certificate_metadata
+        WHERE signer_id = :signerId AND timestamp_certificate_expiration > NOW() AND status != 'REVOKED'
         """)
     List<IssuedCertificateMetadata> findForRevocation(final long signerId);
 }

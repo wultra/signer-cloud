@@ -86,8 +86,13 @@ class EjbcaRestClient {
         final var serialNumber = request.serialNumber();
         final var issuerDN = request.issuerDN();
 
-        final String url = UriComponentsBuilder.fromPath("/v1/certificate/{issuer_dn}/{certificate_serial_number}/revoke")
-                .buildAndExpand(issuerDN, serialNumber)
+        final String url = UriComponentsBuilder
+                .fromPath("/v1/certificate/{issuerDN}/{serialNumber}/revoke")
+                .queryParam("reason", "UNSPECIFIED")
+                .buildAndExpand(
+                        issuerDN,
+                        serialNumber
+                )
                 .toUriString();
 
         logger.info("Revoking certificate, serialNumber: {}, issuerDN: {}", request.serialNumber(), request.issuerDN());

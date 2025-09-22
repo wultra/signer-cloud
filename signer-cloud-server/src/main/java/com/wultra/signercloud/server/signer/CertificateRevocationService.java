@@ -61,7 +61,7 @@ class CertificateRevocationService {
             issuedCertificateRepository.save(updatedCertificateMetadata);
             logger.info("Certificate successfully revoked");
         } catch (final RestClientException e) {
-            logger.warn("Exception when revoking certificate", e);
+            logger.warn("Exception when revoking certificate: {}", e.getResponse(), e);
             throw new CertificateRevocationException("Certificate could not be revoked because of EJBCA client error: " + e.getMessage(), e);
         }
     }

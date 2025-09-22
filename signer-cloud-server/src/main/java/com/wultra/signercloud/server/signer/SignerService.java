@@ -303,6 +303,7 @@ class SignerService {
                 .serialNumber(serialNumber)
                 .issuerDn(issuerDn)
                 .timestampCertificateExpiration(certificateExpiration)
+                .status(IssuedCertificateStatus.ISSUED)
                 .build();
 
         issuedCertificateRepository.save(issuedCertificate);
