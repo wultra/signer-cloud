@@ -27,6 +27,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
+import org.springframework.http.HttpStatusCode;
 
 import java.time.Instant;
 
@@ -45,8 +46,9 @@ class CertificateRevocationServiceTest {
     private static final long ID = 1L;
     private static final long SIGNER_ID = 2L;
     private static final Instant TIMESTAMP_CREATED = Instant.now().minusSeconds(60);
-    private static final String SERIAL_NUMBER = "";
-    private static final String ISSUER_DN = "";
+    private static final String SERIAL_NUMBER = "382960601382395725256979170171623638043940842044";
+    private static final String SERIAL_NUMBER_HEX = "43148c1ac801facceb429395d80765c1c68f6a3c";
+    private static final String ISSUER_DN = "CN=IssuingCA";
     private static final Instant TIMESTAMP_CERTIFICATE_EXPIRATION = Instant.now().plusSeconds(3600);
 
     private static final long MILLISECONDS_DELTA = 1_000;
@@ -70,7 +72,7 @@ class CertificateRevocationServiceTest {
 
         final var revokeRequest = EjbcaService.RevokeCertificateRequest.builder()
                 .issuerDN(ISSUER_DN)
-                .serialNumber(SERIAL_NUMBER)
+                .serialNumberHex(SERIAL_NUMBER_HEX)
                 .build();
 
         doThrow(new RestClientException("Test")).when(ejbcaService).revokeCertificate(revokeRequest);
@@ -89,6 +91,40 @@ class CertificateRevocationServiceTest {
     void testRevokeCertificateWhenRevocationIsSuccessfulThenIssuedCertificateIsUpdated() {
         // given
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
+
+        // when
+        certificateRevocationService.revokeCertificate(issuedCertificateMetadata);
+
+        // then
+        verify(issuedCertificateMetadataRepository).save(issuedCertificateMetadataArgumentCaptor.capture());
+
+        final var issuedCertificate = issuedCertificateMetadataArgumentCaptor.getValue();
+        assertSavedIssuedCertificateMetadata(issuedCertificate);
+    }
+
+    @Test
+    void testRevokeCertificateWhenCertificateIsAlreadyRevokedThenIssuedCertificateIsUpdated() throws RestClientException {
+        // given
+        final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
+
+        final var revokeRequest = EjbcaService.RevokeCertificateRequest.builder()
+                .issuerDN(ISSUER_DN)
+                .serialNumberHex(SERIAL_NUMBER_HEX)
+                .build();
+
+        final var exception = new RestClientException(
+                "409: Conflict",
+                HttpStatusCode.valueOf(409),
+                """
+                    {
+                      "error_code" : 409,
+                      "error_message" : "Certificate with issuer: CN=IssuingCA and serial number: 102c5ee7884e8dc2d5c315a036f02de4c3412a99 has previously been revoked. Revocation reason could not be changed or was not allowed."
+                    }
+                    """,
+                null,
+                null);
+
+        doThrow(exception).when(ejbcaService).revokeCertificate(revokeRequest);
 
         // when
         certificateRevocationService.revokeCertificate(issuedCertificateMetadata);

@@ -108,9 +108,9 @@ public class EjbcaService {
     /**
      * Parameter object for revoking a certificate.
      *
-     * @param serialNumber certificate serial number
+     * @param serialNumberHex certificate serial number in hex format without prefix
      * @param issuerDN certificate issuer distinguished name
      */
     @Builder
-    public record RevokeCertificateRequest(String serialNumber, String issuerDN) {}
+    public record RevokeCertificateRequest(String serialNumberHex, String issuerDN) {}
 }

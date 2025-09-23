@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
@@ -81,6 +82,7 @@ class SignerControllerIntTest {
     );
     private static final String CERTIFICATE_ISSUER_DN = "CN=IssuingCA";
     private static final String ISSUED_CERTIFICATE_1_SERIAL_NUMBER = "382960601382395725256979170171623638043940842044";
+    private static final String ISSUED_CERTIFICATE_1_SERIAL_NUMBER_HEX = "43148c1ac801facceb429395d80765c1c68f6a3c";
     private static final String ISSUED_CERTIFICATE_2_SERIAL_NUMBER = "67973907291189734353515319050300227960917689363";
 
     private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/signers";
@@ -438,13 +440,58 @@ class SignerControllerIntTest {
     }
 
     @Test
-    void testUpdateStatusWhenCertificatesAreRevokedThenSignerAndIssuedCetfificateMetadataAreUpdatedInDatabase() throws Exception {
+    void testUpdateStatusWhenCertificatesAreRevokedThenSignerAndIssuedCertificateMetadataAreUpdatedInDatabase() throws Exception {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         final var certificateExpirationTimestamp = Instant.now().plusSeconds(120);
         createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_1_SERIAL_NUMBER, certificateExpirationTimestamp);
 
         final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED);
+
+        // when
+        mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk());
+
+        // then
+        final var signerAfterTest = signerRepository.findAll().iterator().next();
+        assertSigner(signerAfterTest, TIMESTAMP_CREATED, SignerStatus.REVOKED);
+        assertEquals(Instant.now().toEpochMilli(), signerAfterTest.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
+
+        final var issuedCertificatesMetadata = issuedCertificateMetadataRepository.findAll().iterator().next();
+        assertRevokedIssuedCertificateMetadata(issuedCertificatesMetadata, signer.getId(), certificateExpirationTimestamp);
+    }
+
+    @Test
+    void testUpdateStatusWhenCertificateIsAlreadyRevokedThenSignerAndIssuedCertificateAreUpdatedInDatabase() throws Exception {
+        // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
+        final var certificateExpirationTimestamp = Instant.now().plusSeconds(120);
+        createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_1_SERIAL_NUMBER, certificateExpirationTimestamp);
+
+        final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED);
+
+        final var exception = new RestClientException(
+                "409: Conflict",
+                HttpStatusCode.valueOf(409),
+                """
+                    {
+                      "error_code" : 409,
+                      "error_message" : "Certificate with issuer: %s and serial number: %s has previously been revoked. Revocation reason could not be changed or was not allowed."
+                    }
+                    """.formatted(CERTIFICATE_ISSUER_DN, ISSUED_CERTIFICATE_1_SERIAL_NUMBER),
+                null,
+                null);
+
+        final var revokeCertificateRequest = EjbcaService.RevokeCertificateRequest.builder()
+                .serialNumberHex(ISSUED_CERTIFICATE_1_SERIAL_NUMBER_HEX)
+                .issuerDN(CERTIFICATE_ISSUER_DN)
+                .build();
+
+        doThrow(exception)
+                .when(ejbcaService)
+                .revokeCertificate(revokeCertificateRequest);
 
         // when
         mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)

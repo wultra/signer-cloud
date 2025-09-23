@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 @SpringBootTest
 @ActiveProfiles("test")
 @Sql
-class IssuedCertificateMetadataIntTest {
+class IssuedCertificateMetadataRepositoryIntTest {
 
     private static final long SIGNER_ID = 1L;
 

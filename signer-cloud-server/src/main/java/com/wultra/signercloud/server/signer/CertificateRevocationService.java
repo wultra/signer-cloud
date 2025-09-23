@@ -21,10 +21,12 @@ import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigInteger;
 import java.time.Instant;
 
 /**
@@ -47,22 +49,36 @@ class CertificateRevocationService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     void revokeCertificate(final IssuedCertificateMetadata certificateMetadata) {
         try {
+            final var serialNumber = certificateMetadata.getSerialNumber();
+            final var serialNumberHex = new BigInteger(serialNumber).toString(16);
+
             final var request = new EjbcaService.RevokeCertificateRequest(
-                    certificateMetadata.getSerialNumber(),
+                    serialNumberHex,
                     certificateMetadata.getIssuerDn());
 
             ejbcaService.revokeCertificate(request);
 
-            final var updatedCertificateMetadata = certificateMetadata.toBuilder()
-                    .timestampLastUpdated(Instant.now())
-                    .status(IssuedCertificateStatus.REVOKED)
-                    .build();
-
-            issuedCertificateMetadataRepository.save(updatedCertificateMetadata);
+            setRevokedStatus(certificateMetadata);
             logger.info("Certificate successfully revoked");
         } catch (final RestClientException e) {
             logger.warn("Exception when revoking certificate: {}", e.getResponse(), e);
+
+            if (e.getStatusCode() == HttpStatusCode.valueOf(409) && e.getResponse().contains("has previously been revoked")) {
+                logger.info("Certificate was already revoked in EJBCA");
+                setRevokedStatus(certificateMetadata);
+                return;
+            }
+
             throw new CertificateRevocationException("Certificate could not be revoked because of EJBCA client error: " + e.getMessage(), e);
         }
+    }
+
+    private void setRevokedStatus(final IssuedCertificateMetadata certificateMetadata) {
+        final var updatedCertificateMetadata = certificateMetadata.toBuilder()
+                .timestampLastUpdated(Instant.now())
+                .status(IssuedCertificateStatus.REVOKED)
+                .build();
+
+        issuedCertificateMetadataRepository.save(updatedCertificateMetadata);
     }
 }
