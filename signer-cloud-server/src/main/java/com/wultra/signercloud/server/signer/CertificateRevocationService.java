@@ -44,6 +44,8 @@ class CertificateRevocationService {
 
     /**
      * Revokes single certificate in EJBCA and updates {@link IssuedCertificateMetadata#status} to {@link IssuedCertificateStatus#REVOKED}.
+     * This method always runs in a new transaction.
+     *
      * @param certificateMetadata Certificate metadata to be revoked.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)

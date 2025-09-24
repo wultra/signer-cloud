@@ -155,7 +155,6 @@ class CertificateRevocationServiceTest {
         assertEquals(Instant.now().toEpochMilli(), issuedCertificateMetadata.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(SERIAL_NUMBER, issuedCertificateMetadata.getSerialNumber());
         assertEquals(ISSUER_DN, issuedCertificateMetadata.getIssuerDn());
-        assertEquals(ISSUER_DN, issuedCertificateMetadata.getIssuerDn());
         assertEquals(TIMESTAMP_CERTIFICATE_EXPIRATION, issuedCertificateMetadata.getTimestampCertificateExpiration());
         assertEquals(IssuedCertificateStatus.REVOKED, issuedCertificateMetadata.getStatus());
     }
