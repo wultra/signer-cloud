@@ -55,6 +55,9 @@ import java.util.Map;
 @Slf4j
 class SignerService {
 
+    private static final String CSR_PEM_HEADER = "-----BEGIN CERTIFICATE REQUEST-----";
+    private static final String CSR_PEM_FOOTER = "-----END CERTIFICATE REQUEST-----";
+
     private static final Map<SignerStatus, EnumSet<SignerStatus>> VALID_STATUS_TRANSITIONS = Map.of(
             SignerStatus.ACTIVE, EnumSet.of(SignerStatus.BLOCKED, SignerStatus.REMOVED, SignerStatus.REVOKED),
             SignerStatus.BLOCKED, EnumSet.of(SignerStatus.ACTIVE, SignerStatus.REMOVED, SignerStatus.REVOKED)
@@ -235,8 +238,8 @@ class SignerService {
 
     private static String convertCsrPemToBase64(final String csrPem) {
         return csrPem
-                .replace("-----BEGIN CERTIFICATE REQUEST-----", "")
-                .replace("-----END CERTIFICATE REQUEST-----", "")
+                .replace(CSR_PEM_HEADER, "")
+                .replace(CSR_PEM_FOOTER, "")
                 .replaceAll("\\s", "");
     }
 
