@@ -61,8 +61,7 @@ class IssuedCertificateMetadataRepositoryIntTest {
         final var result = repository.findForRevocation(SIGNER_ID);
 
         // then
-        final var expectedIds = List.of(4L)
-                .toArray();
+        final var expectedIds = new Long[]{ 4L };
 
         final var actualIds = result.stream()
                 .map(IssuedCertificateMetadata::getId)

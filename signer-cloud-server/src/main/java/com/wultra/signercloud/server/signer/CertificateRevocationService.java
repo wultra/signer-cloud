@@ -21,7 +21,7 @@ import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatusCode;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,7 +67,7 @@ class CertificateRevocationService {
         } catch (final RestClientException e) {
             logger.warn("Exception when revoking certificate: {}", e.getResponse(), e);
 
-            if (e.getStatusCode() == HttpStatusCode.valueOf(409) && e.getResponse().contains("has previously been revoked")) {
+            if (e.getStatusCode() == HttpStatus.CONFLICT && e.getResponse().contains("has previously been revoked")) {
                 logger.info("Certificate was already revoked in EJBCA. Issuer DN: {}, Serial Number: {}", issuerDn, serialNumber);
                 setRevokedStatus(certificateMetadata);
                 return;
