@@ -197,12 +197,14 @@ class SignerService {
     private void processCreateUpdateSigner(final CreateUpdateSignerRequest request) {
         final var externalSignerId = request.signerId();
         final var userId = request.userId();
-        final var csr = request.csr();
+        final var csrPem = request.csr();
 
-        verifySignature(externalSignerId, csr);
+        final var csrBase64 = convertCsrPemToBase64(csrPem);
+
+        verifySignature(externalSignerId, csrBase64);
 
         final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(csr)
+                .csr(csrBase64)
                 .externalSignerId(externalSignerId)
                 .userId(userId)
                 .build();
@@ -218,7 +220,7 @@ class SignerService {
         try {
             final var signer = signerBuilder
                     .userId(userId)
-                    .csr(csr)
+                    .csr(csrBase64)
                     .certificateFromX509(x509Certificate)
                     .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
                     .status(SignerStatus.ACTIVE)
@@ -229,6 +231,13 @@ class SignerService {
             logger.warn("Exception when encoding certificate to base64 during creation/update, externalSignerId: {}", externalSignerId);
             throw new CertificateEnrollmentException("Certificate could not be encoded during creation/update", e);
         }
+    }
+
+    private static String convertCsrPemToBase64(final String csrPem) {
+        return csrPem
+                .replace("-----BEGIN CERTIFICATE REQUEST-----", "")
+                .replace("-----END CERTIFICATE REQUEST-----", "")
+                .replaceAll("\\s", "");
     }
 
     private void verifySignature(final String externalSignerId, final String csrBase64) {
