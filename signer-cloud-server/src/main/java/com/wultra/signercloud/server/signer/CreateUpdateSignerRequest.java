@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 
 /**
@@ -25,8 +26,22 @@ import jakarta.validation.constraints.NotBlank;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 record CreateUpdateSignerRequest(
+        @Schema(
+                description = "Unique identifier of the signer in the external system.",
+                example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+        )
         @NotBlank String signerId,
+
+        @Schema(
+                description = "Identifier of the user owning the signer.",
+                example = "demo-user"
+        )
         @NotBlank String userId,
+
+        @Schema(
+                description = "PEM encoded PKCS10 CSR, one line, line endings '\\n'",
+                example = "-----BEGIN CERTIFICATE REQUEST-----\nMIHxMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAT4i0arrfMJ+3mkipWWQRY33l1uoLWUttTzTEselqaNxk+GNLnQy9GW7KBaB9RZ4LhreWEJMDfjO1prlCFFxxgmoAAwCgYIKoZIzj0EAwIDSAAwRQIhAOTV4jyWM0hIg3iRT8Xh//JGmEjFgN+wVJiYRI2Zl5nzAiAeoKKXtYzzU5VxqrqkbylVSPdSzgsetPvt/arRNQhNfw==\n-----END CERTIFICATE REQUEST-----\n"
+        )
         @NotBlank String csr
 ) {
 }

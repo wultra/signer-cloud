@@ -43,6 +43,7 @@ import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Service for {@link Signer} operations.
@@ -54,6 +55,10 @@ import java.util.Map;
 @AllArgsConstructor
 @Slf4j
 class SignerService {
+
+    private static final String CSR_PEM_HEADER = "-----BEGIN CERTIFICATE REQUEST-----";
+    private static final String CSR_PEM_FOOTER = "-----END CERTIFICATE REQUEST-----";
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s");
 
     private static final Map<SignerStatus, EnumSet<SignerStatus>> VALID_STATUS_TRANSITIONS = Map.of(
             SignerStatus.ACTIVE, EnumSet.of(SignerStatus.BLOCKED, SignerStatus.REMOVED, SignerStatus.REVOKED),
@@ -197,12 +202,14 @@ class SignerService {
     private void processCreateUpdateSigner(final CreateUpdateSignerRequest request) {
         final var externalSignerId = request.signerId();
         final var userId = request.userId();
-        final var csr = request.csr();
+        final var csrPem = request.csr();
 
-        verifySignature(externalSignerId, csr);
+        final var csrBase64 = convertCsrPemToBase64(csrPem);
+
+        verifySignature(externalSignerId, csrBase64);
 
         final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(csr)
+                .csr(csrBase64)
                 .externalSignerId(externalSignerId)
                 .userId(userId)
                 .build();
@@ -218,7 +225,7 @@ class SignerService {
         try {
             final var signer = signerBuilder
                     .userId(userId)
-                    .csr(csr)
+                    .csr(csrBase64)
                     .certificateFromX509(x509Certificate)
                     .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
                     .status(SignerStatus.ACTIVE)
@@ -229,6 +236,14 @@ class SignerService {
             logger.warn("Exception when encoding certificate to base64 during creation/update, externalSignerId: {}", externalSignerId);
             throw new CertificateEnrollmentException("Certificate could not be encoded during creation/update", e);
         }
+    }
+
+    private static String convertCsrPemToBase64(final String csrPem) {
+        return WHITESPACE_PATTERN.matcher(
+                    csrPem
+                        .replace(CSR_PEM_HEADER, "")
+                        .replace(CSR_PEM_FOOTER, "")
+        ).replaceAll("");
     }
 
     private void verifySignature(final String externalSignerId, final String csrBase64) {
