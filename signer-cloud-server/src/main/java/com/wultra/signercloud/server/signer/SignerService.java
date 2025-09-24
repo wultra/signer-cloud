@@ -43,6 +43,7 @@ import java.util.Base64;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Service for {@link Signer} operations.
@@ -57,6 +58,7 @@ class SignerService {
 
     private static final String CSR_PEM_HEADER = "-----BEGIN CERTIFICATE REQUEST-----";
     private static final String CSR_PEM_FOOTER = "-----END CERTIFICATE REQUEST-----";
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s");
 
     private static final Map<SignerStatus, EnumSet<SignerStatus>> VALID_STATUS_TRANSITIONS = Map.of(
             SignerStatus.ACTIVE, EnumSet.of(SignerStatus.BLOCKED, SignerStatus.REMOVED, SignerStatus.REVOKED),
@@ -237,10 +239,11 @@ class SignerService {
     }
 
     private static String convertCsrPemToBase64(final String csrPem) {
-        return csrPem
-                .replace(CSR_PEM_HEADER, "")
-                .replace(CSR_PEM_FOOTER, "")
-                .replaceAll("\\s", "");
+        return WHITESPACE_PATTERN.matcher(
+                    csrPem
+                        .replace(CSR_PEM_HEADER, "")
+                        .replace(CSR_PEM_FOOTER, "")
+        ).replaceAll("");
     }
 
     private void verifySignature(final String externalSignerId, final String csrBase64) {
