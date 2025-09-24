@@ -17,6 +17,8 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import java.util.function.Supplier;
+
 /**
  * Wrapper for the result of an operation from the service layer.
  *
@@ -37,6 +39,15 @@ public sealed interface Try<T> permits Try.TryError, Try.TrySuccess{
 
     static <T> Try<T> error(final Throwable t) {
         return new TryError<>(t);
+    }
+
+    static <T> Try<T> execute(final Supplier<T> supplier) {
+        try {
+            final var result = supplier.get();
+            return Try.success(result);
+        } catch (final RuntimeException e) {
+            return Try.error(e);
+        }
     }
 
     /**

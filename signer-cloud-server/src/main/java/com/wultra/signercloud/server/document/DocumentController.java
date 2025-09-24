@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.restapi.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -65,7 +66,10 @@ public class DocumentController {
             @RequestParam("file") final MultipartFile file
     ) throws Throwable {
         logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, externalDocumentId: {}", externalSignerId, externalDocumentId);
-        final var result = documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, file);
+        final var result = Try.execute(
+                () -> documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, file)
+        );
+
         if (result.isSuccess()) {
             final var response = result.getResponse();
             logger.info("action: uploadDocument, state: succeeded, documentId: {}, hash: {}", response.documentId(), response.hash());
@@ -94,7 +98,9 @@ public class DocumentController {
     @PostMapping("/{documentId}/signature")
     SignDocumentResponse sign(@PathVariable final String documentId, @Valid @RequestBody final SignDocumentRequest requestBody) throws Throwable {
         logger.info("action: signDocument, state: initiated, documentId: {}", documentId);
-        final var result = documentService.signDocument(documentId, requestBody);
+        final var result = Try.execute(
+                () -> documentService.signDocument(documentId, requestBody)
+        );
 
         if (result.isSuccess()) {
             logger.info("action: signDocument, state: succeeded");
@@ -129,7 +135,9 @@ public class DocumentController {
     @GetMapping(value = "/{documentId}/file", produces = MediaType.APPLICATION_PDF_VALUE)
     Resource download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
         logger.info("action: downloadDocument, state: initiated, documentId: {}, ranges: {}", documentId, rangeHeader);
-        final var result = documentService.downloadDocument(documentId);
+        final var result = Try.execute(
+                () -> documentService.downloadDocument(documentId)
+        );
 
         if (result.isSuccess()) {
             logger.info("action: downloadDocument, state: succeeded");
@@ -159,7 +167,9 @@ public class DocumentController {
     @PutMapping("/{documentId}")
     RejectDocumentResponse reject(@PathVariable final String documentId, @Valid @RequestBody final RejectDocumentRequest requestBody) throws Throwable {
         logger.info("action: rejectDocument, state: initiated, documentId: {}", documentId);
-        final var result = documentService.rejectDocument(documentId, requestBody);
+        final var result = Try.execute(
+                () -> documentService.rejectDocument(documentId, requestBody)
+        );
 
         if (result.isSuccess()) {
             logger.info("action: rejectDocument, state: succeeded");

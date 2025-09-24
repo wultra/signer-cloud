@@ -17,7 +17,6 @@
  */
 package com.wultra.signercloud.server.document;
 
-import com.wultra.signercloud.server.restapi.Try;
 import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerNotFoundException;
 import com.wultra.signercloud.server.signer.SignerRepository;
@@ -122,28 +121,14 @@ class DocumentService {
      * @param externalDocumentId unique identifier of the document in the external system
      * @param documentName name of the document
      * @param file the PDF document to be stored for signing
-     * @return response as a {@link Try}
+     * @return response with uploaded document details
      */
-    Try<UploadDocumentResponse> uploadDocument(
+    UploadDocumentResponse uploadDocument(
             final String externalSignerId,
             final String externalDocumentId,
             final String documentName,
             final MultipartFile file
-    ) throws NoSuchAlgorithmException {
-       try {
-           final var response = processDocumentUpload(externalSignerId, externalDocumentId, documentName, file);
-           return Try.success(response);
-       } catch (final SignerNotFoundException | DocumentUploadException e) {
-           return Try.error(e);
-       }
-    }
-
-    private UploadDocumentResponse processDocumentUpload(
-            final String externalSignerId,
-            final String externalDocumentId,
-            final String documentName,
-            final MultipartFile file
-    ) throws NoSuchAlgorithmException {
+    ) {
         final var contentType = file.getContentType();
         if (!ContentType.APPLICATION_PDF.getMimeType().equals(contentType)) {
             throw new DocumentUploadException("Unsupported content type: " + contentType);
@@ -205,14 +190,14 @@ class DocumentService {
         }
     }
 
-    private static String computeHash(final byte[] content, final DigestAlgorithm hashAlgorithm) throws NoSuchAlgorithmException {
+    private static String computeHash(final byte[] content, final DigestAlgorithm hashAlgorithm) {
         try {
             final var digest = hashAlgorithm.getMessageDigest();
             final var hashBytes = digest.digest(content);
             return Base64.getEncoder().encodeToString(hashBytes);
         } catch (final NoSuchAlgorithmException e) {
             logger.error("Hash algorithm not found: {}", hashAlgorithm, e);
-            throw e;
+            throw new DocumentUploadException("Hash algorithm not found: " + hashAlgorithm);
         }
     }
 
@@ -230,19 +215,9 @@ class DocumentService {
      *
      * @param documentId identifier of the document to be signed
      * @param requestBody request body containing the signature
-     * @return response as a {@link Try}
+     * @return response with signed document details
      */
-    Try<SignDocumentResponse> signDocument(final String documentId, final SignDocumentRequest requestBody) {
-        try {
-            final var response = processSignDocument(documentId, requestBody);
-            return Try.success(response);
-        } catch (final DocumentNotFoundException | SignerNotFoundException | SignDocumentException e) {
-            return Try.error(e);
-        }
-    }
-
-    private SignDocumentResponse processSignDocument(final String documentId, final SignDocumentRequest requestBody) {
-
+    SignDocumentResponse signDocument(final String documentId, final SignDocumentRequest requestBody) {
         final var document = documentRepository.findByDocumentId(documentId)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
 
@@ -387,18 +362,9 @@ class DocumentService {
      * Downloads the content of the {@link Document} identified by {@code documentUuid}.
      *
      * @param documentUuid identifier of the document to be downloaded
-     * @return response as a {@link Try}
+     * @return document as a {@link Resource}
      */
-    Try<Resource> downloadDocument(final String documentUuid) {
-        try {
-            final var response = processDownloadDocument(documentUuid);
-            return Try.success(response);
-        } catch (final DocumentNotFoundException | DownloadDocumentException e) {
-            return Try.error(e);
-        }
-    }
-
-    private Resource processDownloadDocument(final String documentUuid) {
+    Resource downloadDocument(final String documentUuid) {
         final var document = documentRepository.findByDocumentId(documentUuid)
                 .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
 
@@ -417,18 +383,9 @@ class DocumentService {
      *
      * @param documentId identifier of the document to be rejected
      * @param requestBody request body with the status {@link DocumentStatus#REJECTED}
-     * @return response as a {@link Try}
+     * @return response with rejected document details
      */
-    Try<RejectDocumentResponse> rejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
-        try {
-            final var response = processRejectDocument(documentId, requestBody);
-            return Try.success(response);
-        } catch (final DocumentNotFoundException | RejectDocumentException e) {
-            return Try.error(e);
-        }
-    }
-
-    private RejectDocumentResponse processRejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
+    RejectDocumentResponse rejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
         final var requestedStatus = requestBody.status();
         if (requestedStatus != DocumentStatus.REJECTED) {
             throw new RejectDocumentException("Invalid status in the request body. Expected: %s, actual: %s".formatted(
