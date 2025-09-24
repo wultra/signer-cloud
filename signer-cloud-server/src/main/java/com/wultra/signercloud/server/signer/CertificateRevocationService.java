@@ -50,23 +50,25 @@ class CertificateRevocationService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     void revokeCertificate(final IssuedCertificateMetadata certificateMetadata) {
+        final var issuerDn = certificateMetadata.getIssuerDn();
+        final var serialNumber = certificateMetadata.getSerialNumber();
+
         try {
-            final var serialNumber = certificateMetadata.getSerialNumber();
             final var serialNumberHex = new BigInteger(serialNumber).toString(16);
 
             final var request = new EjbcaService.RevokeCertificateRequest(
                     serialNumberHex,
-                    certificateMetadata.getIssuerDn());
+                    issuerDn);
 
             ejbcaService.revokeCertificate(request);
 
             setRevokedStatus(certificateMetadata);
-            logger.info("Certificate successfully revoked");
+            logger.info("Certificate successfully revoked. Issuer DN: {}, Serial Number: {}", issuerDn, serialNumber);
         } catch (final RestClientException e) {
             logger.warn("Exception when revoking certificate: {}", e.getResponse(), e);
 
             if (e.getStatusCode() == HttpStatusCode.valueOf(409) && e.getResponse().contains("has previously been revoked")) {
-                logger.info("Certificate was already revoked in EJBCA");
+                logger.info("Certificate was already revoked in EJBCA. Issuer DN: {}, Serial Number: {}", issuerDn, serialNumber);
                 setRevokedStatus(certificateMetadata);
                 return;
             }
