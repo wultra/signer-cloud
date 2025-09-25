@@ -18,7 +18,7 @@
 package com.wultra.signercloud.server.restapi;
 
 import com.wultra.signercloud.server.document.*;
-import com.wultra.signercloud.server.signer.SignerNotFoundException;
+import com.wultra.signercloud.server.signer.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -92,27 +92,15 @@ class RestExceptionHandlerTest {
     }
 
     @Test
-    void testHandleSignerNotFoundExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+    void testHandleDocumentContentNotFoundExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
         // -
 
         // When
-        final var response = restExceptionHandler.handleSignerNotFoundException(new SignerNotFoundException("dummyExternalSignerId"));
+        final var response = restExceptionHandler.handleDocumentContentNotFoundException(new DocumentContentNotFoundException("123"));
 
         // Then
-        assertErrorResponse(response, "Signer not found: dummyExternalSignerId", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
-    }
-
-    @Test
-    void testHandleDocumentUploadExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
-        // Given
-        final var message = "Unsupported content type: image/jpeg";
-
-        // When
-        final var response = restExceptionHandler.handleDocumentUploadException(new DocumentUploadException(message));
-
-        // Then
-        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, "Content for document ID 123 not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -124,43 +112,139 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleDocumentNotFoundException(new DocumentNotFoundException("123"));
 
         // Then
-        assertErrorResponse(response, "Document not found for document ID: 123", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+        assertErrorResponse(response, "Document with ID 123 not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
     }
 
     @Test
-    void testHandleSignDocumentExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+    void testHandleDocumentStateExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Document is in invalid state for this operation.";
+
+        // When
+        final var response = restExceptionHandler.handleDocumentStateException(new DocumentStateException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.DOCUMENT_STATE_ERROR);
+    }
+
+    @Test
+    void testHandleDocumentStatusTransitionExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Invalid document status transition.";
+
+        // When
+        final var response = restExceptionHandler.handleDocumentStatusTransitionException(new DocumentStatusTransitionException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.DOCUMENT_STATUS_TRANSITION_ERROR);
+    }
+
+    @Test
+    void testHandleDocumentUploadExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Unsupported content type: image/jpeg";
+
+        // When
+        final var response = restExceptionHandler.handleDocumentUploadException(new DocumentUploadException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.DOCUMENT_UPLOAD_ERROR);
+    }
+
+    @Test
+    void testHandleDocumentSigningExceptionWhenSigningExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
         final var message = "Document signing timeout exceeded";
 
         // When
-        final var response = restExceptionHandler.handleSignDocumentException(new SignDocumentException(message));
+        final var response = restExceptionHandler.handleDocumentSigningException(new DocumentSigningException(message));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, message, ErrorCode.DOCUMENT_SIGNING_ERROR);
     }
 
     @Test
-    void testHandleDownloadDocumentExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+    void testHandleCertificateProcessingExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
-        final var message = "Document not signed yet";
+        final var message = "Certificate processing error";
 
         // When
-        final var response = restExceptionHandler.handleDownloadDocumentException(new DownloadDocumentException(message));
+        final var response = restExceptionHandler.handleCertificateProcessingException(new CertificateProcessingException(message, new RuntimeException()));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, message, ErrorCode.CERTIFICATE_PROCESSING_ERROR);
     }
 
     @Test
-    void testHandleRejectDocumentExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+    void testHandleCsrProcessingExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
-        final var message = "Invalid status in the request body. Expected: REJECTED, actual: SIGNED";
+        final var message = "CSR processing error";
 
         // When
-        final var response = restExceptionHandler.handleRejectDocumentException(new RejectDocumentException(message));
+        final var response = restExceptionHandler.handleCsrProcessingException(new CsrProcessingException(message, new RuntimeException()));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, message, ErrorCode.CSR_PROCESSING_ERROR);
+    }
+
+    @Test
+    void testHandleEjbcaExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Ejbca error";
+
+        // When
+        final var response = restExceptionHandler.handleEjbcaException(new EjbcaException(message, new RuntimeException()));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.EJBCA_ERROR);
+    }
+
+    @Test
+    void testHandleSignatureVerificationExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Signature verification failed";
+
+        // When
+        final var response = restExceptionHandler.handleSignatureVerificationException(new SignatureVerificationException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.SIGNATURE_VERIFICATION_ERROR);
+    }
+
+    @Test
+    void testHandleSignerNotFoundExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        // -
+
+        // When
+        final var response = restExceptionHandler.handleSignerNotFoundException(new SignerNotFoundException("abc"));
+
+        // Then
+        assertErrorResponse(response, "Signer with ID abc not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    void testHandleSignerStateExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Signer is in invalid state for this operation.";
+
+        // When
+        final var response = restExceptionHandler.handleSignerStateException(new SignerStateException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.SIGNER_STATE_ERROR);
+    }
+
+    @Test
+    void testHandleSignerStatusTransitionExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Invalid signer status transition.";
+
+        // When
+        final var response = restExceptionHandler.handleSignerStatusTransitionException(new SignerStatusTransitionException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.SIGNER_STATUS_TRANSITION_ERROR);
     }
 
     private void assertErrorResponse(

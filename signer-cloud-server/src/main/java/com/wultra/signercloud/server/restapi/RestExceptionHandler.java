@@ -56,25 +56,14 @@ public class RestExceptionHandler {
     }
 
     /**
-     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link DocumentContentNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
+    public ResponseEntity<ErrorResponse> handleDocumentContentNotFoundException(final DocumentContentNotFoundException ex) {
         return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
-    }
-
-    /**
-     * Handler for {@link DocumentUploadException} producing {@link HttpStatus#BAD_REQUEST} response.
-     *
-     * @param ex the exception
-     * @return response as {@link ResponseEntity}
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleDocumentUploadException(final DocumentUploadException ex) {
-        return produceBadRequest(ErrorCode.DOCUMENT_UPLOAD_ERROR, ex.getMessage());
     }
 
     /**
@@ -89,58 +78,47 @@ public class RestExceptionHandler {
     }
 
     /**
-     * Handler for {@link SignDocumentException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link DocumentStateException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleSignDocumentException(final SignDocumentException ex) {
+    public ResponseEntity<ErrorResponse> handleDocumentStateException(final DocumentStateException ex) {
+        return produceBadRequest(ErrorCode.DOCUMENT_STATE_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link DocumentStatusTransitionException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleDocumentStatusTransitionException(final DocumentStatusTransitionException ex) {
+        return produceBadRequest(ErrorCode.DOCUMENT_STATUS_TRANSITION_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link DocumentUploadException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleDocumentUploadException(final DocumentUploadException ex) {
+        return produceBadRequest(ErrorCode.DOCUMENT_UPLOAD_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link DocumentSigningException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleDocumentSigningException(final DocumentSigningException ex) {
         return produceBadRequest(ErrorCode.DOCUMENT_SIGNING_ERROR, ex.getMessage());
-    }
-
-    /**
-     * Handler for {@link DownloadDocumentException} producing {@link HttpStatus#BAD_REQUEST} response.
-     *
-     * @param ex the exception
-     * @return response as {@link ResponseEntity}
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleDownloadDocumentException(final DownloadDocumentException ex) {
-        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
-    }
-
-    /**
-     * Handler for {@link RejectDocumentException} producing {@link HttpStatus#BAD_REQUEST} response.
-     *
-     * @param ex the exception
-     * @return response as {@link ResponseEntity}
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleRejectDocumentException(final RejectDocumentException ex) {
-        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
-    }
-
-    /**
-     * Handler for {@link SignatureVerificationException} producing {@link HttpStatus#BAD_REQUEST} response.
-     *
-     * @param ex the exception
-     * @return response as {@link ResponseEntity}
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleSignatureVerificationException(final SignatureVerificationException ex) {
-        return produceBadRequest(ErrorCode.SIGNATURE_VERIFICATION_ERROR, ex.getMessage());
-    }
-
-    /**
-     * Handler for {@link SignerStatusTransitionException} producing {@link HttpStatus#BAD_REQUEST} response.
-     *
-     * @param ex the exception
-     * @return response as {@link ResponseEntity}
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleSignerStatusTransitionException(final SignerStatusTransitionException ex) {
-        return produceBadRequest(ErrorCode.SIGNER_STATUS_TRANSITION_ERROR, ex.getMessage());
     }
 
     /**
@@ -177,25 +155,25 @@ public class RestExceptionHandler {
     }
 
     /**
-     * Handler for {@link DocumentStatusTransitionException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link SignatureVerificationException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleDocumentStatusTransitionException(final DocumentStatusTransitionException ex) {
-        return produceBadRequest(ErrorCode.DOCUMENT_STATUS_TRANSITION_ERROR, ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleSignatureVerificationException(final SignatureVerificationException ex) {
+        return produceBadRequest(ErrorCode.SIGNATURE_VERIFICATION_ERROR, ex.getMessage());
     }
 
     /**
-     * Handler for {@link DocumentStateException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleDocumentStateException(final DocumentStateException ex) {
-        return produceBadRequest(ErrorCode.DOCUMENT_STATE_ERROR, ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
+        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
@@ -207,6 +185,17 @@ public class RestExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerStateException(final SignerStateException ex) {
         return produceBadRequest(ErrorCode.SIGNER_STATE_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link SignerStatusTransitionException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignerStatusTransitionException(final SignerStatusTransitionException ex) {
+        return produceBadRequest(ErrorCode.SIGNER_STATUS_TRANSITION_ERROR, ex.getMessage());
     }
 
     private static ResponseEntity<ErrorResponse> produceBadRequest(final ErrorCode errorCode, final String message) {

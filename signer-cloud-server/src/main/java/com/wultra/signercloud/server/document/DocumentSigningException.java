@@ -22,13 +22,13 @@ package com.wultra.signercloud.server.document;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class SignDocumentException extends RuntimeException {
+public class DocumentSigningException extends RuntimeException {
 
-    public SignDocumentException(final String message) {
+    public DocumentSigningException(final String message) {
         super(message);
     }
 
-    public SignDocumentException(final String message, final Throwable cause) {
+    public DocumentSigningException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

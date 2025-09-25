@@ -183,7 +183,8 @@ class DocumentService {
         try {
             return file.getBytes();
         } catch (final IOException e) {
-            throw new DocumentUploadException("Failed to read file: " + e.getMessage());
+            logger.warn("Exception when reading upload file", e);
+            throw new DocumentUploadException("Failed to read file: " + e.getMessage(), e);
         }
     }
 
@@ -291,7 +292,7 @@ class DocumentService {
 
         final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificate);
         if (!isSignatureValid) {
-            throw new SignDocumentException("Invalid signature");
+            throw new DocumentSigningException("Invalid signature");
         }
 
         final var unsignedDocument = new InMemoryDocument(documentBytes);
@@ -344,8 +345,8 @@ class DocumentService {
         try (final var stream = signedDocument.openStream()) {
             return stream.readAllBytes();
         } catch (final IOException e) {
-            logger.error("Exception when reading bytes of signed document", e);
-            throw new SignDocumentException("Failed to read signed document: " + e.getMessage(), e);
+            logger.warn("Exception when reading bytes of signed document", e);
+            throw new DocumentSigningException("Failed to read signed document: " + e.getMessage(), e);
         }
     }
 

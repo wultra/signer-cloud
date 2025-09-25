@@ -401,7 +401,7 @@ class DocumentServiceTest {
 
         // when
         final var exception = assertThrows(
-                SignDocumentException.class,
+                DocumentSigningException.class,
                 () -> documentService.signDocument(DOCUMENT_UUID, request)
         );
 
