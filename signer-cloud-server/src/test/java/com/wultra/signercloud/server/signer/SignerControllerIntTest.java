@@ -320,6 +320,23 @@ class SignerControllerIntTest {
     }
 
     @Test
+    void testCreateUpdateWhenCsrInRequestIsMalformedThenErrorResponseIsReturned() throws Exception {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, "malformed CSR");
+
+        // when
+        final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // then
+        final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
+        assertErrorResponse(errorResponse, ErrorCode.CSR_PROCESSING_ERROR, "Error when processing CSR: long form definite-length more than 31 bits");
+    }
+
+    @Test
     void testUpdateStatusWhenSignerIsNotFoundThenErrorResponseIsReturned() throws Exception {
         // given
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null);
