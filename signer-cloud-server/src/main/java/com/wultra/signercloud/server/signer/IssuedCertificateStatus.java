@@ -17,21 +17,19 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
-
 /**
- * REST API request body for changing the {@link SignerStatus} of a {@link Signer}.
+ * Enumeration representing status of issued certificate.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Schema(description = "Request to update the status of a signer")
-record UpdateSignerStatusRequest(
-        @Schema(description = "New status of the signer",
-                example = "REVOKED")
-        @NotNull SignerStatus signerStatus,
+public enum IssuedCertificateStatus {
+    /**
+     * The certificate was issued and not revoked. It may be expired.
+     */
+    ISSUED,
 
-        @Schema(description = "If the new status is 'REVOKED', this is the reason for the revocation. By default it is set to 'UNSPECIFIED'.",
-                example = "UNSPECIFIED")
-        RevocationReason revocationReason
-) {}
+    /**
+     * Certificate was revoked.
+     */
+    REVOKED
+}

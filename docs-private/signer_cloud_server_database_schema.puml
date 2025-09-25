@@ -45,6 +45,7 @@ class sc_callback_event <<table>> {
     callback_data text NN
     status varchar(32) NN I (PROCESSING/PENDING/FAILED/COMPLETED)
     timestamp_created timestamp(6) NN
+    timestamp_last_updated timestamp(6)
     timestamp_last_call timestamp(6)
     timestamp_next_call timestamp(6)
     timestamp_delete_after timestamp(6) I
@@ -53,17 +54,32 @@ class sc_callback_event <<table>> {
     idempotency_key varchar(36) NN
 }
 
+class sc_issued_certificate_metadata <<table>> {
+    ID bigint PK
+    --
+    timestamp_created timestamp(6) NN
+    signer_id bigint FK I
+    serial_number varchar(64) NN
+    issuer_dn varchar(512) NN
+    timestamp_certificate_expiration timestamp(6) I
+    status varchar(50) NN I (ISSUED/REVOKED)
+}
+
 class sc_signer_seq <<sequence>>
 class sc_document_seq <<sequence>>
 class sc_document_content_seq <<sequence>>
 class sc_callback_event_seq <<sequence>>
+class sc_issued_certificate_metadata_seq <<sequence>>
 
-sc_signer_seq -> sc_signer
-sc_document_seq -> sc_document
-sc_document_content_seq -> sc_document_content
+sc_signer_seq --> sc_signer
+sc_document_seq --> sc_document
+sc_document_content_seq --> sc_document_content
+sc_callback_event_seq --> sc_callback_event
+sc_issued_certificate_metadata_seq --> sc_issued_certificate_metadata
 
 sc_document "sc_document_signer_id_fk" --> sc_signer
 sc_document "sc_document_document_content_id_fk" --> sc_document_content
+sc_issued_certificate_metadata "sc_issued_certificate_metadata_signer_id_fk" --> sc_signer
 
 note as note1
 Legend:

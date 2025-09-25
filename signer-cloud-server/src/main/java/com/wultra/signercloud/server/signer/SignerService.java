@@ -31,6 +31,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,10 +40,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 /**
@@ -71,6 +69,8 @@ class SignerService {
     private final SignerConfigurationProperties configurationProperties;
     private final CallbackNotificationService callbackNotificationService;
     private final ObjectMapper objectMapper;
+    private final IssuedCertificateMetadataRepository issuedCertificateMetadataRepository;
+    private final CertificateRevocationService certificateRevocationService;
 
     /**
      * Marks all signers that have expired as expired and creates expiration callbacks if configured.
@@ -138,6 +138,8 @@ class SignerService {
                     .certificateFromX509(x509Certificate)
                     .certificateChainFromList(chain)
                     .build());
+
+            saveIssuedCertificate(signer.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
             logger.warn("Exception when encoding certificate to base64 during renewal, externalSignerId: {}", signer.getExternalSignerId());
             throw new CertificateEnrollmentException("Certificate could not be encoded during renewal", e);
@@ -231,7 +233,8 @@ class SignerService {
                     .status(SignerStatus.ACTIVE)
                     .certificateChainFromList(chain)
                     .build();
-            signerRepository.save(signer);
+            final var savedSigner = signerRepository.save(signer);
+            saveIssuedCertificate(savedSigner.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
             logger.warn("Exception when encoding certificate to base64 during creation/update, externalSignerId: {}", externalSignerId);
             throw new CertificateEnrollmentException("Certificate could not be encoded during creation/update", e);
@@ -303,6 +306,23 @@ class SignerService {
                 .timestampLastUpdated(Instant.now());
     }
 
+    private void saveIssuedCertificate(final long signerId, final X509Certificate x509Certificate) {
+        final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
+        final var serialNumber = x509Certificate.getSerialNumber().toString();
+        final var issuerDn = x509Certificate.getIssuerX500Principal().getName();
+
+        final var issuedCertificate = IssuedCertificateMetadata.builder()
+                .signer(AggregateReference.to(signerId))
+                .timestampCreated(Instant.now())
+                .serialNumber(serialNumber)
+                .issuerDn(issuerDn)
+                .timestampCertificateExpiration(certificateExpiration)
+                .status(IssuedCertificateStatus.ISSUED)
+                .build();
+
+        issuedCertificateMetadataRepository.save(issuedCertificate);
+    }
+
     /**
      * Updates the {@link SignerStatus} of a {@link Signer}.
      *
@@ -312,18 +332,19 @@ class SignerService {
      */
     Try<Void> updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
         try {
-            updateStatus(externalSignerId, request.signerStatus());
+            processUpdateStatus(externalSignerId, request);
             return Try.success();
-        } catch (SignerNotFoundException | SignerStatusTransitionException | RestClientException e) {
+        } catch (final SignerNotFoundException | SignerStatusTransitionException | CertificateRevocationException e) {
             return Try.error(e);
         }
     }
 
-    private void updateStatus(final String externalSignerId, final SignerStatus newStatus) throws RestClientException {
+    private void processUpdateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
 
         final var oldStatus = signer.getStatus();
+        final var newStatus = request.signerStatus();
 
         if (oldStatus == newStatus) {
             return;
@@ -337,7 +358,9 @@ class SignerService {
         }
 
         if (newStatus == SignerStatus.REVOKED) {
-            ejbcaService.revokeCertificates(externalSignerId);
+            final var revocationReason = Optional.ofNullable(request.revocationReason())
+                            .orElse(RevocationReason.UNSPECIFIED);
+            revokeCertificates(signer, revocationReason);
         }
 
         final var updatedSigner = signer.toBuilder()
@@ -346,6 +369,19 @@ class SignerService {
                 .build();
 
         signerRepository.save(updatedSigner);
+    }
+
+    private void revokeCertificates(final Signer signer, final RevocationReason revocationReason) {
+        final var signerId = signer.getId();
+
+        final var certificatesMetadata = issuedCertificateMetadataRepository.findForRevocation(signerId);
+        final var certificatesToRevokeCount = certificatesMetadata.size();
+
+        for (var i = 0; i < certificatesToRevokeCount; i++) {
+            logger.info("Revoking certificate {}/{} in EJBCA", i + 1, certificatesToRevokeCount);
+            final var certificateMetadata = certificatesMetadata.get(i);
+            certificateRevocationService.revokeCertificate(certificateMetadata, revocationReason);
+        }
     }
 
     /**
