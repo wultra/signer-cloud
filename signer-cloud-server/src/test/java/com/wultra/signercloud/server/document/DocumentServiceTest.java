@@ -280,7 +280,7 @@ class DocumentServiceTest {
         );
 
         // then
-        assertEquals("Signer with ID %s not found".formatted(SIGNER_ID), exception.getMessage());
+        assertEquals("Signer with internal ID %s not found".formatted(SIGNER_ID), exception.getMessage());
     }
 
     @Test

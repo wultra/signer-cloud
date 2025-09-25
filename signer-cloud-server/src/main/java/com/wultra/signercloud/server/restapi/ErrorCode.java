@@ -37,5 +37,25 @@ public enum ErrorCode {
     /**
      * Resource is not found.
      */
-    ERROR_RESOURCE_NOT_FOUND
+    ERROR_RESOURCE_NOT_FOUND,
+
+    /**
+     * Error during Signer certificate enrollment process.
+     */
+    CERTIFICATE_ENROLLMENT_ERROR,
+
+    /**
+     * Error during Signer certificate revocation process.
+     */
+    CERTIFICATE_REVOCATION_ERROR,
+
+    /**
+     * Error during Signer CSR verification process.
+     */
+    CSR_VERIFICATION_ERROR,
+
+    /**
+     * Invalid status change of the Signer.
+     */
+    SIGNER_STATUS_TRANSITION_ERROR
 }

@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  */
 public sealed interface Try<T> permits Try.TryError, Try.TrySuccess{
     boolean isSuccess();
-    Throwable getError();
+    RuntimeException getError();
     T getResponse();
 
     static <T> Try<T> success() {
@@ -37,8 +37,8 @@ public sealed interface Try<T> permits Try.TryError, Try.TrySuccess{
         return new TrySuccess<>(result);
     }
 
-    static <T> Try<T> error(final Throwable t) {
-        return new TryError<>(t);
+    static <T> Try<T> error(final RuntimeException e) {
+        return new TryError<>(e);
     }
 
     static <T> Try<T> execute(final Supplier<T> supplier) {
@@ -70,7 +70,7 @@ public sealed interface Try<T> permits Try.TryError, Try.TrySuccess{
         }
 
         @Override
-        public Throwable getError() {
+        public RuntimeException getError() {
             throw new UnsupportedOperationException("No error in success");
         }
 
@@ -83,7 +83,7 @@ public sealed interface Try<T> permits Try.TryError, Try.TrySuccess{
     /**
      * Represents a failed operation with an error.
      */
-    record TryError<T>(Throwable throwable) implements Try<T> {
+    record TryError<T>(RuntimeException exception) implements Try<T> {
 
         @Override
         public boolean isSuccess() {
@@ -91,8 +91,8 @@ public sealed interface Try<T> permits Try.TryError, Try.TrySuccess{
         }
 
         @Override
-        public Throwable getError() {
-            return throwable;
+        public RuntimeException getError() {
+            return exception;
         }
 
         @Override

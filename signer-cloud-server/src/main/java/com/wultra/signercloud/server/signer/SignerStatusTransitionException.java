@@ -23,7 +23,7 @@ package com.wultra.signercloud.server.signer;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public class SignerStatusTransitionException extends RuntimeException {
-    public SignerStatusTransitionException(String message) {
+    public SignerStatusTransitionException(final String message) {
         super(message);
     }
 }

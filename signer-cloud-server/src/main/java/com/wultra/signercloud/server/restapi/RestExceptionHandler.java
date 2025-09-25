@@ -18,7 +18,7 @@
 package com.wultra.signercloud.server.restapi;
 
 import com.wultra.signercloud.server.document.*;
-import com.wultra.signercloud.server.signer.SignerNotFoundException;
+import com.wultra.signercloud.server.signer.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -119,6 +119,50 @@ public class RestExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleRejectDocumentException(final RejectDocumentException ex) {
         return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link CertificateEnrollmentException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleCertificateEnrollmentException(final CertificateEnrollmentException ex) {
+        return produceBadRequest(ErrorCode.CERTIFICATE_ENROLLMENT_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link CertificateRevocationException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleCertificateRevocationException(final CertificateRevocationException ex) {
+        return produceBadRequest(ErrorCode.CERTIFICATE_REVOCATION_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link SignatureVerificationException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignatureVerificationException(final SignatureVerificationException ex) {
+        return produceBadRequest(ErrorCode.CSR_VERIFICATION_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link SignerStatusTransitionException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignerStatusTransitionException(final SignerStatusTransitionException ex) {
+        return produceBadRequest(ErrorCode.SIGNER_STATUS_TRANSITION_ERROR, ex.getMessage());
     }
 
     private static ResponseEntity<ErrorResponse> produceBadRequest(final ErrorCode errorCode, final String message) {

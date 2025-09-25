@@ -75,19 +75,10 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 
 #### Response 200
 
-```json
-{
-  "result": "String",
-  "resultReason": null
-}
+```
+200 OK
 ```
 
-##### Response  Params
-
-| Attribute      | Type     | Description                                                                                                                                       |
-|:---------------|:---------|:--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `result`       | `String` | The processing outcome `OK`, `FAIL`.                                                                                                              |
-| `resultReason` | `String` | The reason is used when result is `FAIL` to disclose the reason of failed process.                                                                  |
 <!-- end -->
 
 <!-- begin api PUT /signers/{signerId} -->
@@ -127,19 +118,10 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
 
 #### Response 200
 
-```json
-{
-  "result": "String",
-  "resultReason": null
-}
+```
+200 OK
 ```
 
-##### Response  Params
-
-| Attribute      | Type     | Description                                                                                                                                      |
-|:---------------|:---------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
-| `result`       | `String` | The processing outcome `OK`, `FAIL`.                                                                                                                 |
-| `resultReason` | `String` | The reason is used when result is `FAIL` to disclose the reason of failed process.                                                                 |
 <!-- end -->
 
 <!-- begin api GET /signers/{signerId} -->

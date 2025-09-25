@@ -49,17 +49,16 @@ class SignerController {
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "REST API call was successful. Check the 'result' field in the response to determine if the signer was actually created.",
-                            content = @Content(schema = @Schema(implementation = SignerResponse.class))
+                            description = "REST API call was successful."
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid input data"
+                            description = "In case of error. Check response body for details."
                     )
             }
     )
     @PostMapping
-    SignerResponse createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
+    void createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
         logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.signerId());
         final var result = Try.execute(
                 () -> signerService.createUpdateSigner(requestBody)
@@ -67,10 +66,10 @@ class SignerController {
 
         if (result.isSuccess()) {
             logger.info("action: createUpdateSigner, state: succeeded");
-            return new SignerResponse(SignerResponseResult.OK, null);
         } else {
-            logger.error("action: createUpdateSigner, state: failed, errorMessage: {}", result.getError().getMessage());
-            return new SignerResponse(SignerResponseResult.FAIL, result.getError().getMessage());
+            final var error = result.getError();
+            logger.error("action: createUpdateSigner, state: failed, errorMessage: {}", error.getMessage());
+            throw error;
         }
     }
 
@@ -81,17 +80,16 @@ class SignerController {
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "REST API call was successful. Check the 'result' field in the response to determine if the status change was successful.",
-                            content = @Content(schema = @Schema(implementation = SignerResponse.class))
+                            description = "REST API call was successful."
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid input data"
+                            description = "In case of error. Check response body for details."
                     )
             }
     )
     @PutMapping("/{externalSignerId}")
-    SignerResponse updateStatus(@PathVariable final String externalSignerId, @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
+    void updateStatus(@PathVariable final String externalSignerId, @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
         logger.info("action: updateSignerStatus, state: initiated, externalSignerId: {}, newStatus: {}", externalSignerId, requestBody.signerStatus());
         final var result =  Try.execute(
                 () -> signerService.updateStatus(externalSignerId, requestBody)
@@ -99,10 +97,10 @@ class SignerController {
 
         if (result.isSuccess()) {
             logger.info("action: updateSignerStatus, state: succeeded");
-            return new SignerResponse(SignerResponseResult.OK, null);
         } else {
-            logger.error("action: updateSignerStatus, state: failed, errorMessage: {}", result.getError().getMessage());
-            return new SignerResponse(SignerResponseResult.FAIL, result.getError().getMessage());
+            final var error = result.getError();
+            logger.error("action: updateSignerStatus, state: failed, errorMessage: {}", error.getMessage());
+            throw error;
         }
     }
 
@@ -122,7 +120,7 @@ class SignerController {
             }
     )
     @GetMapping("/{externalSignerId}")
-    SignerDetailResponse getDetail(@PathVariable final String externalSignerId) throws Throwable {
+    SignerDetailResponse getDetail(@PathVariable final String externalSignerId) {
         logger.info("action: getSignerDetail, state: initiated, externalSignerId: {}", externalSignerId);
         final var result = Try.execute(
                 () -> signerService.getDetail(externalSignerId)
@@ -132,8 +130,9 @@ class SignerController {
             logger.info("action: getSignerDetail, state: succeeded");
             return result.getResponse();
         } else {
-            logger.info("action: getSignerDetail, state: failed, errorMessage: {}", result.getError().getMessage());
-            throw result.getError();
+            final var error = result.getError();
+            logger.info("action: getSignerDetail, state: failed, errorMessage: {}", error.getMessage());
+            throw error;
         }
     }
 
