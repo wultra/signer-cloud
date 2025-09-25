@@ -10,6 +10,7 @@
     <include file="20250815-document-indexes.xml" relativeToChangelogFile="true" />
     <include file="20250820-signer-index.xml" relativeToChangelogFile="true" />
     <include file="20250821-callback-event-table.xml" relativeToChangelogFile="true" />
+    <include file="20250912-issued-certificate.xml" relativeToChangelogFile="true" />
     <include file="20250919-certificate-chain.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

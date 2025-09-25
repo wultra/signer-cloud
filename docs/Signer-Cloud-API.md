@@ -84,10 +84,10 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 
 ##### Response  Params
 
-| Attribute      | Type     | Description                                                                                                                                      |
-|:---------------|:---------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
-| `result`       | `String` | The processing outcome OK, FAIL.                                                                                                                 |
-| `resultReason` | `String` | The reason is used when result is FAIL to disclose the reason of failed process.                                                                 |
+| Attribute      | Type     | Description                                                                                                                                       |
+|:---------------|:---------|:--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `result`       | `String` | The processing outcome `OK`, `FAIL`.                                                                                                              |
+| `resultReason` | `String` | The reason is used when result is `FAIL` to disclose the reason of failed process.                                                                  |
 <!-- end -->
 
 <!-- begin api PUT /signers/{signerId} -->
@@ -112,16 +112,18 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
 
 ```json
 {
-  "signerStatus": "BLOCKED"
+  "signerStatus": "REVOKED",
+  "revocationReason": "UNSPECIFIED"
 }
 ```
 
 ##### Request Params
 
-| Attribute      | Type     | Description                                                                |
-|:---------------|:---------|:---------------------------------------------------------------------------|
-| `signerId`     | `String` | Activation ID (Registration ID) from PowerAuth.                            |
-| `signerStatus` | `String` | Select new signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED, EXPIRED |
+| Attribute          | Type     | Description                                                                                                                                                                                                                                                                                                                                                                                                           |
+|:-------------------|:---------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `signerId`         | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                                                                                                                                                                                                                       |
+| `signerStatus`     | `String` | Select new signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED`                                                                                                                                                                                                                                                                                                                                  |
+| `revocationReason` | `String` | Optional parameter, used only if `signerStatus` is set to `REVOKED`. It specifies the reason for revocation, which is passed to EJBCA. If not provided, the default value `UNSPECIFIED` is used. ENUM: `NOT_REVOKED`, `UNSPECIFIED`, `KEY_COMPROMISE`, `CA_COMPROMISE`, `AFFILIATION_CHANGED`, `SUPERSEDED`, `CESSATION_OF_OPERATION`, `CERTIFICATE_HOLD`, `REMOVE_FROM_CRL`, `PRIVILEGES_WITHDRAWN`, `AA_COMPROMISE` |
 
 #### Response 200
 
@@ -136,8 +138,8 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
 
 | Attribute      | Type     | Description                                                                                                                                      |
 |:---------------|:---------|:-------------------------------------------------------------------------------------------------------------------------------------------------|
-| `result`       | `String` | The processing outcome OK, FAIL.                                                                                                                 |
-| `resultReason` | `String` | The reason is used when result is FAIL to disclose the reason of failed process.                                                                 |
+| `result`       | `String` | The processing outcome `OK`, `FAIL`.                                                                                                                 |
+| `resultReason` | `String` | The reason is used when result is `FAIL` to disclose the reason of failed process.                                                                 |
 <!-- end -->
 
 <!-- begin api GET /signers/{signerId} -->
@@ -182,11 +184,11 @@ Get signer state.
 
 ##### Response  Params
 
-| Attribute      | Type     | Description                                                     |
-|:---------------|:---------|:----------------------------------------------------------------|
-| `signerId`     | `String` | Activation ID (Registration ID) from PowerAuth.                 |
-| `userId`       | `String` | Custom User ID mostly for tracking purposes.                    |
-| `signerStatus` | `String` | Signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED, EXPIRED |
+| Attribute      | Type     | Description                                                               |
+|:---------------|:---------|:--------------------------------------------------------------------------|
+| `signerId`     | `String` | Activation ID (Registration ID) from PowerAuth.                           |
+| `userId`       | `String` | Custom User ID mostly for tracking purposes.                              |
+| `signerStatus` | `String` | Signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED` |
 <!-- end -->
 
 <!-- begin api POST /documents -->
@@ -308,7 +310,7 @@ Reject document and terminate signing process.
 | Attribute    | Type     | Description                                                |
 |:-------------|:---------|:-----------------------------------------------------------|
 | `documentId` | `String` | Custom Unique ID identifying document in client’s systems. |
-| `status`     | `String` | Set status to REJECTED.                                    |
+| `status`     | `String` | Set status to `REJECTED`.                                    |
 
 #### Response 200
 

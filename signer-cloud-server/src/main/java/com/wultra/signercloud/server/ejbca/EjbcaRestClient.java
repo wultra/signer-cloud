@@ -28,13 +28,15 @@ import lombok.extern.jackson.Jacksonized;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Rest client for EJBCA.
@@ -48,9 +50,18 @@ class EjbcaRestClient {
 
     private final RestClient restClient;
 
+    @Autowired
     public EjbcaRestClient(final EjbcaConfigurationProperties properties) throws RestClientException {
         validateConfiguration(properties.getRestClientConfiguration());
         this.restClient = new DefaultRestClient(properties.getRestClientConfiguration());
+    }
+
+    /**
+     * Constructor for unit testing purposes.
+     * @param restClient Rest client to be used.
+     */
+    EjbcaRestClient(final RestClient restClient) {
+        this.restClient = restClient;
     }
 
     private void validateConfiguration(final RestClientConfiguration restClientConfiguration) {
@@ -77,13 +88,26 @@ class EjbcaRestClient {
         return response.getBody();
     }
 
-    void revokeCertificates(final String externalSignerId) throws RestClientException {
-        final String url = UriComponentsBuilder.fromPath("/v1/endentity/{external_signer_id}/revoke")
-                .buildAndExpand(externalSignerId)
-                .toUriString();
+    /**
+     * Revokes single certificate in EJBCA.
+     *
+     * @param request metadata for certificate to be revoked
+     * @throws RestClientException in case of communication error with EJBCA
+     */
+    void revokeCertificate(final EjbcaService.RevokeCertificateRequest request) throws RestClientException {
+        final var serialNumber = request.serialNumberHex();
+        final var issuerDN = request.issuerDN();
+        final var reason = request.revocationReason();
 
-        logger.info("Revoking certificates, externalSignerId: {}", externalSignerId);
-        restClient.put(url, null, ParameterizedTypeReference.forType(Void.class));
+        final var url = UriComponentsBuilder.fromPath("/v1/certificate/{issuerDN}/{serialNumber}/revoke")
+                        .buildAndExpand(issuerDN, serialNumber)
+                        .toUriString();
+
+        final var params = MultiValueMap.fromSingleValue(Map.of("reason", reason.name()));
+
+        logger.info("Revoking certificate, serialNumberHex: {}, issuerDN: {}, reason: {}", request.serialNumberHex(), request.issuerDN(), reason);
+        restClient.put(url, null, params, null, ParameterizedTypeReference.forType(Void.class));
+        logger.info("Successful EJBCA certificate revoke call");
     }
 
     @Jacksonized

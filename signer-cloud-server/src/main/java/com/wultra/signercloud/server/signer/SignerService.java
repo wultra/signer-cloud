@@ -30,6 +30,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,10 +39,8 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * Service for {@link Signer} operations.
@@ -54,6 +53,10 @@ import java.util.Map;
 @Slf4j
 class SignerService {
 
+    private static final String CSR_PEM_HEADER = "-----BEGIN CERTIFICATE REQUEST-----";
+    private static final String CSR_PEM_FOOTER = "-----END CERTIFICATE REQUEST-----";
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s");
+
     private static final Map<SignerStatus, EnumSet<SignerStatus>> VALID_STATUS_TRANSITIONS = Map.of(
             SignerStatus.ACTIVE, EnumSet.of(SignerStatus.BLOCKED, SignerStatus.REMOVED, SignerStatus.REVOKED),
             SignerStatus.BLOCKED, EnumSet.of(SignerStatus.ACTIVE, SignerStatus.REMOVED, SignerStatus.REVOKED)
@@ -65,6 +68,8 @@ class SignerService {
     private final SignerConfigurationProperties configurationProperties;
     private final CallbackNotificationService callbackNotificationService;
     private final ObjectMapper objectMapper;
+    private final IssuedCertificateMetadataRepository issuedCertificateMetadataRepository;
+    private final CertificateRevocationService certificateRevocationService;
 
     /**
      * Marks all signers that have expired as expired and creates expiration callbacks if configured.
@@ -132,6 +137,8 @@ class SignerService {
                     .certificateFromX509(x509Certificate)
                     .certificateChainFromList(chain)
                     .build());
+
+            saveIssuedCertificate(signer.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
             logger.warn("Exception when encoding certificate to base64 during renewal, externalSignerId: {}", signer.getExternalSignerId());
             throw new CertificateEnrollmentException("Certificate could not be encoded during renewal", e);
@@ -186,12 +193,14 @@ class SignerService {
     void createUpdateSigner(final CreateUpdateSignerRequest request) {
         final var externalSignerId = request.signerId();
         final var userId = request.userId();
-        final var csr = request.csr();
+        final var csrPem = request.csr();
 
-        verifySignature(externalSignerId, csr);
+        final var csrBase64 = convertCsrPemToBase64(csrPem);
+
+        verifySignature(externalSignerId, csrBase64);
 
         final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(csr)
+                .csr(csrBase64)
                 .externalSignerId(externalSignerId)
                 .userId(userId)
                 .build();
@@ -207,17 +216,26 @@ class SignerService {
         try {
             final var signer = signerBuilder
                     .userId(userId)
-                    .csr(csr)
+                    .csr(csrBase64)
                     .certificateFromX509(x509Certificate)
                     .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
                     .status(SignerStatus.ACTIVE)
                     .certificateChainFromList(chain)
                     .build();
-            signerRepository.save(signer);
+            final var savedSigner = signerRepository.save(signer);
+            saveIssuedCertificate(savedSigner.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
             logger.warn("Exception when encoding certificate to base64 during creation/update, externalSignerId: {}", externalSignerId);
             throw new CertificateEnrollmentException("Certificate could not be encoded during creation/update", e);
         }
+    }
+
+    private static String convertCsrPemToBase64(final String csrPem) {
+        return WHITESPACE_PATTERN.matcher(
+                    csrPem
+                        .replace(CSR_PEM_HEADER, "")
+                        .replace(CSR_PEM_FOOTER, "")
+        ).replaceAll("");
     }
 
     private void verifySignature(final String externalSignerId, final String csrBase64) {
@@ -277,6 +295,23 @@ class SignerService {
                 .timestampLastUpdated(Instant.now());
     }
 
+    private void saveIssuedCertificate(final long signerId, final X509Certificate x509Certificate) {
+        final var certificateExpiration = x509Certificate.getNotAfter().toInstant();
+        final var serialNumber = x509Certificate.getSerialNumber().toString();
+        final var issuerDn = x509Certificate.getIssuerX500Principal().getName();
+
+        final var issuedCertificate = IssuedCertificateMetadata.builder()
+                .signer(AggregateReference.to(signerId))
+                .timestampCreated(Instant.now())
+                .serialNumber(serialNumber)
+                .issuerDn(issuerDn)
+                .timestampCertificateExpiration(certificateExpiration)
+                .status(IssuedCertificateStatus.ISSUED)
+                .build();
+
+        issuedCertificateMetadataRepository.save(issuedCertificate);
+    }
+
     /**
      * Updates the {@link SignerStatus} of a {@link Signer}.
      *
@@ -303,7 +338,9 @@ class SignerService {
         }
 
         if (newStatus == SignerStatus.REVOKED) {
-            ejbcaService.revokeCertificates(externalSignerId);
+            final var revocationReason = Optional.ofNullable(request.revocationReason())
+                            .orElse(RevocationReason.UNSPECIFIED);
+            revokeCertificates(signer, revocationReason);
         }
 
         final var updatedSigner = signer.toBuilder()
@@ -312,6 +349,19 @@ class SignerService {
                 .build();
 
         signerRepository.save(updatedSigner);
+    }
+
+    private void revokeCertificates(final Signer signer, final RevocationReason revocationReason) {
+        final var signerId = signer.getId();
+
+        final var certificatesMetadata = issuedCertificateMetadataRepository.findForRevocation(signerId);
+        final var certificatesToRevokeCount = certificatesMetadata.size();
+
+        for (var i = 0; i < certificatesToRevokeCount; i++) {
+            logger.info("Revoking certificate {}/{} in EJBCA", i + 1, certificatesToRevokeCount);
+            final var certificateMetadata = certificatesMetadata.get(i);
+            certificateRevocationService.revokeCertificate(certificateMetadata, revocationReason);
+        }
     }
 
     /**

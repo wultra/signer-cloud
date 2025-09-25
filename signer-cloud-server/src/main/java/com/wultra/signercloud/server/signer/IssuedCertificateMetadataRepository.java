@@ -17,21 +17,21 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
+import org.springframework.data.jdbc.repository.query.Query;
+import org.springframework.data.repository.CrudRepository;
+
+import java.util.List;
 
 /**
- * REST API request body for changing the {@link SignerStatus} of a {@link Signer}.
+ * Repository for accessing a {@link IssuedCertificateMetadata}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Schema(description = "Request to update the status of a signer")
-record UpdateSignerStatusRequest(
-        @Schema(description = "New status of the signer",
-                example = "REVOKED")
-        @NotNull SignerStatus signerStatus,
+interface IssuedCertificateMetadataRepository extends CrudRepository<IssuedCertificateMetadata, Long> {
 
-        @Schema(description = "If the new status is 'REVOKED', this is the reason for the revocation. By default it is set to 'UNSPECIFIED'.",
-                example = "UNSPECIFIED")
-        RevocationReason revocationReason
-) {}
+    @Query("""
+        SELECT * FROM sc_issued_certificate_metadata
+        WHERE signer_id = :signerId AND timestamp_certificate_expiration > NOW() AND status != 'REVOKED'
+        """)
+    List<IssuedCertificateMetadata> findForRevocation(final long signerId);
+}

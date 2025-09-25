@@ -18,17 +18,16 @@
 package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.signer.RevocationReason;
+import com.wultra.signercloud.server.utils.CertificateUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.util.Base64;
 import java.util.List;
 
 /**
@@ -61,7 +60,7 @@ public class EjbcaService {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
         }
 
-        final var x509Certificate = convertDerToX509Certificate(certificateResponse.certificate());
+        final var x509Certificate = CertificateUtils.base64ToX509Certificate(certificateResponse.certificate());
 
         return new CertificateResponse(x509Certificate, certificateResponse.certificateChain());
     }
@@ -78,22 +77,14 @@ public class EjbcaService {
                 .build();
     }
 
-    private static X509Certificate convertDerToX509Certificate(final String derCertificateBase64) throws IOException, CertificateException {
-        final byte[] derCertificate = Base64.getDecoder().decode(derCertificateBase64);
-        final CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
-        try (final ByteArrayInputStream inputStream = new ByteArrayInputStream(derCertificate)) {
-            return (X509Certificate) certificateFactory.generateCertificate(inputStream);
-        }
-    }
-
     /**
-     * Revokes all certificates associated with the given {@link com.wultra.signercloud.server.signer.Signer#externalSignerId}.
+     * Revokes a specific certificate identified by its serial number and issuer DN.
      *
-     * @param externalSignerId the external signer ID to identify the signer whose certificates should be revoked
+     * @param request the request containing the serial number and issuer DN of the certificate to be revoked
      * @throws RestClientException if an error occurs during the revocation process
      */
-    public void revokeCertificates(final String externalSignerId) throws RestClientException {
-        ejbcaRestClient.revokeCertificates(externalSignerId);
+    public void revokeCertificate(final RevokeCertificateRequest request) throws RestClientException {
+        ejbcaRestClient.revokeCertificate(request);
     }
 
     /**
@@ -114,4 +105,13 @@ public class EjbcaService {
      */
     @Builder
     public record CertificateResponse(X509Certificate certificate, List<String> chain){}
+
+    /**
+     * Parameter object for revoking a certificate.
+     *
+     * @param serialNumberHex certificate serial number in hex format without prefix
+     * @param issuerDN certificate issuer distinguished name
+     */
+    @Builder
+    public record RevokeCertificateRequest(String serialNumberHex, String issuerDN, RevocationReason revocationReason) {}
 }

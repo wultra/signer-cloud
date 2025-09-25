@@ -17,21 +17,21 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
-
 /**
- * REST API request body for changing the {@link SignerStatus} of a {@link Signer}.
+ * Reason of certificate revocation supported by EJBCA.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Schema(description = "Request to update the status of a signer")
-record UpdateSignerStatusRequest(
-        @Schema(description = "New status of the signer",
-                example = "REVOKED")
-        @NotNull SignerStatus signerStatus,
-
-        @Schema(description = "If the new status is 'REVOKED', this is the reason for the revocation. By default it is set to 'UNSPECIFIED'.",
-                example = "UNSPECIFIED")
-        RevocationReason revocationReason
-) {}
+public enum RevocationReason {
+    NOT_REVOKED,
+    UNSPECIFIED,
+    KEY_COMPROMISE,
+    CA_COMPROMISE,
+    AFFILIATION_CHANGED,
+    SUPERSEDED,
+    CESSATION_OF_OPERATION,
+    CERTIFICATE_HOLD,
+    REMOVE_FROM_CRL,
+    PRIVILEGES_WITHDRAWN,
+    AA_COMPROMISE
+}
