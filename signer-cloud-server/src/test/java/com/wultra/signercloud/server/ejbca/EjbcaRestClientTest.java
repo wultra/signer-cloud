@@ -19,6 +19,7 @@ package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.RestClient;
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.signer.RevocationReason;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -58,6 +59,7 @@ class EjbcaRestClientTest {
         final var request = EjbcaService.RevokeCertificateRequest.builder()
                 .issuerDN(ISSUER_DN)
                 .serialNumberHex(SERIAL_NUMBER_HEX)
+                .revocationReason(RevocationReason.UNSPECIFIED)
                 .build();
 
         // when
