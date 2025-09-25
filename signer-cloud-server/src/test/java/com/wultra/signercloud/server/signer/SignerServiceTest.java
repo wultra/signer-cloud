@@ -472,7 +472,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testUpdateStatusWhenStatusIsSetToRevokedAndEjbcaReturnsErrorThenFailResultIsReturned() throws CertificateEncodingException, RestClientException {
+    void testUpdateStatusWhenEjbcaReturnsErrorThenExceptionIsThrown() throws CertificateEncodingException {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
@@ -484,12 +484,12 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                SignerStatusTransitionException.class,
+                CertificateRevocationException.class,
                 () -> signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED, null))
         );
 
         // then
-        assertEquals("TODO", exception.getMessage());
+        assertEquals("Test", exception.getMessage());
     }
 
     @Test
