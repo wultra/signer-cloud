@@ -424,7 +424,10 @@ class SignerServiceTest {
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.empty());
 
         // when
-        final var response = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+        final var response = signerService.updateStatus(
+                EXTERNAL_SIGNER_ID,
+                new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null)
+        );
 
         // then
         assertFalse(response.isSuccess());
@@ -438,7 +441,10 @@ class SignerServiceTest {
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        final var response = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+        final var response = signerService.updateStatus(
+                EXTERNAL_SIGNER_ID,
+                new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null)
+        );
 
         // then
         assertTrue(response.isSuccess());
@@ -452,7 +458,10 @@ class SignerServiceTest {
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        final var response = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.ACTIVE));
+        final var response = signerService.updateStatus(
+                EXTERNAL_SIGNER_ID,
+                new UpdateSignerStatusRequest(SignerStatus.ACTIVE, null)
+        );
 
         // then
         assertFalse(response.isSuccess());
@@ -466,31 +475,38 @@ class SignerServiceTest {
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
 
         // when
-        final var response = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.BLOCKED));
+        final var response = signerService.updateStatus(
+                EXTERNAL_SIGNER_ID,
+                new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null)
+        );
 
         // then
         assertTrue(response.isSuccess());
     }
 
     @Test
-    void testUpdateStatusWhenStatusIsSetToRevokedAndEjbcaReturnsErrorThenFailResultIsReturned() throws RestClientException, CertificateEncodingException {
+    void testUpdateStatusWhenStatusIsSetToRevokedAndEjbcaReturnsErrorThenFailResultIsReturned() throws CertificateEncodingException {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
 
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
         when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
-        doThrow(new CertificateRevocationException("Test", new RuntimeException())).when(certificateRevocationService).revokeCertificate(issuedCertificateMetadata);
+        doThrow(new CertificateRevocationException("Test", new RuntimeException()))
+                .when(certificateRevocationService).revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED);
 
         // when
-        final var result = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED));
+        final var result = signerService.updateStatus(
+                EXTERNAL_SIGNER_ID,
+                new UpdateSignerStatusRequest(SignerStatus.REVOKED, null)
+        );
 
         // then
         assertErrorResult(result, CertificateRevocationException.class, "Test");
     }
 
     @Test
-    void testUpdateStatusWhenStatusIsSetToRevokedThenEjbcaIsCalled() throws RestClientException, CertificateEncodingException {
+    void testUpdateStatusWhenStatusIsSetToRevokedThenEjbcaIsCalled() throws CertificateEncodingException {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
@@ -499,10 +515,31 @@ class SignerServiceTest {
         when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
 
         // when
-        final var result = signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED));
+        signerService.updateStatus(
+                EXTERNAL_SIGNER_ID,
+                new UpdateSignerStatusRequest(SignerStatus.REVOKED, null));
 
         // then
-        verify(certificateRevocationService).revokeCertificate(issuedCertificateMetadata);
+        verify(certificateRevocationService).revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED);
+    }
+
+    @Test
+    void testUpdateStatusWhenRevocationReasonIsSpecifiedThenEjbcaIsCalledWithGivenReason() throws CertificateEncodingException {
+        // given
+        final var signer = buildSigner(SignerStatus.ACTIVE);
+        final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
+        final var reason = RevocationReason.CESSATION_OF_OPERATION;
+
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+
+        // when
+        signerService.updateStatus(
+                EXTERNAL_SIGNER_ID,
+                new UpdateSignerStatusRequest(SignerStatus.REVOKED, reason));
+
+        // then
+        verify(certificateRevocationService).revokeCertificate(issuedCertificateMetadata, reason);
     }
 
     @Test

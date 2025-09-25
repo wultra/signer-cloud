@@ -40,10 +40,7 @@ import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
-import java.util.Base64;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Service for {@link Signer} operations.
@@ -320,18 +317,19 @@ class SignerService {
      */
     Try<Void> updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
         try {
-            updateStatus(externalSignerId, request.signerStatus());
+            processUpdateStatus(externalSignerId, request);
             return Try.success();
         } catch (final SignerNotFoundException | SignerStatusTransitionException | CertificateRevocationException e) {
             return Try.error(e);
         }
     }
 
-    private void updateStatus(final String externalSignerId, final SignerStatus newStatus) {
+    private void processUpdateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
 
         final var oldStatus = signer.getStatus();
+        final var newStatus = request.signerStatus();
 
         if (oldStatus == newStatus) {
             return;
@@ -345,7 +343,9 @@ class SignerService {
         }
 
         if (newStatus == SignerStatus.REVOKED) {
-            revokeCertificates(signer);
+            final var revocationReason = Optional.ofNullable(request.revocationReason())
+                            .orElse(RevocationReason.UNSPECIFIED);
+            revokeCertificates(signer, revocationReason);
         }
 
         final var updatedSigner = signer.toBuilder()
@@ -356,7 +356,7 @@ class SignerService {
         signerRepository.save(updatedSigner);
     }
 
-    private void revokeCertificates(final Signer signer) {
+    private void revokeCertificates(final Signer signer, final RevocationReason revocationReason) {
         final var signerId = signer.getId();
 
         final var certificatesMetadata = issuedCertificateMetadataRepository.findForRevocation(signerId);
@@ -365,7 +365,7 @@ class SignerService {
         for (var i = 0; i < certificatesToRevokeCount; i++) {
             logger.info("Revoking certificate {}/{} in EJBCA", i + 1, certificatesToRevokeCount);
             final var certificateMetadata = certificatesMetadata.get(i);
-            certificateRevocationService.revokeCertificate(certificateMetadata);
+            certificateRevocationService.revokeCertificate(certificateMetadata, revocationReason);
         }
     }
 

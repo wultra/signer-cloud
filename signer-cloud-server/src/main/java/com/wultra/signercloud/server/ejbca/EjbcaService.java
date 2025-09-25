@@ -18,6 +18,7 @@
 package com.wultra.signercloud.server.ejbca;
 
 import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.signer.RevocationReason;
 import com.wultra.signercloud.server.utils.CertificateUtils;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -112,5 +113,5 @@ public class EjbcaService {
      * @param issuerDN certificate issuer distinguished name
      */
     @Builder
-    public record RevokeCertificateRequest(String serialNumberHex, String issuerDN) {}
+    public record RevokeCertificateRequest(String serialNumberHex, String issuerDN, RevocationReason revocationReason) {}
 }

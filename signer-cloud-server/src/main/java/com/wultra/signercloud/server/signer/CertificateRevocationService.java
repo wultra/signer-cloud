@@ -49,7 +49,7 @@ class CertificateRevocationService {
      * @param certificateMetadata Certificate metadata to be revoked.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    void revokeCertificate(final IssuedCertificateMetadata certificateMetadata) {
+    void revokeCertificate(final IssuedCertificateMetadata certificateMetadata, final RevocationReason revocationReason) {
         final var issuerDn = certificateMetadata.getIssuerDn();
         final var serialNumber = certificateMetadata.getSerialNumber();
 
@@ -58,7 +58,9 @@ class CertificateRevocationService {
 
             final var request = new EjbcaService.RevokeCertificateRequest(
                     serialNumberHex,
-                    issuerDn);
+                    issuerDn,
+                    revocationReason
+            );
 
             ejbcaService.revokeCertificate(request);
 

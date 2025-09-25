@@ -329,7 +329,7 @@ class SignerControllerIntTest {
     @Test
     void testUpdateStatusWhenSignerIsNotFoundThenFailResponseIsReturned() throws Exception {
         // given
-        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null);
 
         // when
         final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
@@ -348,7 +348,7 @@ class SignerControllerIntTest {
     void testUpdateStatusWhenStatusTransitionIsNotValidThenFailResponseIsReturned() throws Exception {
         // given
         createSigner(SignerStatus.REVOKED);
-        final var request = new UpdateSignerStatusRequest(SignerStatus.ACTIVE);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.ACTIVE, null);
 
         // when
         final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
@@ -367,7 +367,7 @@ class SignerControllerIntTest {
     void testUpdateStatusWhenStatusTransitionIsValidThenSuccessResponseIsReturned() throws Exception {
         // given
         createSigner(SignerStatus.ACTIVE);
-        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null);
 
         // when
         final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
@@ -386,7 +386,7 @@ class SignerControllerIntTest {
     void testUpdateStatusWhenStatusTransitionIsValidThenStatusIsUpdatedInDatabase() throws Exception {
         // given
         createSigner(SignerStatus.ACTIVE);
-        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null);
 
         // when
         mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
@@ -407,7 +407,7 @@ class SignerControllerIntTest {
         createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_1_SERIAL_NUMBER, Instant.now().plusSeconds(120));
         createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_2_SERIAL_NUMBER, Instant.now().plusSeconds(120));
 
-        final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED, null);
 
         doNothing()
             .doThrow(new RestClientException("Test REST client exception"))
@@ -446,7 +446,7 @@ class SignerControllerIntTest {
         final var certificateExpirationTimestamp = Instant.now().plusSeconds(120);
         createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_1_SERIAL_NUMBER, certificateExpirationTimestamp);
 
-        final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED, null);
 
         // when
         mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
@@ -470,7 +470,7 @@ class SignerControllerIntTest {
         final var certificateExpirationTimestamp = Instant.now().plusSeconds(120);
         createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_1_SERIAL_NUMBER, certificateExpirationTimestamp);
 
-        final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED);
+        final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED, RevocationReason.CA_COMPROMISE);
 
         final var exception = new RestClientException(
                 "409: Conflict",
@@ -487,6 +487,7 @@ class SignerControllerIntTest {
         final var revokeCertificateRequest = EjbcaService.RevokeCertificateRequest.builder()
                 .serialNumberHex(ISSUED_CERTIFICATE_1_SERIAL_NUMBER_HEX)
                 .issuerDN(CERTIFICATE_ISSUER_DN)
+                .revocationReason(RevocationReason.CA_COMPROMISE)
                 .build();
 
         doThrow(exception)

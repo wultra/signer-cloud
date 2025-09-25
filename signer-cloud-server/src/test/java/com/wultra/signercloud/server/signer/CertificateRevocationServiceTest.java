@@ -73,6 +73,7 @@ class CertificateRevocationServiceTest {
         final var revokeRequest = EjbcaService.RevokeCertificateRequest.builder()
                 .issuerDN(ISSUER_DN)
                 .serialNumberHex(SERIAL_NUMBER_HEX)
+                .revocationReason(RevocationReason.UNSPECIFIED)
                 .build();
 
         doThrow(new RestClientException("Test")).when(ejbcaService).revokeCertificate(revokeRequest);
@@ -80,7 +81,7 @@ class CertificateRevocationServiceTest {
         // when
         final var exception = assertThrows(
                 CertificateRevocationException.class,
-                () -> certificateRevocationService.revokeCertificate(issuedCertificateMetadata)
+                () -> certificateRevocationService.revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED)
         );
 
         // then
@@ -93,7 +94,7 @@ class CertificateRevocationServiceTest {
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
 
         // when
-        certificateRevocationService.revokeCertificate(issuedCertificateMetadata);
+        certificateRevocationService.revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED);
 
         // then
         verify(issuedCertificateMetadataRepository).save(issuedCertificateMetadataArgumentCaptor.capture());
@@ -110,6 +111,7 @@ class CertificateRevocationServiceTest {
         final var revokeRequest = EjbcaService.RevokeCertificateRequest.builder()
                 .issuerDN(ISSUER_DN)
                 .serialNumberHex(SERIAL_NUMBER_HEX)
+                .revocationReason(RevocationReason.UNSPECIFIED)
                 .build();
 
         final var exception = new RestClientException(
@@ -127,7 +129,7 @@ class CertificateRevocationServiceTest {
         doThrow(exception).when(ejbcaService).revokeCertificate(revokeRequest);
 
         // when
-        certificateRevocationService.revokeCertificate(issuedCertificateMetadata);
+        certificateRevocationService.revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED);
 
         // then
         verify(issuedCertificateMetadataRepository).save(issuedCertificateMetadataArgumentCaptor.capture());

@@ -112,16 +112,18 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
 
 ```json
 {
-  "signerStatus": "BLOCKED"
+  "signerStatus": "REVOKED",
+  "revocationReason": "UNSPECIFIED"
 }
 ```
 
 ##### Request Params
 
-| Attribute      | Type     | Description                                                                |
-|:---------------|:---------|:---------------------------------------------------------------------------|
-| `signerId`     | `String` | Activation ID (Registration ID) from PowerAuth.                            |
-| `signerStatus` | `String` | Select new signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED, EXPIRED |
+| Attribute          | Type     | Description                                                                                                                                                                                                                                                                                                                                                                                |
+|:-------------------|:---------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `signerId`         | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                                                                                                                                                                                            |
+| `signerStatus`     | `String` | Select new signer status. ENUM: ACTIVE, BLOCKED, REMOVED, REVOKED, EXPIRED                                                                                                                                                                                                                                                                                                                 |
+| `revocationReason` | `String` | Optional parameter, used only if `signerStatus` is set to REVOKED. It specifies the reason for revocation, which is passed to EJBCA. If not provided, the default value UNSPECIFIED is used. ENUM: NOT_REVOKED, UNSPECIFIED ,KEY_COMPROMISE, CA_COMPROMISE, AFFILIATION_CHANGED, SUPERSEDED, CESSATION_OF_OPERATION, CERTIFICATE_HOLD, REMOVE_FROM_CRL, PRIVILEGES_WITHDRAWN, AA_COMPROMISE |
 
 #### Response 200
 

@@ -97,14 +97,15 @@ class EjbcaRestClient {
     void revokeCertificate(final EjbcaService.RevokeCertificateRequest request) throws RestClientException {
         final var serialNumber = request.serialNumberHex();
         final var issuerDN = request.issuerDN();
+        final var reason = request.revocationReason();
 
         final var url = UriComponentsBuilder.fromPath("/v1/certificate/{issuerDN}/{serialNumber}/revoke")
                         .buildAndExpand(issuerDN, serialNumber)
                         .toUriString();
 
-        final var params = MultiValueMap.fromSingleValue(Map.of("reason", "UNSPECIFIED"));
+        final var params = MultiValueMap.fromSingleValue(Map.of("reason", reason.name()));
 
-        logger.info("Revoking certificate, serialNumberHex: {}, issuerDN: {}", request.serialNumberHex(), request.issuerDN());
+        logger.info("Revoking certificate, serialNumberHex: {}, issuerDN: {}, reason: {}", request.serialNumberHex(), request.issuerDN(), reason);
         restClient.put(url, null, params, null, ParameterizedTypeReference.forType(Void.class));
         logger.info("Successful EJBCA certificate revoke call");
     }
