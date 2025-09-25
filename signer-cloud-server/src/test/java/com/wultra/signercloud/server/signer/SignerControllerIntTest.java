@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -144,7 +145,7 @@ class SignerControllerIntTest {
 
         // then
         final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(errorResponse, ErrorCode.CSR_VERIFICATION_ERROR, "Signature could not be verified due to PowerAuth error: PowerAuth test exception");
+        assertErrorResponse(errorResponse, ErrorCode.SIGNATURE_VERIFICATION_ERROR, "Signature could not be verified due to PowerAuth error: PowerAuth test exception");
     }
 
     @Test
@@ -157,9 +158,10 @@ class SignerControllerIntTest {
                 .build();
 
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var ejbcaException = new RestClientException("Test", HttpStatus.BAD_REQUEST, "Test response", null);
 
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(certificateRequest)).thenThrow(new RestClientException("EJBCA test exception"));
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenThrow(ejbcaException);
 
         // when
         final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
@@ -170,7 +172,7 @@ class SignerControllerIntTest {
 
         // then
         final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(errorResponse, ErrorCode.CERTIFICATE_ENROLLMENT_ERROR, "Certificate could not be enrolled due to EJBCA error: EJBCA test exception");
+        assertErrorResponse(errorResponse, ErrorCode.EJBCA_ERROR, "Error from EJBCA server when enrolling certificate: Test response");
     }
 
     @Test

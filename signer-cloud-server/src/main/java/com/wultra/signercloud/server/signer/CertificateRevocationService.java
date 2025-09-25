@@ -67,7 +67,7 @@ class CertificateRevocationService {
             setRevokedStatus(certificateMetadata);
             logger.info("Certificate successfully revoked. Issuer DN: {}, Serial Number: {}", issuerDn, serialNumber);
         } catch (final RestClientException e) {
-            logger.warn("Exception when revoking certificate: {}", e.getResponse(), e);
+            logger.warn("Error from EJBCA server when revoking certificate: {}", e.getResponse(), e);
 
             if (e.getStatusCode() == HttpStatus.CONFLICT && e.getResponse().contains("has previously been revoked")) {
                 logger.info("Certificate was already revoked in EJBCA. Issuer DN: {}, Serial Number: {}", issuerDn, serialNumber);
@@ -75,7 +75,7 @@ class CertificateRevocationService {
                 return;
             }
 
-            throw new CertificateRevocationException("Certificate could not be revoked because of EJBCA client error: " + e.getMessage(), e);
+            throw new EjbcaException("Error from EJBCA server when revoking certificate: " + e.getMessage(), e);
         }
     }
 

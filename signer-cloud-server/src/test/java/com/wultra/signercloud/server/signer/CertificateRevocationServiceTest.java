@@ -80,12 +80,12 @@ class CertificateRevocationServiceTest {
 
         // when
         final var exception = assertThrows(
-                CertificateRevocationException.class,
+                EjbcaException.class,
                 () -> certificateRevocationService.revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED)
         );
 
         // then
-        assertEquals("Certificate could not be revoked because of EJBCA client error: Test", exception.getMessage());
+        assertEquals("Error from EJBCA server when revoking certificate: Test", exception.getMessage());
     }
 
     @Test

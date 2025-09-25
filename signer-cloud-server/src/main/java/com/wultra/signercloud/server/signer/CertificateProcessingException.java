@@ -18,12 +18,12 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when certificate revocation fails.
+ * Exception thrown in case of certificate processing error.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class CertificateRevocationException extends RuntimeException {
-    public CertificateRevocationException(final String message, final Throwable cause) {
+public class CertificateProcessingException extends RuntimeException {
+    public CertificateProcessingException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

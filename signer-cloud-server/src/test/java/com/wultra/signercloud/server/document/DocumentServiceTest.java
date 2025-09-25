@@ -17,10 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
-import com.wultra.signercloud.server.signer.Signer;
-import com.wultra.signercloud.server.signer.SignerNotFoundException;
-import com.wultra.signercloud.server.signer.SignerRepository;
-import com.wultra.signercloud.server.signer.SignerStatus;
+import com.wultra.signercloud.server.signer.*;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
@@ -303,7 +300,7 @@ class DocumentServiceTest {
 
         // when
         final var exception = assertThrows(
-                SignDocumentException.class,
+                SignerStateException.class,
                 () -> documentService.signDocument(DOCUMENT_UUID, request)
         );
 
@@ -332,7 +329,7 @@ class DocumentServiceTest {
 
         // when
         final var exception = assertThrows(
-                SignDocumentException.class,
+                DocumentStateException.class,
                 () -> documentService.signDocument(DOCUMENT_UUID, request)
         );
 
@@ -366,7 +363,7 @@ class DocumentServiceTest {
 
         // when
         final var exception = assertThrows(
-                SignDocumentException.class,
+                DocumentStateException.class,
                 () -> documentService.signDocument(DOCUMENT_UUID, request)
         );
 
@@ -547,7 +544,7 @@ class DocumentServiceTest {
 
         // when
         final var exception = assertThrows(
-                DownloadDocumentException.class,
+                DocumentStateException.class,
                 () -> documentService.downloadDocument(DOCUMENT_UUID)
         );
 
@@ -584,7 +581,7 @@ class DocumentServiceTest {
 
         // when
         final var exception = assertThrows(
-                RejectDocumentException.class,
+                DocumentStatusTransitionException.class,
                 () -> documentService.rejectDocument(DOCUMENT_UUID, requestBody)
         );
 

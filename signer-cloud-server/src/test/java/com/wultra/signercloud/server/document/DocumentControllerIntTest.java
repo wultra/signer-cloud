@@ -162,7 +162,7 @@ class DocumentControllerIntTest {
 
         // when
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Unsupported content type: image/png");
+        assertErrorResponse(responseBody, ErrorCode.DOCUMENT_UPLOAD_ERROR, "Unsupported content type: image/png");
     }
 
     @Test
@@ -265,7 +265,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Signer is not active. Signer: " + DUMMY_EXTERNAL_SIGNER_ID);
+        assertErrorResponse(responseBody, ErrorCode.SIGNER_STATE_ERROR, "Signer is not active. Signer: " + DUMMY_EXTERNAL_SIGNER_ID);
     }
 
     @Test
@@ -287,7 +287,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Document is not in state when it can be signed");
+        assertErrorResponse(responseBody, ErrorCode.DOCUMENT_STATE_ERROR, "Document is not in state when it can be signed");
     }
 
     @Test
@@ -310,7 +310,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Document signing timeout exceeded");
+        assertErrorResponse(responseBody, ErrorCode.DOCUMENT_STATE_ERROR, "Document signing timeout exceeded");
     }
 
     @Test
@@ -332,7 +332,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Invalid signature");
+        assertErrorResponse(responseBody, ErrorCode.DOCUMENT_SIGNING_ERROR, "Invalid signature");
     }
 
     @Test
@@ -433,7 +433,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Document is not signed yet");
+        assertErrorResponse(responseBody, ErrorCode.DOCUMENT_STATE_ERROR, "Document is not signed yet");
     }
 
     @Test
@@ -504,7 +504,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_GENERIC, "Invalid status in the request body. Expected: REJECTED, actual: WAITING");
+        assertErrorResponse(responseBody, ErrorCode.DOCUMENT_STATUS_TRANSITION_ERROR, "Invalid status in the request body. Expected: REJECTED, actual: WAITING");
     }
 
     @Test

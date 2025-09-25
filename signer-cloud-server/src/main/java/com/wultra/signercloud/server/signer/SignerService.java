@@ -141,7 +141,7 @@ class SignerService {
             saveIssuedCertificate(signer.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
             logger.warn("Exception when encoding certificate to base64 during renewal, externalSignerId: {}", signer.getExternalSignerId());
-            throw new CertificateEnrollmentException("Certificate could not be encoded during renewal", e);
+            throw new CertificateProcessingException("Certificate could not be encoded during renewal", e);
         }
 
         if (callbackNotificationService.isCallbackEnabled(CallbackType.RENEWED)) {
@@ -195,9 +195,15 @@ class SignerService {
         final var userId = request.userId();
         final var csrPem = request.csr();
 
-        final var csrBase64 = convertCsrPemToBase64(csrPem);
+        final var csrBase64 = WHITESPACE_PATTERN.matcher(
+                csrPem
+                        .replace(CSR_PEM_HEADER, "")
+                        .replace(CSR_PEM_FOOTER, "")
+        ).replaceAll("");
 
-        verifySignature(externalSignerId, csrBase64);
+        final var csrVerificationRequest = buildCsrVerificationRequest(externalSignerId, csrBase64);
+
+        verifySignature(csrVerificationRequest);
 
         final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(csrBase64)
@@ -225,20 +231,12 @@ class SignerService {
             final var savedSigner = signerRepository.save(signer);
             saveIssuedCertificate(savedSigner.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
-            logger.warn("Exception when encoding certificate to base64 during creation/update, externalSignerId: {}", externalSignerId);
-            throw new CertificateEnrollmentException("Certificate could not be encoded during creation/update", e);
+            logger.warn("Error when processing certificate, externalSignerId: {}", externalSignerId, e);
+            throw new CertificateProcessingException("Error when processing certificate: " + e.getMessage(), e);
         }
     }
 
-    private static String convertCsrPemToBase64(final String csrPem) {
-        return WHITESPACE_PATTERN.matcher(
-                    csrPem
-                        .replace(CSR_PEM_HEADER, "")
-                        .replace(CSR_PEM_FOOTER, "")
-        ).replaceAll("");
-    }
-
-    private void verifySignature(final String externalSignerId, final String csrBase64) {
+    private VerifyECDSASignatureRequest buildCsrVerificationRequest(final String externalSignerId, final String csrBase64) {
         try {
             final var csrBytes = Base64.getDecoder().decode(csrBase64);
             final var csr = new PKCS10CertificationRequest(csrBytes);
@@ -256,16 +254,22 @@ class SignerService {
             request.setData(dataBase64);
             request.setSignature(signatureBase64);
 
+            return request;
+        } catch (final RuntimeException | IOException e) {
+            logger.warn("Error when processing CSR", e);
+            throw new CsrProcessingException("Error when processing CSR: " + e.getMessage(), e);
+        }
+    }
+
+    private void verifySignature(final VerifyECDSASignatureRequest request) {
+        try {
             final var isSignatureValid = powerAuthService.isSignatureValid(request);
             if (!isSignatureValid) {
-                throw new SignatureVerificationException("Signature is not valid. External signer ID: " + externalSignerId);
+                throw new SignatureVerificationException("Signature is not valid.");
             }
         } catch (final PowerAuthClientException e) {
             logger.warn("Error response from PowerAuth server", e);
             throw new SignatureVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage(), e);
-        } catch (final IOException e) {
-            logger.warn("Error when processing CSR", e);
-            throw new SignatureVerificationException("Error when processing CSR: " + e.getMessage(), e);
         }
     }
 
@@ -273,14 +277,11 @@ class SignerService {
         try {
             return ejbcaService.enrollCertificate(certificateRequest);
         } catch (final RestClientException e) {
-            logger.warn("Error response from EJBCA server", e);
-            throw new CertificateEnrollmentException("Certificate could not be enrolled due to EJBCA error: " + e.getMessage(), e);
-        } catch (final CertificateException e) {
+            logger.warn("Error from EJBCA server when enrolling certificate: {}", e.getResponse(), e);
+            throw new EjbcaException("Error from EJBCA server when enrolling certificate: " + e.getResponse(), e);
+        } catch (final CertificateException | IOException e) {
             logger.warn("Error when processing enrolled certificate", e);
-            throw new CertificateEnrollmentException("Certificate could not be processed: " + e.getMessage(), e);
-        } catch (final IOException e) {
-            logger.warn("Error when reading enrolled certificate", e);
-            throw new CertificateEnrollmentException("Certificate could not be read: " + e.getMessage(), e);
+            throw new CertificateProcessingException("Error when processing enrolled certificate: " + e.getMessage(), e);
         }
     }
 

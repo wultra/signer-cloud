@@ -40,22 +40,52 @@ public enum ErrorCode {
     ERROR_RESOURCE_NOT_FOUND,
 
     /**
-     * Error during Signer certificate enrollment process.
+     * Issue with processing the certificate.
      */
-    CERTIFICATE_ENROLLMENT_ERROR,
+    CERTIFICATE_PROCESSING_ERROR,
 
     /**
-     * Error during Signer certificate revocation process.
+     * Signature verification via PowerAuth server failed.
      */
-    CERTIFICATE_REVOCATION_ERROR,
-
-    /**
-     * Error during Signer CSR verification process.
-     */
-    CSR_VERIFICATION_ERROR,
+    SIGNATURE_VERIFICATION_ERROR,
 
     /**
      * Invalid status change of the Signer.
      */
-    SIGNER_STATUS_TRANSITION_ERROR
+    SIGNER_STATUS_TRANSITION_ERROR,
+
+    /**
+     * Error when processing the CSR (Certificate Signing Request).
+     */
+    CSR_PROCESSING_ERROR,
+
+    /**
+     * Error returned from EJBCA.
+     */
+    EJBCA_ERROR,
+
+    /**
+     * Error when document could not be uploaded.
+     */
+    DOCUMENT_UPLOAD_ERROR,
+
+    /**
+     * Invalid status change of the Document.
+     */
+    DOCUMENT_STATUS_TRANSITION_ERROR,
+
+    /**
+     * Document is in invalid state for the requested operation.
+     */
+    DOCUMENT_STATE_ERROR,
+
+    /**
+     * Error when signing the document. Either signature is invalid or error when assembling the signed document.
+     */
+    DOCUMENT_SIGNING_ERROR,
+
+    /**
+     * Signer is in invalid state for the requested operation.
+     */
+    SIGNER_STATE_ERROR
 }

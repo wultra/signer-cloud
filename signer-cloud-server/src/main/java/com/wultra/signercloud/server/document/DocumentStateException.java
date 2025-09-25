@@ -15,15 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
+package com.wultra.signercloud.server.document;
 
 /**
- * Exception thrown when certificate enrollment fails.
+ * Exception thrown in case the document is in invalid state for the requested operation.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class CertificateEnrollmentException extends RuntimeException {
-    public CertificateEnrollmentException(final String message, final Throwable cause) {
-        super(message, cause);
+public class DocumentStateException extends RuntimeException {
+    public DocumentStateException(final String message) {
+        super(message);
     }
 }

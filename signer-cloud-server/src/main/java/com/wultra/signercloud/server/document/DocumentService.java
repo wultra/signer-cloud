@@ -17,10 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
-import com.wultra.signercloud.server.signer.Signer;
-import com.wultra.signercloud.server.signer.SignerNotFoundException;
-import com.wultra.signercloud.server.signer.SignerRepository;
-import com.wultra.signercloud.server.signer.SignerStatus;
+import com.wultra.signercloud.server.signer.*;
 import com.wultra.signercloud.server.utils.CertificateUtils;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
@@ -107,7 +104,7 @@ class DocumentService {
 
     private void processRetention(final DocumentStatus status, final Duration retentionPeriod, final Consumer<String> resultConsumer, final Instant now) {
         if (retentionPeriod != null) {
-            long deletedCount = documentRepository.deleteByStatusAndTimestampCreatedBefore(status, now.minus(retentionPeriod));
+            final long deletedCount = documentRepository.deleteByStatusAndTimestampCreatedBefore(status, now.minus(retentionPeriod));
             resultConsumer.accept(String.valueOf(deletedCount));
         } else {
             resultConsumer.accept("disabled");
@@ -258,18 +255,18 @@ class DocumentService {
 
     private void verifyDocumentCanBeSigned(final Signer signer, final Document document) {
         if (signer.getStatus() != SignerStatus.ACTIVE) {
-            throw new SignDocumentException("Signer is not active. Signer: " + signer.getExternalSignerId());
+            throw new SignerStateException("Signer is not active. Signer: " + signer.getExternalSignerId());
         }
 
         if (document.getStatus() != DocumentStatus.WAITING) {
-            throw new SignDocumentException("Document is not in state when it can be signed");
+            throw new DocumentStateException("Document is not in state when it can be signed");
         }
 
         final var waitingTimeout = configurationProperties.getWaiting().getTimeout();
         if (waitingTimeout != null) {
             final var documentSigningDeadline = document.getTimestampCreated().plus(waitingTimeout);
             if (Instant.now().isAfter(documentSigningDeadline)) {
-                throw new SignDocumentException("Document signing timeout exceeded");
+                throw new DocumentStateException("Document signing timeout exceeded");
             }
         }
     }
@@ -308,8 +305,8 @@ class DocumentService {
             final var x509Certificate = signer.getX509Certificate();
             return new CertificateToken(x509Certificate);
         } catch (final CertificateException e) {
-            logger.warn("Exception when processing certificate ", e);
-            throw new SignDocumentException("Exception when processing certificate: " + e.getMessage(), e);
+            logger.warn("Exception when processing certificate", e);
+            throw new CertificateProcessingException("Exception when processing certificate: " + e.getMessage(), e);
         }
     }
 
@@ -325,7 +322,7 @@ class DocumentService {
             return chain;
         } catch (final CertificateException e) {
             logger.warn("Exception when processing certificate chain", e);
-            throw new SignDocumentException("Exception when processing certificate chain: " + e.getMessage(), e);
+            throw new CertificateProcessingException("Exception when processing certificate chain: " + e.getMessage(), e);
         }
     }
 
@@ -373,7 +370,7 @@ class DocumentService {
                 .orElseThrow(() -> new DocumentContentNotFoundException(documentUuid));
 
         if (document.getStatus() != DocumentStatus.SIGNED) {
-            throw new DownloadDocumentException("Document is not signed yet");
+            throw new DocumentStateException("Document is not signed yet");
         }
 
         return new ByteArrayResource(documentContent.getContent());
@@ -389,7 +386,7 @@ class DocumentService {
     RejectDocumentResponse rejectDocument(final String documentUuid, final RejectDocumentRequest requestBody) {
         final var requestedStatus = requestBody.status();
         if (requestedStatus != DocumentStatus.REJECTED) {
-            throw new RejectDocumentException("Invalid status in the request body. Expected: %s, actual: %s".formatted(
+            throw new DocumentStatusTransitionException("Invalid status in the request body. Expected: %s, actual: %s".formatted(
                     DocumentStatus.REJECTED,
                     requestedStatus)
             );

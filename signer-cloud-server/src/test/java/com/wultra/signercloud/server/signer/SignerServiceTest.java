@@ -32,6 +32,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
+import org.springframework.http.HttpStatus;
 
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
@@ -156,7 +157,7 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                SignatureVerificationException.class,
+                CsrProcessingException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
@@ -178,26 +179,27 @@ class SignerServiceTest {
         );
 
         // then
-        assertEquals("Signature is not valid. External signer ID: " + EXTERNAL_SIGNER_ID, exception.getMessage());
+        assertEquals("Signature is not valid.", exception.getMessage());
     }
 
     @Test
     void testCreateUpdateSignerWhenEjbcaClientReturnsErrorThenExceptionIsThrown() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
         // given
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var ejbcaException = new RestClientException("Test", HttpStatus.BAD_REQUEST, "Test response", null);
 
         when(powerAuthService.isSignatureValid(powerAuthRequest))
                 .thenReturn(true);
-        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest)).thenThrow(new RestClientException("Rest client test exception"));
+        when(ejbcaService.enrollCertificate(ejbcaCertificateRequest)).thenThrow(ejbcaException);
 
         // when
         final var exception = assertThrows(
-                CertificateEnrollmentException.class,
+                EjbcaException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
         // then
-        assertEquals("Certificate could not be enrolled due to EJBCA error: Rest client test exception", exception.getMessage());
+        assertEquals("Error from EJBCA server when enrolling certificate: Test response", exception.getMessage());
     }
 
     @Test
@@ -212,12 +214,12 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                CertificateEnrollmentException.class,
+                CertificateProcessingException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
         // then
-        assertEquals("Certificate could not be processed: Certificate test exception", exception.getMessage());
+        assertEquals("Error when processing enrolled certificate: Certificate test exception", exception.getMessage());
     }
 
     @Test
@@ -232,12 +234,12 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                CertificateEnrollmentException.class,
+                CertificateProcessingException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
         // then
-        assertEquals("Certificate could not be read: Certificate IO test exception", exception.getMessage());
+        assertEquals("Error when processing enrolled certificate: Certificate IO test exception", exception.getMessage());
     }
 
     @Test
@@ -258,12 +260,12 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                CertificateEnrollmentException.class,
+                CertificateProcessingException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
         // then
-        assertEquals("Certificate could not be encoded during creation/update", exception.getMessage());
+        assertEquals("Error when processing certificate: Certificate encoding test exception", exception.getMessage());
     }
 
     @Test
@@ -479,12 +481,12 @@ class SignerServiceTest {
 
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
         when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
-        doThrow(new CertificateRevocationException("Test", new RuntimeException()))
+        doThrow(new CertificateProcessingException("Test", new RuntimeException()))
                 .when(certificateRevocationService).revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED);
 
         // when
         final var exception = assertThrows(
-                CertificateRevocationException.class,
+                CertificateProcessingException.class,
                 () -> signerService.updateStatus(EXTERNAL_SIGNER_ID, new UpdateSignerStatusRequest(SignerStatus.REVOKED, null))
         );
 
