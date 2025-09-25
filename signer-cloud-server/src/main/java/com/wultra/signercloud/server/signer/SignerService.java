@@ -262,10 +262,10 @@ class SignerService {
             }
         } catch (final PowerAuthClientException e) {
             logger.warn("Error response from PowerAuth server", e);
-            throw new SignatureVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage());
+            throw new SignatureVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage(), e);
         } catch (final IOException e) {
             logger.warn("Error when processing CSR", e);
-            throw new SignatureVerificationException("Error when processing CSR: " + e.getMessage());
+            throw new SignatureVerificationException("Error when processing CSR: " + e.getMessage(), e);
         }
     }
 
@@ -274,13 +274,13 @@ class SignerService {
             return ejbcaService.enrollCertificate(certificateRequest);
         } catch (final RestClientException e) {
             logger.warn("Error response from EJBCA server", e);
-            throw new CertificateEnrollmentException("Certificate could not be enrolled due to EJBCA error: " + e.getMessage());
+            throw new CertificateEnrollmentException("Certificate could not be enrolled due to EJBCA error: " + e.getMessage(), e);
         } catch (final CertificateException e) {
             logger.warn("Error when processing enrolled certificate", e);
-            throw new CertificateEnrollmentException("Certificate could not be processed: " + e.getMessage());
+            throw new CertificateEnrollmentException("Certificate could not be processed: " + e.getMessage(), e);
         } catch (final IOException e) {
             logger.warn("Error when reading enrolled certificate", e);
-            throw new CertificateEnrollmentException("Certificate could not be read: " + e.getMessage());
+            throw new CertificateEnrollmentException("Certificate could not be read: " + e.getMessage(), e);
         }
     }
 
@@ -318,10 +318,10 @@ class SignerService {
      * @param externalSignerId identifier of the signer to update
      * @param request request containing the new status
      */
-    void updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) throws RestClientException {
+    void updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
 
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
-                .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
+                .orElseThrow(() -> new SignerNotFoundException(externalSignerId));
 
         final var oldStatus = signer.getStatus();
         final var newStatus = request.signerStatus();
@@ -373,7 +373,7 @@ class SignerService {
     SignerDetailResponse getDetail(final String externalSignerId) {
         return signerRepository.findByExternalSignerId(externalSignerId)
                 .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getUserId(), signer.getStatus()))
-                .orElseThrow(() -> new SignerNotFoundException("Signer not found: " + externalSignerId));
+                .orElseThrow(() -> new SignerNotFoundException(externalSignerId));
     }
 
     @Builder

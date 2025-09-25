@@ -423,7 +423,7 @@ class SignerServiceTest {
         );
 
         // then
-        assertEquals("Signer not found for external signer ID: " + EXTERNAL_SIGNER_ID, exception.getMessage());
+        assertEquals("Signer with ID %s not found".formatted(EXTERNAL_SIGNER_ID), exception.getMessage());
     }
 
     @Test
@@ -541,7 +541,7 @@ class SignerServiceTest {
         );
 
         // then
-        assertEquals("Signer not found: " + EXTERNAL_SIGNER_ID, exception.getMessage());
+        assertEquals("Signer with ID %s not found".formatted(EXTERNAL_SIGNER_ID), exception.getMessage());
     }
 
     @Test

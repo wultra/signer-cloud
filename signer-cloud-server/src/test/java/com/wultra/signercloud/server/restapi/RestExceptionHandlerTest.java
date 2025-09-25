@@ -94,13 +94,13 @@ class RestExceptionHandlerTest {
     @Test
     void testHandleSignerNotFoundExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
-        final var message = "Signer not found: dummyExternalSignerId";
+        // -
 
         // When
-        final var response = restExceptionHandler.handleSignerNotFoundException(new SignerNotFoundException(message));
+        final var response = restExceptionHandler.handleSignerNotFoundException(new SignerNotFoundException("dummyExternalSignerId"));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+        assertErrorResponse(response, "Signer not found: dummyExternalSignerId", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -118,13 +118,13 @@ class RestExceptionHandlerTest {
     @Test
     void testHandleDocumentNotFoundExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
-        final var message = "Document not found for document ID: 123";
+        // -
 
         // When
-        final var response = restExceptionHandler.handleDocumentNotFoundException(new DocumentNotFoundException(message));
+        final var response = restExceptionHandler.handleDocumentNotFoundException(new DocumentNotFoundException("123"));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+        assertErrorResponse(response, "Document not found for document ID: 123", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
     }
 
     @Test

@@ -94,13 +94,7 @@ class SignerController {
     SignerResponse updateStatus(@PathVariable final String externalSignerId, @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
         logger.info("action: updateSignerStatus, state: initiated, externalSignerId: {}, newStatus: {}", externalSignerId, requestBody.signerStatus());
         final var result =  Try.execute(
-                () -> {
-                    try {
-                        signerService.updateStatus(externalSignerId, requestBody);
-                    } catch (RestClientException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+                () -> signerService.updateStatus(externalSignerId, requestBody)
         );
 
         if (result.isSuccess()) {

@@ -181,7 +181,7 @@ class DocumentControllerIntTest {
 
         // when
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Signer not found for external signer ID: dummyExternalSignerId");
+        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Signer with ID %s not found".formatted(DUMMY_EXTERNAL_SIGNER_ID));
     }
 
     @Test
@@ -243,7 +243,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Document not found for document ID: " + DOCUMENT_UUID);
+        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Document with ID %s not found".formatted(DOCUMENT_UUID));
     }
 
     @Test
@@ -414,7 +414,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Document not found for document ID: " + DOCUMENT_UUID);
+        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Document with ID %s not found".formatted(DOCUMENT_UUID));
     }
 
     @Test
@@ -522,7 +522,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Document not found for document ID: " + DOCUMENT_UUID);
+        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Document with ID %s not found".formatted(DOCUMENT_UUID));
     }
 
     @Test

@@ -23,10 +23,6 @@ package com.wultra.signercloud.server.signer;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public class CertificateEnrollmentException extends RuntimeException {
-    public CertificateEnrollmentException(final String message) {
-        super(message);
-    }
-
     public CertificateEnrollmentException(final String message, final Throwable cause) {
         super(message, cause);
     }

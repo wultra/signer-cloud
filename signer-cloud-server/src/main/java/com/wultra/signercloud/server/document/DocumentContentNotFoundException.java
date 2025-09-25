@@ -18,17 +18,12 @@
 package com.wultra.signercloud.server.document;
 
 /**
- * Exception thrown when document signing fails.
+ * Exception thrown when a {@link DocumentContent} is not found in the system.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class SignDocumentException extends RuntimeException {
-
-    public SignDocumentException(final String message) {
-        super(message);
-    }
-
-    public SignDocumentException(final String message, final Throwable cause) {
-        super(message, cause);
+public class DocumentContentNotFoundException extends RuntimeException {
+    public DocumentContentNotFoundException(final String documentUuid) {
+        super("Content for document ID %s not found".formatted(documentUuid));
     }
 }

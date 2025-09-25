@@ -146,7 +146,7 @@ class DocumentServiceTest {
         );
 
         // then
-        assertEquals("Signer not found for external signer ID: dummyExternalSignerId", exception.getMessage());
+        assertEquals("Signer with ID %s not found".formatted(EXTERNAL_SIGNER_ID), exception.getMessage());
     }
 
     @Test
@@ -232,7 +232,7 @@ class DocumentServiceTest {
         );
 
         // then
-        assertEquals("Document not found for document ID: " + DOCUMENT_UUID, exception.getMessage());
+        assertEquals("Document with ID %s not found".formatted(DOCUMENT_UUID), exception.getMessage());
     }
 
     @Test
@@ -249,12 +249,12 @@ class DocumentServiceTest {
 
         // when
         final var exception = assertThrows(
-                DocumentNotFoundException.class,
+                DocumentContentNotFoundException.class,
                 () -> documentService.signDocument(DOCUMENT_UUID, request)
         );
 
         // then
-        assertEquals("Document content not found for document ID: " + DOCUMENT_UUID, exception.getMessage());
+        assertEquals("Content for document ID %s not found".formatted(DOCUMENT_UUID), exception.getMessage());
     }
 
     @Test
@@ -280,7 +280,7 @@ class DocumentServiceTest {
         );
 
         // then
-        assertEquals("Signer not found for document ID: " + DOCUMENT_UUID, exception.getMessage());
+        assertEquals("Signer with ID %s not found".formatted(SIGNER_ID), exception.getMessage());
     }
 
     @Test
@@ -509,7 +509,7 @@ class DocumentServiceTest {
         );
 
         // then
-        assertEquals("Document not found for document ID: " + DOCUMENT_UUID, exception.getMessage());
+        assertEquals("Document with ID %s not found".formatted(DOCUMENT_UUID), exception.getMessage());
     }
 
     @Test
@@ -524,12 +524,12 @@ class DocumentServiceTest {
 
         // when
         final var exception = assertThrows(
-                DocumentNotFoundException.class,
+                DocumentContentNotFoundException.class,
                 () -> documentService.downloadDocument(DOCUMENT_UUID)
         );
 
         // then
-        assertEquals("Document content not found for document ID: " + DOCUMENT_UUID, exception.getMessage());
+        assertEquals("Content for document ID %s not found".formatted(DOCUMENT_UUID), exception.getMessage());
     }
 
     @Test
@@ -606,7 +606,7 @@ class DocumentServiceTest {
         );
 
         // then
-        assertEquals("Document not found for document ID: " + DOCUMENT_UUID, exception.getMessage());
+        assertEquals("Document with ID %s not found".formatted(DOCUMENT_UUID), exception.getMessage());
     }
 
     @Test

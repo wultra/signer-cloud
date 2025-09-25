@@ -26,4 +26,8 @@ public class SignatureVerificationException extends RuntimeException {
     public SignatureVerificationException(final String message) {
         super(message);
     }
+
+    public SignatureVerificationException(final String message, final Throwable cause) {
+        super(message, cause);
+    }
 }
