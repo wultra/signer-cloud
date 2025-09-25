@@ -19,6 +19,7 @@ package com.wultra.signercloud.server.restapi;
 
 import com.wultra.signercloud.server.document.*;
 import com.wultra.signercloud.server.signer.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -31,6 +32,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @ControllerAdvice
+@Slf4j
 public class RestExceptionHandler {
     private static final String ERROR_STATUS = "ERROR";
 
@@ -196,6 +198,19 @@ public class RestExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerStatusTransitionException(final SignerStatusTransitionException ex) {
         return produceBadRequest(ErrorCode.SIGNER_STATUS_TRANSITION_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for generic {@link RuntimeException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * This is a fallback handler for all unhandled runtime exceptions.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleRuntimeException(final RuntimeException ex) {
+        logger.error("Unexpected runtime exception occurred", ex);
+        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
     }
 
     private static ResponseEntity<ErrorResponse> produceBadRequest(final ErrorCode errorCode, final String message) {

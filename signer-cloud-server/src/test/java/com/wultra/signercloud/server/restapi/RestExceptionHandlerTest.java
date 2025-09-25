@@ -51,7 +51,6 @@ class RestExceptionHandlerTest {
     private static final String EXPECTED_SPECIFIC_MESSAGE = "Validation failed: " + DUMMY_FIELD_NAME + " " + ERROR_MESSAGE;
     private static final String EXPECTED_GENERIC_MESSAGE = "Validation failed: Unknown validation error";
 
-
     private BindingResult bindingResult;
 
     @Mock
@@ -245,6 +244,18 @@ class RestExceptionHandlerTest {
 
         // Then
         assertErrorResponse(response, message, ErrorCode.SIGNER_STATUS_TRANSITION_ERROR);
+    }
+
+    @Test
+    void testHandleRuntimeExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Generic runtime exception";
+
+        // When
+        final var response = restExceptionHandler.handleRuntimeException(new RuntimeException(message));
+
+        // Then
+        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
     }
 
     private void assertErrorResponse(
