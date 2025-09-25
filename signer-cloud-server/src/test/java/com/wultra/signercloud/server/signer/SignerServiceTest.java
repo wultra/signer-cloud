@@ -105,7 +105,7 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                PowerAuthClientException.class,
+                SignatureVerificationException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
@@ -336,7 +336,7 @@ class SignerServiceTest {
         );
 
         // then
-        assertEquals("Signer not found", exception.getMessage());
+        assertEquals("Signer not found for external signer ID: " + EXTERNAL_SIGNER_ID, exception.getMessage());
     }
 
     @Test
@@ -367,7 +367,7 @@ class SignerServiceTest {
         );
 
         // then
-        assertEquals("Signer status transition is not valid", exception.getMessage());
+        assertEquals("Invalid status transition from REVOKED to BLOCKED", exception.getMessage());
     }
 
     @Test
@@ -410,7 +410,7 @@ class SignerServiceTest {
         );
 
         // then
-        assertEquals("Signer not found", exception.getMessage());
+        assertEquals("Signer not found: " + EXTERNAL_SIGNER_ID, exception.getMessage());
     }
 
     @Test
