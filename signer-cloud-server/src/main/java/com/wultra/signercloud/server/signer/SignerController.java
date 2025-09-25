@@ -17,6 +17,8 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.restapi.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -59,7 +61,9 @@ class SignerController {
     @PostMapping
     SignerResponse createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
         logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.signerId());
-        final var result = signerService.createUpdateSigner(requestBody);
+        final var result = Try.execute(
+                () -> signerService.createUpdateSigner(requestBody)
+        );
 
         if (result.isSuccess()) {
             logger.info("action: createUpdateSigner, state: succeeded");
@@ -89,7 +93,15 @@ class SignerController {
     @PutMapping("/{externalSignerId}")
     SignerResponse updateStatus(@PathVariable final String externalSignerId, @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
         logger.info("action: updateSignerStatus, state: initiated, externalSignerId: {}, newStatus: {}", externalSignerId, requestBody.signerStatus());
-        final var result =  signerService.updateStatus(externalSignerId, requestBody);
+        final var result =  Try.execute(
+                () -> {
+                    try {
+                        signerService.updateStatus(externalSignerId, requestBody);
+                    } catch (RestClientException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+        );
 
         if (result.isSuccess()) {
             logger.info("action: updateSignerStatus, state: succeeded");
@@ -118,7 +130,9 @@ class SignerController {
     @GetMapping("/{externalSignerId}")
     SignerDetailResponse getDetail(@PathVariable final String externalSignerId) throws Throwable {
         logger.info("action: getSignerDetail, state: initiated, externalSignerId: {}", externalSignerId);
-        final var result = signerService.getDetail(externalSignerId);
+        final var result = Try.execute(
+                () -> signerService.getDetail(externalSignerId)
+        );
 
         if (result.isSuccess()) {
             logger.info("action: getSignerDetail, state: succeeded");

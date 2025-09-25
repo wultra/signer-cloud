@@ -50,6 +50,15 @@ public sealed interface Try<T> permits Try.TryError, Try.TrySuccess{
         }
     }
 
+    static <T> Try<T> execute(final Runnable runnable) {
+        try {
+            runnable.run();
+            return Try.success();
+        } catch (final RuntimeException e) {
+            return Try.error(e);
+        }
+    }
+
     /**
      * Represents a successful operation.
      */

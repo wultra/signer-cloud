@@ -26,7 +26,6 @@ import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
 import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
-import com.wultra.signercloud.server.restapi.Try;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -183,18 +182,8 @@ class SignerService {
      * a certificate via the EJBCA service and finally stores the signer in the database.
      *
      * @param request the request containing details of signer
-     * @return result of operation as {@link Try}
      */
-    Try<Void> createUpdateSigner(final CreateUpdateSignerRequest request) {
-        try {
-            processCreateUpdateSigner(request);
-            return Try.success();
-        } catch (final SignatureVerificationException | CertificateEnrollmentException e) {
-            return Try.error(e);
-        }
-    }
-
-    private void processCreateUpdateSigner(final CreateUpdateSignerRequest request) {
+    void createUpdateSigner(final CreateUpdateSignerRequest request) {
         final var externalSignerId = request.signerId();
         final var userId = request.userId();
         final var csr = request.csr();
@@ -293,22 +282,14 @@ class SignerService {
      *
      * @param externalSignerId identifier of the signer to update
      * @param request request containing the new status
-     * @return result of operation as {@link Try}
      */
-    Try<Void> updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
-        try {
-            updateStatus(externalSignerId, request.signerStatus());
-            return Try.success();
-        } catch (SignerNotFoundException | SignerStatusTransitionException | RestClientException e) {
-            return Try.error(e);
-        }
-    }
+    void updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) throws RestClientException {
 
-    private void updateStatus(final String externalSignerId, final SignerStatus newStatus) throws RestClientException {
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
 
         final var oldStatus = signer.getStatus();
+        final var newStatus = request.signerStatus();
 
         if (oldStatus == newStatus) {
             return;
@@ -337,13 +318,12 @@ class SignerService {
      * Get details of {@link Signer}.
      *
      * @param externalSignerId identifier of the signer to get details for
-     * @return result as {@link Try} containing {@link SignerDetailResponse} or an error
+     * @return details of the signer
      */
-    Try<SignerDetailResponse> getDetail(final String externalSignerId) {
+    SignerDetailResponse getDetail(final String externalSignerId) {
         return signerRepository.findByExternalSignerId(externalSignerId)
                 .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getUserId(), signer.getStatus()))
-                .map(Try::success)
-                .orElse(Try.error(new SignerNotFoundException("Signer not found: " + externalSignerId)));
+                .orElseThrow(() -> new SignerNotFoundException("Signer not found: " + externalSignerId));
     }
 
     @Builder
