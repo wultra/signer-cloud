@@ -18,16 +18,12 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when verification of the signature in {@link CreateUpdateSignerRequest#csr} fails.
+ * Exception thrown by Certificate Authority.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class SignatureVerificationException extends RuntimeException {
-    public SignatureVerificationException(final String message) {
-        super(message);
-    }
-
-    public SignatureVerificationException(final String message, final Throwable cause) {
+public class CertificateAuthorityException extends RuntimeException {
+    public CertificateAuthorityException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

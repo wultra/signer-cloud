@@ -265,11 +265,11 @@ class SignerService {
         try {
             final var isSignatureValid = powerAuthService.isSignatureValid(request);
             if (!isSignatureValid) {
-                throw new SignatureVerificationException("Signature is not valid.");
+                throw new CsrInvalidSignatureException("Signature is not valid.");
             }
         } catch (final PowerAuthClientException e) {
             logger.warn("Error response from PowerAuth server", e);
-            throw new SignatureVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage(), e);
+            throw new CsrVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage(), e);
         }
     }
 
@@ -278,7 +278,7 @@ class SignerService {
             return ejbcaService.enrollCertificate(certificateRequest);
         } catch (final RestClientException e) {
             logger.warn("Error from EJBCA server when enrolling certificate: {}", e.getResponse(), e);
-            throw new EjbcaException("Error from EJBCA server when enrolling certificate: " + e.getResponse(), e);
+            throw new CertificateAuthorityException("Error from EJBCA server when enrolling certificate: " + e.getResponse(), e);
         } catch (final CertificateException | IOException e) {
             logger.warn("Error when processing enrolled certificate", e);
             throw new CertificateProcessingException("Error when processing enrolled certificate: " + e.getMessage(), e);

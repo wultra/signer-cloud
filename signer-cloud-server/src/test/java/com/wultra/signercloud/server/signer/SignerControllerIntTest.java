@@ -140,12 +140,12 @@ class SignerControllerIntTest {
         final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isBadRequest())
+            .andExpect(status().isInternalServerError())
             .andReturn();
 
         // then
         final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(errorResponse, ErrorCode.SIGNATURE_VERIFICATION_ERROR, "Signature could not be verified due to PowerAuth error: PowerAuth test exception");
+        assertErrorResponse(errorResponse, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR, "Signature could not be verified due to PowerAuth error: PowerAuth test exception");
     }
 
     @Test
@@ -172,7 +172,7 @@ class SignerControllerIntTest {
 
         // then
         final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(errorResponse, ErrorCode.EJBCA_ERROR, "Error from EJBCA server when enrolling certificate: Test response");
+        assertErrorResponse(errorResponse, ErrorCode.CERTIFICATE_AUTHORITY_ERROR, "Error from EJBCA server when enrolling certificate: Test response");
     }
 
     @Test
@@ -333,7 +333,7 @@ class SignerControllerIntTest {
 
         // then
         final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(errorResponse, ErrorCode.CSR_PROCESSING_ERROR, "Error when processing CSR: long form definite-length more than 31 bits");
+        assertErrorResponse(errorResponse, ErrorCode.CSR_INVALID_SIGNATURE_ERROR, "Error when processing CSR: long form definite-length more than 31 bits");
     }
 
     @Test
@@ -368,7 +368,7 @@ class SignerControllerIntTest {
 
         // then
         final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(errorResponse, ErrorCode.SIGNER_STATUS_TRANSITION_ERROR, "Invalid status transition from REVOKED to ACTIVE");
+        assertErrorResponse(errorResponse, ErrorCode.ILLEGAL_OPERATION_ERROR, "Invalid status transition from REVOKED to ACTIVE");
     }
 
     @Test

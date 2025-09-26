@@ -18,12 +18,13 @@
 package com.wultra.signercloud.server.document;
 
 /**
- * Exception thrown when assembling signed document fails.
+ * Exception thrown when signature for the {@link Document} is invalid.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class DocumentSigningException extends RuntimeException {
-    public DocumentSigningException(final String message, final Throwable cause) {
-        super(message, cause);
+public class DocumentInvalidSignatureException extends RuntimeException {
+
+    public DocumentInvalidSignatureException(final String message) {
+        super(message);
     }
 }

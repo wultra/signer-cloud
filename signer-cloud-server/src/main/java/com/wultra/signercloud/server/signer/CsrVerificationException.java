@@ -18,12 +18,12 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown in case of EJBCA related error.
+ * Exception thrown when Power Auth is not able to verify the CSR (Certificate Signing Request).
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class EjbcaException extends RuntimeException {
-    public EjbcaException(final String message, final Throwable cause) {
+public class CsrVerificationException extends RuntimeException {
+    public CsrVerificationException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

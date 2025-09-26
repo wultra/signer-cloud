@@ -75,7 +75,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleValidationException(exception);
 
         // Then
-        assertErrorResponse(response, EXPECTED_SPECIFIC_MESSAGE, ErrorCode.REQUEST_VALIDATION_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, EXPECTED_SPECIFIC_MESSAGE, ErrorCode.REQUEST_VALIDATION_ERROR);
     }
 
     @Test
@@ -87,7 +87,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleValidationException(exception);
 
         // Then
-        assertErrorResponse(response, EXPECTED_GENERIC_MESSAGE, ErrorCode.REQUEST_VALIDATION_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, EXPECTED_GENERIC_MESSAGE, ErrorCode.REQUEST_VALIDATION_ERROR);
     }
 
     @Test
@@ -99,7 +99,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleDocumentContentNotFoundException(new DocumentContentNotFoundException("123"));
 
         // Then
-        assertErrorResponse(response, "Content for document ID 123 not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, "Content for document ID 123 not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -111,7 +111,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleDocumentNotFoundException(new DocumentNotFoundException("123"));
 
         // Then
-        assertErrorResponse(response, "Document with ID 123 not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, "Document with ID 123 not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -123,7 +123,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleDocumentStateException(new DocumentStateException(message));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.DOCUMENT_STATE_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.ILLEGAL_OPERATION_ERROR);
     }
 
     @Test
@@ -135,7 +135,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleDocumentStatusTransitionException(new DocumentStatusTransitionException(message));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.DOCUMENT_STATUS_TRANSITION_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.ILLEGAL_OPERATION_ERROR);
     }
 
     @Test
@@ -147,19 +147,31 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleDocumentUploadException(new DocumentUploadException(message));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.DOCUMENT_UPLOAD_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.DOCUMENT_UPLOAD_ERROR);
     }
 
     @Test
     void testHandleDocumentSigningExceptionWhenSigningExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
-        final var message = "Document signing timeout exceeded";
+        final var message = "Error when assembling signed document content";
 
         // When
-        final var response = restExceptionHandler.handleDocumentSigningException(new DocumentSigningException(message));
+        final var response = restExceptionHandler.handleDocumentSigningException(new DocumentSigningException(message, new RuntimeException()));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.DOCUMENT_SIGNING_ERROR);
+        assertErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, response, message, ErrorCode.DOCUMENT_SIGNING_ERROR);
+    }
+
+    @Test
+    void testHandleDocumentInvalidSignatureExceptionWhenSigningExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Invalid document signature";
+
+        // When
+        final var response = restExceptionHandler.handleDocumentInvalidSignatureException(new DocumentInvalidSignatureException(message));
+
+        // Then
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.DOCUMENT_INVALID_SIGNATURE_ERROR);
     }
 
     @Test
@@ -171,7 +183,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleCertificateProcessingException(new CertificateProcessingException(message, new RuntimeException()));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.CERTIFICATE_PROCESSING_ERROR);
+        assertErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, response, message, ErrorCode.CERTIFICATE_PROCESSING_ERROR);
     }
 
     @Test
@@ -183,31 +195,43 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleCsrProcessingException(new CsrProcessingException(message, new RuntimeException()));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.CSR_PROCESSING_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.CSR_INVALID_SIGNATURE_ERROR);
     }
 
     @Test
-    void testHandleEjbcaExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+    void testHandleCertificateAuthorityExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
         final var message = "Ejbca error";
 
         // When
-        final var response = restExceptionHandler.handleEjbcaException(new EjbcaException(message, new RuntimeException()));
+        final var response = restExceptionHandler.handleCertificateAuthorityException(new CertificateAuthorityException(message, new RuntimeException()));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.EJBCA_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.CERTIFICATE_AUTHORITY_ERROR);
     }
 
     @Test
-    void testHandleSignatureVerificationExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+    void testHandleCsrInvalidSignatureExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Invalid CSR signature";
+
+        // When
+        final var response = restExceptionHandler.handleSignatureVerificationException(new CsrInvalidSignatureException(message));
+
+        // Then
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.CSR_INVALID_SIGNATURE_ERROR);
+    }
+
+    @Test
+    void testHandleCsrVerificationExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
         final var message = "Signature verification failed";
 
         // When
-        final var response = restExceptionHandler.handleSignatureVerificationException(new SignatureVerificationException(message));
+        final var response = restExceptionHandler.handleCsrVerificationException(new CsrVerificationException(message, new RuntimeException()));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.SIGNATURE_VERIFICATION_ERROR);
+        assertErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, response, message, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR);
     }
 
     @Test
@@ -219,7 +243,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleSignerNotFoundException(new SignerNotFoundException("abc"));
 
         // Then
-        assertErrorResponse(response, "Signer with ID abc not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, "Signer with ID abc not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
     }
 
     @Test
@@ -231,7 +255,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleSignerStateException(new SignerStateException(message));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.SIGNER_STATE_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.ILLEGAL_OPERATION_ERROR);
     }
 
     @Test
@@ -243,7 +267,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleSignerStatusTransitionException(new SignerStatusTransitionException(message));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.SIGNER_STATUS_TRANSITION_ERROR);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.ILLEGAL_OPERATION_ERROR);
     }
 
     @Test
@@ -255,15 +279,16 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleRuntimeException(new RuntimeException(message));
 
         // Then
-        assertErrorResponse(response, message, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.ERROR_GENERIC);
     }
 
     private void assertErrorResponse(
+            final HttpStatus httpStatus,
             final ResponseEntity<ErrorResponse> responseEntity,
             final String expectedMessage,
             final ErrorCode expectedCode
     ) {
-        assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
+        assertEquals(httpStatus, responseEntity.getStatusCode());
 
         final var body = responseEntity.getBody();
         assertEquals(ERROR_STATUS, body.status());

@@ -81,7 +81,7 @@ class CertificateRevocationServiceTest {
 
         // when
         final var exception = assertThrows(
-                EjbcaException.class,
+                CertificateAuthorityException.class,
                 () -> certificateRevocationService.revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED)
         );
 

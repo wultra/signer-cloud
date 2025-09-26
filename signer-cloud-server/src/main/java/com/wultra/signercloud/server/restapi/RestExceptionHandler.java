@@ -65,7 +65,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentContentNotFoundException(final DocumentContentNotFoundException ex) {
-        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
@@ -76,7 +76,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentNotFoundException(final DocumentNotFoundException ex) {
-        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
@@ -87,7 +87,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentStateException(final DocumentStateException ex) {
-        return produceBadRequest(ErrorCode.DOCUMENT_STATE_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
     /**
@@ -98,7 +98,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentStatusTransitionException(final DocumentStatusTransitionException ex) {
-        return produceBadRequest(ErrorCode.DOCUMENT_STATUS_TRANSITION_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
     /**
@@ -109,29 +109,40 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentUploadException(final DocumentUploadException ex) {
-        return produceBadRequest(ErrorCode.DOCUMENT_UPLOAD_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.DOCUMENT_UPLOAD_ERROR, ex.getMessage());
     }
 
     /**
-     * Handler for {@link DocumentSigningException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link DocumentInvalidSignatureException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleDocumentInvalidSignatureException(final DocumentInvalidSignatureException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.DOCUMENT_INVALID_SIGNATURE_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link DocumentSigningException} producing {@link HttpStatus#INTERNAL_SERVER_ERROR} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentSigningException(final DocumentSigningException ex) {
-        return produceBadRequest(ErrorCode.DOCUMENT_SIGNING_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.DOCUMENT_SIGNING_ERROR, ex.getMessage());
     }
 
     /**
-     * Handler for {@link CertificateProcessingException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link CertificateProcessingException} producing {@link HttpStatus#INTERNAL_SERVER_ERROR} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleCertificateProcessingException(final CertificateProcessingException ex) {
-        return produceBadRequest(ErrorCode.CERTIFICATE_PROCESSING_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.CERTIFICATE_PROCESSING_ERROR, ex.getMessage());
     }
 
     /**
@@ -142,29 +153,40 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleCsrProcessingException(final CsrProcessingException ex) {
-        return produceBadRequest(ErrorCode.CSR_PROCESSING_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CSR_INVALID_SIGNATURE_ERROR, ex.getMessage());
     }
 
     /**
-     * Handler for {@link EjbcaException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link CsrVerificationException} producing {@link HttpStatus#INTERNAL_SERVER_ERROR} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleEjbcaException(final EjbcaException ex) {
-        return produceBadRequest(ErrorCode.EJBCA_ERROR, ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleCsrVerificationException(final CsrVerificationException ex) {
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR, ex.getMessage());
     }
 
     /**
-     * Handler for {@link SignatureVerificationException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link CertificateAuthorityException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleSignatureVerificationException(final SignatureVerificationException ex) {
-        return produceBadRequest(ErrorCode.SIGNATURE_VERIFICATION_ERROR, ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleCertificateAuthorityException(final CertificateAuthorityException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CERTIFICATE_AUTHORITY_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link CsrInvalidSignatureException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignatureVerificationException(final CsrInvalidSignatureException ex) {
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CSR_INVALID_SIGNATURE_ERROR, ex.getMessage());
     }
 
     /**
@@ -175,7 +197,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
-        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
@@ -186,7 +208,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerStateException(final SignerStateException ex) {
-        return produceBadRequest(ErrorCode.SIGNER_STATE_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
     /**
@@ -197,7 +219,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerStatusTransitionException(final SignerStatusTransitionException ex) {
-        return produceBadRequest(ErrorCode.SIGNER_STATUS_TRANSITION_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
     /**
@@ -210,15 +232,15 @@ public class RestExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleRuntimeException(final RuntimeException ex) {
         logger.error("Unexpected runtime exception occurred", ex);
-        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_GENERIC, ex.getMessage());
     }
 
-    private static ResponseEntity<ErrorResponse> produceBadRequest(final ErrorCode errorCode, final String message) {
+    private static ResponseEntity<ErrorResponse> buildErrorResponse(final HttpStatus status, final ErrorCode errorCode, final String message) {
         final var responseBody = new ErrorResponse(
                 ERROR_STATUS,
                 new ErrorDetails(errorCode, message)
         );
 
-        return ResponseEntity.badRequest().body(responseBody);
+        return ResponseEntity.status(status).body(responseBody);
     }
 }

@@ -46,49 +46,39 @@ public enum ErrorCode {
     CERTIFICATE_PROCESSING_ERROR,
 
     /**
-     * Signature verification via PowerAuth server failed.
+     * Error when signature of CSR (Certificate Signing Request) is invalid.
      */
-    SIGNATURE_VERIFICATION_ERROR,
+    CSR_INVALID_SIGNATURE_ERROR,
 
     /**
-     * Invalid status change of the {@link com.wultra.signercloud.server.signer.Signer}.
+     * Error when Power Auth server could not verify signature of CSR (Certificate Signing Request). Indicates problem with Power Auth server.
      */
-    SIGNER_STATUS_TRANSITION_ERROR,
+    CSR_SIGNATURE_VERIFICATION_ERROR,
 
     /**
-     * Error when processing the CSR (Certificate Signing Request).
+     * Error returned from Certificate Authority. Can indicate problem with Certificate Authority server.
      */
-    CSR_PROCESSING_ERROR,
+    CERTIFICATE_AUTHORITY_ERROR,
 
     /**
-     * Error returned from EJBCA.
-     */
-    EJBCA_ERROR,
-
-    /**
-     * Error when document could not be uploaded.
+     * Error when document content could not be uploaded.
      */
     DOCUMENT_UPLOAD_ERROR,
 
     /**
-     * Invalid status change of the {@link com.wultra.signercloud.server.document.Document}.
+     * Error when signature of {@link com.wultra.signercloud.server.document.Document} is invalid.
      */
-    DOCUMENT_STATUS_TRANSITION_ERROR,
+    DOCUMENT_INVALID_SIGNATURE_ERROR,
 
     /**
-     * Document is in invalid state for the requested operation.
-     */
-    DOCUMENT_STATE_ERROR,
-
-    /**
-     * Error when signing the {@link com.wultra.signercloud.server.document.Document}. Either signature is invalid or error when assembling the signed document.
+     * Error when the content of a signed document could not be assembled.
      */
     DOCUMENT_SIGNING_ERROR,
 
     /**
-     * {@link com.wultra.signercloud.server.signer.Signer} is in invalid state for the requested operation.
+     * The state of the resource does not allow the requested operation.
      */
-    SIGNER_STATE_ERROR,
+    ILLEGAL_OPERATION_ERROR,
 
     /**
      * Any other error not covered by a specific error code.

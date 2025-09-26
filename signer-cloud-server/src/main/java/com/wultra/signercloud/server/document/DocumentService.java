@@ -292,7 +292,7 @@ class DocumentService {
 
         final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificate);
         if (!isSignatureValid) {
-            throw new DocumentSigningException("Invalid signature");
+            throw new DocumentInvalidSignatureException("Invalid signature");
         }
 
         final var unsignedDocument = new InMemoryDocument(documentBytes);

@@ -15,15 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.document;
+package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when assembling signed document fails.
+ * Exception thrown when verification of the signature in {@link CreateUpdateSignerRequest#csr} fails.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class DocumentSigningException extends RuntimeException {
-    public DocumentSigningException(final String message, final Throwable cause) {
-        super(message, cause);
+public class CsrInvalidSignatureException extends RuntimeException {
+    public CsrInvalidSignatureException(final String message) {
+        super(message);
     }
 }

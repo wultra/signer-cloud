@@ -142,7 +142,7 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                SignatureVerificationException.class,
+                CsrVerificationException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
@@ -174,7 +174,7 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                SignatureVerificationException.class,
+                CsrInvalidSignatureException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
@@ -183,7 +183,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testCreateUpdateSignerWhenEjbcaClientReturnsErrorThenExceptionIsThrown() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
+    void testCreateUpdateSignerWhenCertificateAuthorityClientReturnsErrorThenExceptionIsThrown() throws PowerAuthClientException, RestClientException, CertificateException, IOException {
         // given
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
         final var ejbcaException = new RestClientException("Test", HttpStatus.BAD_REQUEST, "Test response", null);
@@ -194,7 +194,7 @@ class SignerServiceTest {
 
         // when
         final var exception = assertThrows(
-                EjbcaException.class,
+                CertificateAuthorityException.class,
                 () -> signerService.createUpdateSigner(request)
         );
 
@@ -428,7 +428,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testUpdateStatusWhenEjbcaReturnsErrorThenExceptionIsThrown() throws CertificateEncodingException {
+    void testUpdateStatusWhenCertificateAuthorityReturnsErrorThenExceptionIsThrown() throws CertificateEncodingException {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
@@ -450,7 +450,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testUpdateStatusWhenStatusIsSetToRevokedThenEjbcaIsCalled() throws CertificateEncodingException {
+    void testUpdateStatusWhenStatusIsSetToRevokedThenCertificateAuthorityIsCalled() throws CertificateEncodingException {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
@@ -468,7 +468,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testUpdateStatusWhenRevocationReasonIsSpecifiedThenEjbcaIsCalledWithGivenReason() throws CertificateEncodingException {
+    void testUpdateStatusWhenRevocationReasonIsSpecifiedThenCertificateAuthorityIsCalledWithGivenReason() throws CertificateEncodingException {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
