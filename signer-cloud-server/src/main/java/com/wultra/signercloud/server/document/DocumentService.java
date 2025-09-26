@@ -132,7 +132,7 @@ class DocumentService {
         }
 
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
-                .orElseThrow(() -> new SignerNotFoundException(externalSignerId));
+                .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
 
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
@@ -217,14 +217,14 @@ class DocumentService {
      */
     SignDocumentResponse signDocument(final String documentUuid, final SignDocumentRequest requestBody) {
         final var document = documentRepository.findByDocumentId(documentUuid)
-                .orElseThrow(() -> new DocumentNotFoundException(documentUuid));
+                .orElseThrow(() -> DocumentNotFoundException.forId(documentUuid));
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContent())
-                .orElseThrow(() -> new DocumentContentNotFoundException(documentUuid));
+                .orElseThrow(() -> DocumentContentNotFoundException.forId(documentUuid));
 
         final var signerReference = document.getSigner();
         final var signer = signerRepository.findById(signerReference)
-                .orElseThrow(() -> new SignerNotFoundException(signerReference.getId()));
+                .orElseThrow(() -> SignerNotFoundException.forInternalId(signerReference.getId()));
 
         verifyDocumentCanBeSigned(signer, document);
 
@@ -365,10 +365,10 @@ class DocumentService {
      */
     Resource downloadDocument(final String documentUuid) {
         final var document = documentRepository.findByDocumentId(documentUuid)
-                .orElseThrow(() -> new DocumentNotFoundException(documentUuid));
+                .orElseThrow(() -> DocumentNotFoundException.forId(documentUuid));
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContent())
-                .orElseThrow(() -> new DocumentContentNotFoundException(documentUuid));
+                .orElseThrow(() -> DocumentContentNotFoundException.forId(documentUuid));
 
         if (document.getStatus() != DocumentStatus.SIGNED) {
             throw new DocumentStateException("Document is not signed yet");
@@ -394,7 +394,7 @@ class DocumentService {
         }
 
         final var document = documentRepository.findByDocumentId(documentUuid)
-                .orElseThrow(() -> new DocumentNotFoundException(documentUuid));
+                .orElseThrow(() -> DocumentNotFoundException.forId(documentUuid));
 
         final var updatedDocument = document.toBuilder()
                 .timestampLastUpdated(Instant.now())

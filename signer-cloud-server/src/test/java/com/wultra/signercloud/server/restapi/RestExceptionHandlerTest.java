@@ -96,7 +96,7 @@ class RestExceptionHandlerTest {
         // -
 
         // When
-        final var response = restExceptionHandler.handleDocumentContentNotFoundException(new DocumentContentNotFoundException("123"));
+        final var response = restExceptionHandler.handleDocumentContentNotFoundException(DocumentContentNotFoundException.forId("123"));
 
         // Then
         assertErrorResponse(HttpStatus.BAD_REQUEST, response, "Content for document ID 123 not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
@@ -108,7 +108,7 @@ class RestExceptionHandlerTest {
         // -
 
         // When
-        final var response = restExceptionHandler.handleDocumentNotFoundException(new DocumentNotFoundException("123"));
+        final var response = restExceptionHandler.handleDocumentNotFoundException(DocumentNotFoundException.forId("123"));
 
         // Then
         assertErrorResponse(HttpStatus.BAD_REQUEST, response, "Document with ID 123 not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);
@@ -240,7 +240,7 @@ class RestExceptionHandlerTest {
         // -
 
         // When
-        final var response = restExceptionHandler.handleSignerNotFoundException(new SignerNotFoundException("abc"));
+        final var response = restExceptionHandler.handleSignerNotFoundException(SignerNotFoundException.forId("abc"));
 
         // Then
         assertErrorResponse(HttpStatus.BAD_REQUEST, response, "Signer with ID abc not found", ErrorCode.ERROR_RESOURCE_NOT_FOUND);

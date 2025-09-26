@@ -322,7 +322,7 @@ class SignerService {
     void updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
 
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
-                .orElseThrow(() -> new SignerNotFoundException(externalSignerId));
+                .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
 
         final var oldStatus = signer.getStatus();
         final var newStatus = request.signerStatus();
@@ -374,7 +374,7 @@ class SignerService {
     SignerDetailResponse getDetail(final String externalSignerId) {
         return signerRepository.findByExternalSignerId(externalSignerId)
                 .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getUserId(), signer.getStatus()))
-                .orElseThrow(() -> new SignerNotFoundException(externalSignerId));
+                .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
     }
 
     @Builder

@@ -332,7 +332,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.DOCUMENT_SIGNING_ERROR, "Invalid signature");
+        assertErrorResponse(responseBody, ErrorCode.DOCUMENT_INVALID_SIGNATURE_ERROR, "Invalid signature");
     }
 
     @Test

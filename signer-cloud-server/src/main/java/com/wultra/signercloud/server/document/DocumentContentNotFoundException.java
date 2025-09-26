@@ -23,7 +23,18 @@ package com.wultra.signercloud.server.document;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public class DocumentContentNotFoundException extends RuntimeException {
-    public DocumentContentNotFoundException(final String documentUuid) {
-        super("Content for document ID %s not found".formatted(documentUuid));
+    private DocumentContentNotFoundException(final String message) {
+        super(message);
+    }
+
+    /**
+     * Creates exception for document content.
+     *
+     * @param documentUuid Document UUID
+     * @return Exception instance
+     */
+    public static DocumentContentNotFoundException forId(final String documentUuid) {
+        final var message = "Content for document ID %s not found".formatted(documentUuid);
+        return new DocumentContentNotFoundException(message);
     }
 }
