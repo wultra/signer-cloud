@@ -157,9 +157,7 @@ Get signer state.
 
 #### Request
 
-```json
- 
-```
+Request without body.
 
 ##### Request Params
 
