@@ -271,7 +271,7 @@ class CallbackService {
                     onError);
 
             logger.debug("CallbackEvent {} was dispatched.", callbackEventData.id());
-        } catch (RestClientException e) {
+        } catch (final RestClientException e) {
             callbackEventResponseHandler.handleFailure(callbackEventData, e);
         }
     }

@@ -75,7 +75,7 @@ class CertificateRevocationService {
                 return;
             }
 
-            throw new EjbcaException("Error from EJBCA server when revoking certificate: " + e.getMessage(), e);
+            throw new EjbcaException("Error from EJBCA server when revoking certificate: " + e.getResponse(), e);
         }
     }
 
