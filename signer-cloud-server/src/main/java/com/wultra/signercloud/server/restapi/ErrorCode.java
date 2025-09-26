@@ -24,10 +24,6 @@ package com.wultra.signercloud.server.restapi;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public enum ErrorCode {
-    /**
-     * Issue with a request format or issue of the business logic.
-     */
-    ERROR_GENERIC,
 
     /**
      * Unauthorized request.
@@ -35,12 +31,17 @@ public enum ErrorCode {
     ERROR_UNAUTHORIZED,
 
     /**
+     * REST API endpoint called with invalid body or parameters.
+     */
+    REQUEST_VALIDATION_ERROR,
+
+    /**
      * Resource is not found.
      */
     ERROR_RESOURCE_NOT_FOUND,
 
     /**
-     * Issue with processing the certificate.
+     * Issue with processing a certificate.
      */
     CERTIFICATE_PROCESSING_ERROR,
 
@@ -50,7 +51,7 @@ public enum ErrorCode {
     SIGNATURE_VERIFICATION_ERROR,
 
     /**
-     * Invalid status change of the Signer.
+     * Invalid status change of the {@link com.wultra.signercloud.server.signer.Signer}.
      */
     SIGNER_STATUS_TRANSITION_ERROR,
 
@@ -70,7 +71,7 @@ public enum ErrorCode {
     DOCUMENT_UPLOAD_ERROR,
 
     /**
-     * Invalid status change of the Document.
+     * Invalid status change of the {@link com.wultra.signercloud.server.document.Document}.
      */
     DOCUMENT_STATUS_TRANSITION_ERROR,
 
@@ -80,12 +81,17 @@ public enum ErrorCode {
     DOCUMENT_STATE_ERROR,
 
     /**
-     * Error when signing the document. Either signature is invalid or error when assembling the signed document.
+     * Error when signing the {@link com.wultra.signercloud.server.document.Document}. Either signature is invalid or error when assembling the signed document.
      */
     DOCUMENT_SIGNING_ERROR,
 
     /**
-     * Signer is in invalid state for the requested operation.
+     * {@link com.wultra.signercloud.server.signer.Signer} is in invalid state for the requested operation.
      */
-    SIGNER_STATE_ERROR
+    SIGNER_STATE_ERROR,
+
+    /**
+     * Any other error not covered by a specific error code.
+     */
+    ERROR_GENERIC,
 }

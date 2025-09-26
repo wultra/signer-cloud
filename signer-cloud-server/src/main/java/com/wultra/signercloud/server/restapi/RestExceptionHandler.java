@@ -51,7 +51,7 @@ public class RestExceptionHandler {
 
         final var responseBody = new ErrorResponse(
                 ERROR_STATUS,
-                new ErrorDetails(ErrorCode.ERROR_GENERIC, message)
+                new ErrorDetails(ErrorCode.REQUEST_VALIDATION_ERROR, message)
         );
 
         return ResponseEntity.badRequest().body(responseBody);

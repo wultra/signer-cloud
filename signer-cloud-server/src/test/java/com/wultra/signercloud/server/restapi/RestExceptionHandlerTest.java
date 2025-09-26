@@ -75,7 +75,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleValidationException(exception);
 
         // Then
-        assertErrorResponse(response, EXPECTED_SPECIFIC_MESSAGE, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, EXPECTED_SPECIFIC_MESSAGE, ErrorCode.REQUEST_VALIDATION_ERROR);
     }
 
     @Test
@@ -87,7 +87,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleValidationException(exception);
 
         // Then
-        assertErrorResponse(response, EXPECTED_GENERIC_MESSAGE, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(response, EXPECTED_GENERIC_MESSAGE, ErrorCode.REQUEST_VALIDATION_ERROR);
     }
 
     @Test

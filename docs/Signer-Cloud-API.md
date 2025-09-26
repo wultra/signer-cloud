@@ -18,10 +18,23 @@ Signer Cloud Server provides a RESTful API that allows to control specific parts
 
 Signer Cloud Server uses following format for error response body, accompanied by an appropriate HTTP status code. Besides the HTTP error codes that application server may return regardless of server application (such as 404 when resource is not found or 503 when server is down), following ERROR codes may be returned:
 
-| Error Code         | HTTP Code | Description                                                |
-|:-------------------|:----------|:-----------------------------------------------------------|
-| ERROR_GENERIC      | 400       | Issue with a request format or issue of the business logic |
-| ERROR_UNAUTHORIZED | 401       | Unauthorized request                                       |
+| Error Code                       | HTTP Code | Description                                                                                                |
+|:---------------------------------|:----------|:-----------------------------------------------------------------------------------------------------------|
+| ERROR_UNAUTHORIZED               | 401       | Unauthorized request                                                                                       |
+| REQUEST_VALIDATION_ERROR         | 400       | REST API endpoint called with invalid body or parameters                                                   |
+| ERROR_RESOURCE_NOT_FOUND         | 400       | Resource is not found                                                                                      |
+| CERTIFICATE_PROCESSING_ERROR     | 400       | Issue with processing the certificate                                                                      |
+| SIGNATURE_VERIFICATION_ERROR     | 400       | Signature verification via PowerAuth server failed                                                         |
+| SIGNER_STATUS_TRANSITION_ERROR   | 400       | Invalid status change of the `Signer`.                                                                     |
+| CSR_PROCESSING_ERROR             | 400       | Error when processing the CSR                                                                              |
+| EJBCA_ERROR                      | 400       | Error returned from EJBCA                                                                                  |
+| DOCUMENT_UPLOAD_ERROR            | 400       | Error when document could not be uploaded.                                                                 |
+| DOCUMENT_STATUS_TRANSITION_ERROR | 400       | Invalid status change of the `Document`                                                                    |
+| DOCUMENT_STATE_ERROR             | 400       | `Document` is in invalid state for the requested operation                                                 |
+| DOCUMENT_SIGNING_ERROR           | 400       | Error when signing the document. Either signature is invalid or error when assembling the signed document. |
+| SIGNER_STATE_ERROR               | 400       | `Signer` is in invalid state for the requested operation                                                   |
+| ERROR_GENERIC                    | 400       | Any other error not covered by a specific error code                                                       |
+
 
 All error responses that are produced by the Signer Cloud Server have the following body:
 
