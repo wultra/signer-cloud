@@ -28,6 +28,6 @@ public class SignerNotFoundException extends RuntimeException {
     }
 
     public SignerNotFoundException(final Long signerId) {
-        super("Signer with internal ID %d not found".formatted(signerId));
+        super("Signer with internal ID %s not found".formatted(signerId));
     }
 }
