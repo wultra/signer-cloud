@@ -26,7 +26,6 @@ import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
 import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
-import com.wultra.signercloud.server.restapi.Try;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -142,7 +141,7 @@ class SignerService {
             saveIssuedCertificate(signer.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
             logger.warn("Exception when encoding certificate to base64 during renewal, externalSignerId: {}", signer.getExternalSignerId());
-            throw new CertificateEnrollmentException("Certificate could not be encoded during renewal", e);
+            throw new CertificateProcessingException("Certificate could not be encoded during renewal", e);
         }
 
         if (callbackNotificationService.isCallbackEnabled(CallbackType.RENEWED)) {
@@ -190,25 +189,21 @@ class SignerService {
      * a certificate via the EJBCA service and finally stores the signer in the database.
      *
      * @param request the request containing details of signer
-     * @return result of operation as {@link Try}
      */
-    Try<Void> createUpdateSigner(final CreateUpdateSignerRequest request) {
-        try {
-            processCreateUpdateSigner(request);
-            return Try.success();
-        } catch (final SignatureVerificationException | CertificateEnrollmentException e) {
-            return Try.error(e);
-        }
-    }
-
-    private void processCreateUpdateSigner(final CreateUpdateSignerRequest request) {
+    void createUpdateSigner(final CreateUpdateSignerRequest request) {
         final var externalSignerId = request.signerId();
         final var userId = request.userId();
         final var csrPem = request.csr();
 
-        final var csrBase64 = convertCsrPemToBase64(csrPem);
+        final var csrBase64 = WHITESPACE_PATTERN.matcher(
+                csrPem
+                        .replace(CSR_PEM_HEADER, "")
+                        .replace(CSR_PEM_FOOTER, "")
+        ).replaceAll("");
 
-        verifySignature(externalSignerId, csrBase64);
+        final var csrVerificationRequest = buildCsrVerificationRequest(externalSignerId, csrBase64);
+
+        verifySignature(csrVerificationRequest);
 
         final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(csrBase64)
@@ -236,20 +231,11 @@ class SignerService {
             final var savedSigner = signerRepository.save(signer);
             saveIssuedCertificate(savedSigner.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
-            logger.warn("Exception when encoding certificate to base64 during creation/update, externalSignerId: {}", externalSignerId);
-            throw new CertificateEnrollmentException("Certificate could not be encoded during creation/update", e);
+            throw new CertificateProcessingException("Error when processing certificate: " + e.getMessage(), e);
         }
     }
 
-    private static String convertCsrPemToBase64(final String csrPem) {
-        return WHITESPACE_PATTERN.matcher(
-                    csrPem
-                        .replace(CSR_PEM_HEADER, "")
-                        .replace(CSR_PEM_FOOTER, "")
-        ).replaceAll("");
-    }
-
-    private void verifySignature(final String externalSignerId, final String csrBase64) {
+    private VerifyECDSASignatureRequest buildCsrVerificationRequest(final String externalSignerId, final String csrBase64) {
         try {
             final var csrBytes = Base64.getDecoder().decode(csrBase64);
             final var csr = new PKCS10CertificationRequest(csrBytes);
@@ -267,16 +253,20 @@ class SignerService {
             request.setData(dataBase64);
             request.setSignature(signatureBase64);
 
+            return request;
+        } catch (final RuntimeException | IOException e) {
+            throw new CsrProcessingException("Error when processing CSR: " + e.getMessage(), e);
+        }
+    }
+
+    private void verifySignature(final VerifyECDSASignatureRequest request) {
+        try {
             final var isSignatureValid = powerAuthService.isSignatureValid(request);
             if (!isSignatureValid) {
-                throw new SignatureVerificationException("Signature is not valid. External signer ID: " + externalSignerId);
+                throw new CsrInvalidSignatureException("Signature is not valid.");
             }
         } catch (final PowerAuthClientException e) {
-            logger.warn("Error response from PowerAuth server", e);
-            throw new SignatureVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage());
-        } catch (final IOException e) {
-            logger.warn("Error when processing CSR", e);
-            throw new SignatureVerificationException("Error when processing CSR: " + e.getMessage());
+            throw new CsrVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage(), e);
         }
     }
 
@@ -284,14 +274,9 @@ class SignerService {
         try {
             return ejbcaService.enrollCertificate(certificateRequest);
         } catch (final RestClientException e) {
-            logger.warn("Error response from EJBCA server", e);
-            throw new CertificateEnrollmentException("Certificate could not be enrolled due to EJBCA error: " + e.getMessage());
-        } catch (final CertificateException e) {
-            logger.warn("Error when processing enrolled certificate", e);
-            throw new CertificateEnrollmentException("Certificate could not be processed: " + e.getMessage());
-        } catch (final IOException e) {
-            logger.warn("Error when reading enrolled certificate", e);
-            throw new CertificateEnrollmentException("Certificate could not be read: " + e.getMessage());
+            throw new CertificateAuthorityException("Error from EJBCA server when enrolling certificate: " + e.getResponse(), e, e.getStatusCode());
+        } catch (final CertificateException | IOException e) {
+            throw new CertificateProcessingException("Error when processing enrolled certificate: " + e.getMessage(), e);
         }
     }
 
@@ -328,20 +313,11 @@ class SignerService {
      *
      * @param externalSignerId identifier of the signer to update
      * @param request request containing the new status
-     * @return result of operation as {@link Try}
      */
-    Try<Void> updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
-        try {
-            processUpdateStatus(externalSignerId, request);
-            return Try.success();
-        } catch (final SignerNotFoundException | SignerStatusTransitionException | CertificateRevocationException e) {
-            return Try.error(e);
-        }
-    }
+    void updateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
 
-    private void processUpdateStatus(final String externalSignerId, final UpdateSignerStatusRequest request) {
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
-                .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
+                .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
 
         final var oldStatus = signer.getStatus();
         final var newStatus = request.signerStatus();
@@ -388,13 +364,12 @@ class SignerService {
      * Get details of {@link Signer}.
      *
      * @param externalSignerId identifier of the signer to get details for
-     * @return result as {@link Try} containing {@link SignerDetailResponse} or an error
+     * @return details of the signer
      */
-    Try<SignerDetailResponse> getDetail(final String externalSignerId) {
+    SignerDetailResponse getDetail(final String externalSignerId) {
         return signerRepository.findByExternalSignerId(externalSignerId)
                 .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getUserId(), signer.getStatus()))
-                .map(Try::success)
-                .orElse(Try.error(new SignerNotFoundException("Signer not found: " + externalSignerId)));
+                .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
     }
 
     @Builder

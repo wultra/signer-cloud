@@ -18,12 +18,12 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Common response for operations related to {@link Signer}.
+ * Exception thrown when action is requested on the Signer that is not active.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-record SignerResponse(
-        SignerResponseResult result,
-        String reason
-) {
+public class SignerStateException extends RuntimeException {
+    public SignerStateException(final String message) {
+        super(message);
+    }
 }

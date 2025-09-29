@@ -18,12 +18,12 @@
 package com.wultra.signercloud.server.document;
 
 /**
- * Exception thrown for {@link Document} reject operation.
+ * Exception thrown in case of invalid document status transition.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class RejectDocumentException extends RuntimeException {
-    public RejectDocumentException(final String message) {
+public class DocumentStatusTransitionException extends RuntimeException {
+    public DocumentStatusTransitionException(final String message) {
         super(message);
     }
 }

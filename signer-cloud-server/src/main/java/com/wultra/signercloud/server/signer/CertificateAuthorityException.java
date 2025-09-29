@@ -17,13 +17,21 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import lombok.Getter;
+import org.springframework.http.HttpStatusCode;
+
 /**
- * Exception thrown when certificate revocation fails.
+ * Exception thrown by Certificate Authority.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class CertificateRevocationException extends RuntimeException {
-    public CertificateRevocationException(final String message, final Throwable cause) {
+@Getter
+public class CertificateAuthorityException extends RuntimeException {
+
+    private final HttpStatusCode httpStatus;
+
+    public CertificateAuthorityException(final String message, final Throwable cause, final HttpStatusCode httpStatus) {
         super(message, cause);
+        this.httpStatus = httpStatus;
     }
 }

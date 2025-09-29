@@ -18,12 +18,16 @@
 package com.wultra.signercloud.server.restapi;
 
 import com.wultra.signercloud.server.document.*;
-import com.wultra.signercloud.server.signer.SignerNotFoundException;
+import com.wultra.signercloud.server.signer.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.Optional;
 
 /**
  * Handler for validation exception producing HTTP 400 response.
@@ -31,6 +35,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @ControllerAdvice
+@Slf4j
 public class RestExceptionHandler {
     private static final String ERROR_STATUS = "ERROR";
 
@@ -49,32 +54,22 @@ public class RestExceptionHandler {
 
         final var responseBody = new ErrorResponse(
                 ERROR_STATUS,
-                new ErrorDetails(ErrorCode.ERROR_GENERIC, message)
+                new ErrorDetails(ErrorCode.REQUEST_VALIDATION_ERROR, message)
         );
 
         return ResponseEntity.badRequest().body(responseBody);
     }
 
     /**
-     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link DocumentContentNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
-        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
-    }
-
-    /**
-     * Handler for {@link DocumentUploadException} producing {@link HttpStatus#BAD_REQUEST} response.
-     *
-     * @param ex the exception
-     * @return response as {@link ResponseEntity}
-     */
-    @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleDocumentUploadException(final DocumentUploadException ex) {
-        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleDocumentContentNotFoundException(final DocumentContentNotFoundException ex) {
+        logger.warn("Document content not found", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
@@ -85,48 +80,190 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentNotFoundException(final DocumentNotFoundException ex) {
-        return produceBadRequest(ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
+        logger.warn("Document not found", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
     /**
-     * Handler for {@link SignDocumentException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link DocumentStateException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleSignDocumentException(final SignDocumentException ex) {
-        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleDocumentStateException(final DocumentStateException ex) {
+        logger.warn("Illegal document operation", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
     /**
-     * Handler for {@link DownloadDocumentException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link DocumentStatusTransitionException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleDownloadDocumentException(final DownloadDocumentException ex) {
-        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleDocumentStatusTransitionException(final DocumentStatusTransitionException ex) {
+        logger.warn("Illegal document status transition", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
     /**
-     * Handler for {@link RejectDocumentException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * Handler for {@link DocumentUploadException} producing {@link HttpStatus#BAD_REQUEST} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
      */
     @ExceptionHandler
-    public ResponseEntity<ErrorResponse> handleRejectDocumentException(final RejectDocumentException ex) {
-        return produceBadRequest(ErrorCode.ERROR_GENERIC, ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleDocumentUploadException(final DocumentUploadException ex) {
+        logger.warn("Document upload error", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.DOCUMENT_UPLOAD_ERROR, ex.getMessage());
     }
 
-    private static ResponseEntity<ErrorResponse> produceBadRequest(final ErrorCode errorCode, final String message) {
+    /**
+     * Handler for {@link DocumentInvalidSignatureException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleDocumentInvalidSignatureException(final DocumentInvalidSignatureException ex) {
+        logger.warn("Document invalid signature", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.DOCUMENT_INVALID_SIGNATURE_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link DocumentSigningException} producing {@link HttpStatus#INTERNAL_SERVER_ERROR} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleDocumentSigningException(final DocumentSigningException ex) {
+        logger.warn("Document signing exception", ex);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.DOCUMENT_SIGNING_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link CertificateProcessingException} producing {@link HttpStatus#INTERNAL_SERVER_ERROR} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleCertificateProcessingException(final CertificateProcessingException ex) {
+        logger.warn("Certificate processing exception", ex);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.CERTIFICATE_PROCESSING_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link CsrProcessingException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleCsrProcessingException(final CsrProcessingException ex) {
+        logger.warn("CSR processing exception", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CSR_INVALID_SIGNATURE_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link CsrVerificationException} producing {@link HttpStatus#SERVICE_UNAVAILABLE} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleCsrVerificationException(final CsrVerificationException ex) {
+        logger.warn("CSR signature verification exception", ex);
+        return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link CertificateAuthorityException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleCertificateAuthorityException(final CertificateAuthorityException ex) {
+        logger.warn("Certificate authority exception", ex);
+        final var httpStatus = Optional.ofNullable(ex.getHttpStatus())
+                .filter(HttpStatusCode::is4xxClientError)
+                .map(status -> HttpStatus.BAD_REQUEST)
+                .orElse(HttpStatus.SERVICE_UNAVAILABLE);
+
+        return buildErrorResponse(httpStatus, ErrorCode.CERTIFICATE_AUTHORITY_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link CsrInvalidSignatureException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignatureVerificationException(final CsrInvalidSignatureException ex) {
+        logger.warn("CSR invalid signature", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CSR_INVALID_SIGNATURE_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link SignerNotFoundException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
+        logger.warn("Signer not found", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link SignerStateException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignerStateException(final SignerStateException ex) {
+        logger.warn("Illegal Signer operation", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link SignerStatusTransitionException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleSignerStatusTransitionException(final SignerStatusTransitionException ex) {
+        logger.warn("Illegal Signer status transition", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for generic {@link RuntimeException} producing {@link HttpStatus#BAD_REQUEST} response.
+     * This is a fallback handler for all unhandled runtime exceptions.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleRuntimeException(final RuntimeException ex) {
+        logger.error("Unexpected runtime exception occurred", ex);
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_GENERIC, ex.getMessage());
+    }
+
+    private static ResponseEntity<ErrorResponse> buildErrorResponse(final HttpStatus status, final ErrorCode errorCode, final String message) {
         final var responseBody = new ErrorResponse(
                 ERROR_STATUS,
                 new ErrorDetails(errorCode, message)
         );
 
-        return ResponseEntity.badRequest().body(responseBody);
+        return ResponseEntity.status(status).body(responseBody);
     }
 }

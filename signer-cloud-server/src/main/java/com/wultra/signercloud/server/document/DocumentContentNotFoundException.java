@@ -15,15 +15,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
+package com.wultra.signercloud.server.document;
 
 /**
- * Exception thrown when requested change of {@link SignerStatus} for a given {@link Signer} is not valid.
+ * Exception thrown when a {@link DocumentContent} is not found in the system.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class SignerStatusTransitionException extends RuntimeException {
-    public SignerStatusTransitionException(final String message) {
+public class DocumentContentNotFoundException extends RuntimeException {
+    private DocumentContentNotFoundException(final String message) {
         super(message);
+    }
+
+    /**
+     * Creates exception for document content.
+     *
+     * @param documentUuid Document UUID
+     * @return Exception instance
+     */
+    public static DocumentContentNotFoundException forId(final String documentUuid) {
+        final var message = "Content for document ID %s not found".formatted(documentUuid);
+        return new DocumentContentNotFoundException(message);
     }
 }

@@ -15,15 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.signer;
+package com.wultra.signercloud.server.document;
 
 /**
- * Exception thrown when requested change of {@link SignerStatus} for a given {@link Signer} is not valid.
+ * Exception thrown when assembling signed document fails.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class SignerStatusTransitionException extends RuntimeException {
-    public SignerStatusTransitionException(final String message) {
-        super(message);
+public class DocumentSigningException extends RuntimeException {
+    public DocumentSigningException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 }

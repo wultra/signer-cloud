@@ -15,15 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.document;
+package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when {@link Document} download fails.
+ * Exception thrown when Power Auth is not able to verify the CSR (Certificate Signing Request).
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class DownloadDocumentException extends RuntimeException {
-    public DownloadDocumentException(final String message) {
-        super(message);
+public class CsrVerificationException extends RuntimeException {
+    public CsrVerificationException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 }

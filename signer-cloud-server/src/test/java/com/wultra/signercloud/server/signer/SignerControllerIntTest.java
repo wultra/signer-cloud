@@ -23,6 +23,8 @@ import com.wultra.security.powerauth.client.model.error.PowerAuthClientException
 import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
+import com.wultra.signercloud.server.restapi.ErrorCode;
+import com.wultra.signercloud.server.restapi.ErrorResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +32,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -126,7 +129,7 @@ class SignerControllerIntTest {
     }
 
     @Test
-    void testCreateUpdateWhenSignatureVerificationFailsThenFailResponseIsReturned() throws Exception {
+    void testCreateUpdateWhenSignatureVerificationFailsThenErrorResponseIsReturned() throws Exception {
         // given
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
 
@@ -137,17 +140,16 @@ class SignerControllerIntTest {
         final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isOk())
+            .andExpect(status().isServiceUnavailable())
             .andReturn();
 
         // then
-        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
-        assertEquals(SignerResponseResult.FAIL, responseBody.result());
-        assertEquals("Signature could not be verified due to PowerAuth error: PowerAuth test exception", responseBody.reason());
+        final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
+        assertErrorResponse(errorResponse, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR, "Signature could not be verified due to PowerAuth error: PowerAuth test exception");
     }
 
     @Test
-    void testCreateUpdateWhenCertificateEnrollmentFailsThenFailResponseIsReturned() throws Exception {
+    void testCreateUpdateWhenCertificateEnrollmentFailsThenErrorResponseIsReturned() throws Exception {
         // given
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(CSR_BASE64)
@@ -156,21 +158,21 @@ class SignerControllerIntTest {
                 .build();
 
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var ejbcaException = new RestClientException("Test", HttpStatus.BAD_REQUEST, "Test response", null);
 
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
-        when(ejbcaService.enrollCertificate(certificateRequest)).thenThrow(new RestClientException("EJBCA test exception"));
+        when(ejbcaService.enrollCertificate(certificateRequest)).thenThrow(ejbcaException);
 
         // when
         final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
         // then
-        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
-        assertEquals(SignerResponseResult.FAIL, responseBody.result());
-        assertEquals("Certificate could not be enrolled due to EJBCA error: EJBCA test exception", responseBody.reason());
+        final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
+        assertErrorResponse(errorResponse, ErrorCode.CERTIFICATE_AUTHORITY_ERROR, "Error from EJBCA server when enrolling certificate: Test response");
     }
 
     @Test
@@ -191,7 +193,7 @@ class SignerControllerIntTest {
         mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isServiceUnavailable());
 
         // then
         assertEquals(0, signerRepository.count());
@@ -216,17 +218,12 @@ class SignerControllerIntTest {
 
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
 
-        // when
-        final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
+        // when, then
+        mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andReturn();
-
-        // then
-        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
-        assertEquals(SignerResponseResult.OK, responseBody.result());
-        assertNull(responseBody.reason());
     }
 
     @Test
@@ -281,17 +278,12 @@ class SignerControllerIntTest {
 
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
 
-        // when
-        final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
+        // when, then
+        mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andReturn();
-
-        // then
-        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
-        assertEquals(SignerResponseResult.OK, responseBody.result());
-        assertNull(responseBody.reason());
     }
 
     @Test
@@ -328,7 +320,24 @@ class SignerControllerIntTest {
     }
 
     @Test
-    void testUpdateStatusWhenSignerIsNotFoundThenFailResponseIsReturned() throws Exception {
+    void testCreateUpdateWhenCsrInRequestIsMalformedThenErrorResponseIsReturned() throws Exception {
+        // given
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, "malformed CSR");
+
+        // when
+        final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andReturn();
+
+        // then
+        final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
+        assertErrorResponse(errorResponse, ErrorCode.CSR_INVALID_SIGNATURE_ERROR, "Error when processing CSR: long form definite-length more than 31 bits");
+    }
+
+    @Test
+    void testUpdateStatusWhenSignerIsNotFoundThenErrorResponseIsReturned() throws Exception {
         // given
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null);
 
@@ -336,17 +345,16 @@ class SignerControllerIntTest {
         final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
         // then
-        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
-        assertEquals(SignerResponseResult.FAIL, responseBody.result());
-        assertNotNull(responseBody.reason());
+        final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
+        assertErrorResponse(errorResponse, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Signer with ID %s not found".formatted(EXTERNAL_SIGNER_ID));
     }
 
     @Test
-    void testUpdateStatusWhenStatusTransitionIsNotValidThenFailResponseIsReturned() throws Exception {
+    void testUpdateStatusWhenStatusTransitionIsNotValidThenErrorResponseIsReturned() throws Exception {
         // given
         createSigner(SignerStatus.REVOKED);
         final var request = new UpdateSignerStatusRequest(SignerStatus.ACTIVE, null);
@@ -355,32 +363,26 @@ class SignerControllerIntTest {
         final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
+                .andExpect(status().isBadRequest())
                 .andReturn();
 
         // then
-        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
-        assertEquals(SignerResponseResult.FAIL, responseBody.result());
-        assertNotNull(responseBody.reason());
+        final var errorResponse = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), ErrorResponse.class);
+        assertErrorResponse(errorResponse, ErrorCode.ILLEGAL_OPERATION_ERROR, "Invalid status transition from REVOKED to ACTIVE");
     }
 
     @Test
-    void testUpdateStatusWhenStatusTransitionIsValidThenSuccessResponseIsReturned() throws Exception {
+    void testUpdateStatusWhenStatusTransitionIsValidThenSuccessIsReturned() throws Exception {
         // given
         createSigner(SignerStatus.ACTIVE);
         final var request = new UpdateSignerStatusRequest(SignerStatus.BLOCKED, null);
 
-        // when
-        final var mvcResult = mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
+        // when, then
+        mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andReturn();
-
-        // then
-        final var responseBody = objectMapper.readValue(mvcResult.getResponse().getContentAsString(), SignerResponse.class);
-        assertEquals(SignerResponseResult.OK, responseBody.result());
-        assertNull(responseBody.reason());
     }
 
     @Test
@@ -419,7 +421,7 @@ class SignerControllerIntTest {
         mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk());
+                .andExpect(status().isServiceUnavailable());
 
         // then
         final var signerAfterTest = signerRepository.findAll().iterator().next();
@@ -601,5 +603,13 @@ class SignerControllerIntTest {
         assertEquals(CERTIFICATE_ISSUER_DN, issuedCertificateMetadata.getIssuerDn());
         assertEquals(expirationTimestamp.toEpochMilli(), issuedCertificateMetadata.getTimestampCertificateExpiration().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(IssuedCertificateStatus.REVOKED, issuedCertificateMetadata.getStatus());
+    }
+
+    private void assertErrorResponse(final ErrorResponse errorResponse, final ErrorCode errorCode, final String message) {
+        assertEquals("ERROR", errorResponse.status());
+
+        final var errorDetail = errorResponse.responseObject();
+        assertEquals(errorCode, errorDetail.code());
+        assertEquals(message, errorDetail.message());
     }
 }

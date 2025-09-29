@@ -18,12 +18,12 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when verification of the signature in {@link CreateUpdateSignerRequest#csr} fails.
+ * Exception thrown in case of CSR (Certificate Signing Request) processing error.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class SignatureVerificationException extends RuntimeException {
-    public SignatureVerificationException(final String message) {
-        super(message);
+public class CsrProcessingException extends RuntimeException {
+    public CsrProcessingException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 }

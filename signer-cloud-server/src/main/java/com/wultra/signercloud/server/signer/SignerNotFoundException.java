@@ -23,7 +23,30 @@ package com.wultra.signercloud.server.signer;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public class SignerNotFoundException extends RuntimeException {
-    public SignerNotFoundException(String message) {
+
+    private SignerNotFoundException(final String message) {
         super(message);
+    }
+
+    /**
+     * Create exception for given external signer ID.
+     *
+     * @param externalSignerId External signer ID
+     * @return Exception instance
+     */
+    public static SignerNotFoundException forId(final String externalSignerId) {
+        final var message = "Signer with ID %s not found".formatted(externalSignerId);
+        return new SignerNotFoundException(message);
+    }
+
+    /**
+     * Create exception for given internal signer ID.
+     *
+     * @param signerId Internal signer ID
+     * @return Exception instance
+     */
+    public static SignerNotFoundException forInternalId(final Long signerId) {
+        final var message = "Signer with internal ID %s not found".formatted(signerId);
+        return new SignerNotFoundException(message);
     }
 }

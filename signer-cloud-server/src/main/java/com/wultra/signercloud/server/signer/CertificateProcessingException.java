@@ -18,16 +18,12 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when certificate enrollment fails.
+ * Exception thrown in case of certificate processing error.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class CertificateEnrollmentException extends RuntimeException {
-    public CertificateEnrollmentException(final String message) {
-        super(message);
-    }
-
-    public CertificateEnrollmentException(final String message, final Throwable cause) {
+public class CertificateProcessingException extends RuntimeException {
+    public CertificateProcessingException(final String message, final Throwable cause) {
         super(message, cause);
     }
 }

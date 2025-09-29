@@ -18,12 +18,12 @@
 package com.wultra.signercloud.server.document;
 
 /**
- * Exception thrown when document signing fails.
+ * Exception thrown in case the document is in invalid state for the requested operation.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class SignDocumentException extends RuntimeException {
-    public SignDocumentException(final String message) {
+public class DocumentStateException extends RuntimeException {
+    public DocumentStateException(final String message) {
         super(message);
     }
 }

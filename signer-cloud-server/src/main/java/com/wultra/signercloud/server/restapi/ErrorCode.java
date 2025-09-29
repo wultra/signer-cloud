@@ -24,10 +24,6 @@ package com.wultra.signercloud.server.restapi;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public enum ErrorCode {
-    /**
-     * Issue with a request format or issue of the business logic.
-     */
-    ERROR_GENERIC,
 
     /**
      * Unauthorized request.
@@ -35,7 +31,57 @@ public enum ErrorCode {
     ERROR_UNAUTHORIZED,
 
     /**
+     * REST API endpoint called with invalid body or parameters.
+     */
+    REQUEST_VALIDATION_ERROR,
+
+    /**
      * Resource is not found.
      */
-    ERROR_RESOURCE_NOT_FOUND
+    ERROR_RESOURCE_NOT_FOUND,
+
+    /**
+     * Issue with processing a certificate.
+     */
+    CERTIFICATE_PROCESSING_ERROR,
+
+    /**
+     * Error when signature of CSR (Certificate Signing Request) is invalid.
+     */
+    CSR_INVALID_SIGNATURE_ERROR,
+
+    /**
+     * Error when Power Auth server could not verify signature of CSR (Certificate Signing Request). Indicates problem with Power Auth server.
+     */
+    CSR_SIGNATURE_VERIFICATION_ERROR,
+
+    /**
+     * Error returned from Certificate Authority. Can indicate problem with Certificate Authority server.
+     */
+    CERTIFICATE_AUTHORITY_ERROR,
+
+    /**
+     * Error when document content could not be uploaded.
+     */
+    DOCUMENT_UPLOAD_ERROR,
+
+    /**
+     * Error when signature of {@link com.wultra.signercloud.server.document.Document} is invalid.
+     */
+    DOCUMENT_INVALID_SIGNATURE_ERROR,
+
+    /**
+     * Error when the content of a signed document could not be assembled.
+     */
+    DOCUMENT_SIGNING_ERROR,
+
+    /**
+     * The state of the resource does not allow the requested operation.
+     */
+    ILLEGAL_OPERATION_ERROR,
+
+    /**
+     * Any other error not covered by a specific error code.
+     */
+    ERROR_GENERIC,
 }

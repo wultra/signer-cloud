@@ -23,7 +23,12 @@ package com.wultra.signercloud.server.document;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public class DocumentUploadException extends RuntimeException {
+
     public DocumentUploadException(final String message) {
         super(message);
+    }
+
+    public DocumentUploadException(final String message, final Throwable cause) {
+        super(message, cause);
     }
 }

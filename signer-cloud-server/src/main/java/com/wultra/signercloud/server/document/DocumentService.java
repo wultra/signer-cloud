@@ -17,11 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
-import com.wultra.signercloud.server.restapi.Try;
-import com.wultra.signercloud.server.signer.Signer;
-import com.wultra.signercloud.server.signer.SignerNotFoundException;
-import com.wultra.signercloud.server.signer.SignerRepository;
-import com.wultra.signercloud.server.signer.SignerStatus;
+import com.wultra.signercloud.server.signer.*;
 import com.wultra.signercloud.server.utils.CertificateUtils;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
@@ -108,7 +104,7 @@ class DocumentService {
 
     private void processRetention(final DocumentStatus status, final Duration retentionPeriod, final Consumer<String> resultConsumer, final Instant now) {
         if (retentionPeriod != null) {
-            long deletedCount = documentRepository.deleteByStatusAndTimestampCreatedBefore(status, now.minus(retentionPeriod));
+            final long deletedCount = documentRepository.deleteByStatusAndTimestampCreatedBefore(status, now.minus(retentionPeriod));
             resultConsumer.accept(String.valueOf(deletedCount));
         } else {
             resultConsumer.accept("disabled");
@@ -122,35 +118,21 @@ class DocumentService {
      * @param externalDocumentId unique identifier of the document in the external system
      * @param documentName name of the document
      * @param file the PDF document to be stored for signing
-     * @return response as a {@link Try}
+     * @return response with uploaded document details
      */
-    Try<UploadDocumentResponse> uploadDocument(
+    UploadDocumentResponse uploadDocument(
             final String externalSignerId,
             final String externalDocumentId,
             final String documentName,
             final MultipartFile file
-    ) throws NoSuchAlgorithmException {
-       try {
-           final var response = processDocumentUpload(externalSignerId, externalDocumentId, documentName, file);
-           return Try.success(response);
-       } catch (final SignerNotFoundException | DocumentUploadException e) {
-           return Try.error(e);
-       }
-    }
-
-    private UploadDocumentResponse processDocumentUpload(
-            final String externalSignerId,
-            final String externalDocumentId,
-            final String documentName,
-            final MultipartFile file
-    ) throws NoSuchAlgorithmException {
+    ) {
         final var contentType = file.getContentType();
         if (!ContentType.APPLICATION_PDF.getMimeType().equals(contentType)) {
             throw new DocumentUploadException("Unsupported content type: " + contentType);
         }
 
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
-                .orElseThrow(() -> new SignerNotFoundException("Signer not found for external signer ID: " + externalSignerId));
+                .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
 
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
@@ -201,18 +183,18 @@ class DocumentService {
         try {
             return file.getBytes();
         } catch (final IOException e) {
-            throw new DocumentUploadException("Failed to read file: " + e.getMessage());
+            throw new DocumentUploadException("Exception when reading upload file: " + e.getMessage(), e);
         }
     }
 
-    private static String computeHash(final byte[] content, final DigestAlgorithm hashAlgorithm) throws NoSuchAlgorithmException {
+    private static String computeHash(final byte[] content, final DigestAlgorithm hashAlgorithm) {
         try {
             final var digest = hashAlgorithm.getMessageDigest();
             final var hashBytes = digest.digest(content);
             return Base64.getEncoder().encodeToString(hashBytes);
         } catch (final NoSuchAlgorithmException e) {
             logger.error("Hash algorithm not found: {}", hashAlgorithm, e);
-            throw e;
+            throw new DocumentUploadException("Hash algorithm not found: " + hashAlgorithm, e);
         }
     }
 
@@ -228,29 +210,20 @@ class DocumentService {
      * Successful signing updates the {@link Document} status to {@link DocumentStatus#SIGNED} and stores the signed PDF document
      * into {@link DocumentContent} (It overrides the original unsigned PDF content with the signed one.).
      *
-     * @param documentId identifier of the document to be signed
+     * @param documentUuid identifier of the document to be signed
      * @param requestBody request body containing the signature
-     * @return response as a {@link Try}
+     * @return response with signed document details
      */
-    Try<SignDocumentResponse> signDocument(final String documentId, final SignDocumentRequest requestBody) {
-        try {
-            final var response = processSignDocument(documentId, requestBody);
-            return Try.success(response);
-        } catch (final DocumentNotFoundException | SignerNotFoundException | SignDocumentException e) {
-            return Try.error(e);
-        }
-    }
-
-    private SignDocumentResponse processSignDocument(final String documentId, final SignDocumentRequest requestBody) {
-
-        final var document = documentRepository.findByDocumentId(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
+    SignDocumentResponse signDocument(final String documentUuid, final SignDocumentRequest requestBody) {
+        final var document = documentRepository.findByDocumentId(documentUuid)
+                .orElseThrow(() -> DocumentNotFoundException.forId(documentUuid));
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContent())
-                .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentId));
+                .orElseThrow(() -> DocumentContentNotFoundException.forId(documentUuid));
 
-        final var signer = signerRepository.findById(document.getSigner())
-                .orElseThrow(() -> new SignerNotFoundException("Signer not found for document ID: " + documentId));
+        final var signerReference = document.getSigner();
+        final var signer = signerRepository.findById(signerReference)
+                .orElseThrow(() -> SignerNotFoundException.forInternalId(signerReference.getId()));
 
         verifyDocumentCanBeSigned(signer, document);
 
@@ -276,24 +249,24 @@ class DocumentService {
 
         documentRepository.save(updatedDocument);
 
-        final var downloadUrl = buildDocumentDownloadUri(documentId);
-        return new SignDocumentResponse(documentId, downloadUrl);
+        final var downloadUrl = buildDocumentDownloadUri(documentUuid);
+        return new SignDocumentResponse(documentUuid, downloadUrl);
     }
 
     private void verifyDocumentCanBeSigned(final Signer signer, final Document document) {
         if (signer.getStatus() != SignerStatus.ACTIVE) {
-            throw new SignDocumentException("Signer is not active. Signer: " + signer.getExternalSignerId());
+            throw new SignerStateException("Signer is not active. Signer: " + signer.getExternalSignerId());
         }
 
         if (document.getStatus() != DocumentStatus.WAITING) {
-            throw new SignDocumentException("Document is not in state when it can be signed");
+            throw new DocumentStateException("Document is not in state when it can be signed");
         }
 
         final var waitingTimeout = configurationProperties.getWaiting().getTimeout();
         if (waitingTimeout != null) {
             final var documentSigningDeadline = document.getTimestampCreated().plus(waitingTimeout);
             if (Instant.now().isAfter(documentSigningDeadline)) {
-                throw new SignDocumentException("Document signing timeout exceeded");
+                throw new DocumentStateException("Document signing timeout exceeded");
             }
         }
     }
@@ -318,7 +291,7 @@ class DocumentService {
 
         final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificate);
         if (!isSignatureValid) {
-            throw new SignDocumentException("Invalid signature");
+            throw new DocumentInvalidSignatureException("Invalid signature");
         }
 
         final var unsignedDocument = new InMemoryDocument(documentBytes);
@@ -332,8 +305,7 @@ class DocumentService {
             final var x509Certificate = signer.getX509Certificate();
             return new CertificateToken(x509Certificate);
         } catch (final CertificateException e) {
-            logger.warn("Exception when processing certificate ", e);
-            throw new SignDocumentException("Exception when processing certificate: " + e.getMessage());
+            throw new CertificateProcessingException("Exception when processing certificate: " + e.getMessage(), e);
         }
     }
 
@@ -348,8 +320,7 @@ class DocumentService {
 
             return chain;
         } catch (final CertificateException e) {
-            logger.warn("Exception when processing certificate chain", e);
-            throw new SignDocumentException("Exception when processing certificate chain: " + e.getMessage());
+            throw new CertificateProcessingException("Exception when processing certificate chain: " + e.getMessage(), e);
         }
     }
 
@@ -371,8 +342,7 @@ class DocumentService {
         try (final var stream = signedDocument.openStream()) {
             return stream.readAllBytes();
         } catch (final IOException e) {
-            logger.error("Exception when reading bytes of signed document", e);
-            throw new SignDocumentException("Failed to read signed document: " + e.getMessage());
+            throw new DocumentSigningException("Exception when reading bytes of signed document: " + e.getMessage(), e);
         }
     }
 
@@ -387,26 +357,17 @@ class DocumentService {
      * Downloads the content of the {@link Document} identified by {@code documentUuid}.
      *
      * @param documentUuid identifier of the document to be downloaded
-     * @return response as a {@link Try}
+     * @return document as a {@link Resource}
      */
-    Try<Resource> downloadDocument(final String documentUuid) {
-        try {
-            final var response = processDownloadDocument(documentUuid);
-            return Try.success(response);
-        } catch (final DocumentNotFoundException | DownloadDocumentException e) {
-            return Try.error(e);
-        }
-    }
-
-    private Resource processDownloadDocument(final String documentUuid) {
+    Resource downloadDocument(final String documentUuid) {
         final var document = documentRepository.findByDocumentId(documentUuid)
-                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentUuid));
+                .orElseThrow(() -> DocumentNotFoundException.forId(documentUuid));
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContent())
-                .orElseThrow(() -> new DocumentNotFoundException("Document content not found for document ID: " + documentUuid));
+                .orElseThrow(() -> DocumentContentNotFoundException.forId(documentUuid));
 
         if (document.getStatus() != DocumentStatus.SIGNED) {
-            throw new DownloadDocumentException("Document is not signed yet");
+            throw new DocumentStateException("Document is not signed yet");
         }
 
         return new ByteArrayResource(documentContent.getContent());
@@ -415,30 +376,21 @@ class DocumentService {
     /**
      * Rejects the {@link Document} identified by {@code documentId}.
      *
-     * @param documentId identifier of the document to be rejected
+     * @param documentUuid identifier of the document to be rejected
      * @param requestBody request body with the status {@link DocumentStatus#REJECTED}
-     * @return response as a {@link Try}
+     * @return response with rejected document details
      */
-    Try<RejectDocumentResponse> rejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
-        try {
-            final var response = processRejectDocument(documentId, requestBody);
-            return Try.success(response);
-        } catch (final DocumentNotFoundException | RejectDocumentException e) {
-            return Try.error(e);
-        }
-    }
-
-    private RejectDocumentResponse processRejectDocument(final String documentId, final RejectDocumentRequest requestBody) {
+    RejectDocumentResponse rejectDocument(final String documentUuid, final RejectDocumentRequest requestBody) {
         final var requestedStatus = requestBody.status();
         if (requestedStatus != DocumentStatus.REJECTED) {
-            throw new RejectDocumentException("Invalid status in the request body. Expected: %s, actual: %s".formatted(
+            throw new DocumentStatusTransitionException("Invalid status in the request body. Expected: %s, actual: %s".formatted(
                     DocumentStatus.REJECTED,
                     requestedStatus)
             );
         }
 
-        final var document = documentRepository.findByDocumentId(documentId)
-                .orElseThrow(() -> new DocumentNotFoundException("Document not found for document ID: " + documentId));
+        final var document = documentRepository.findByDocumentId(documentUuid)
+                .orElseThrow(() -> DocumentNotFoundException.forId(documentUuid));
 
         final var updatedDocument = document.toBuilder()
                 .timestampLastUpdated(Instant.now())
@@ -448,7 +400,7 @@ class DocumentService {
         documentRepository.save(updatedDocument);
 
         return new RejectDocumentResponse(
-                documentId,
+                documentUuid,
                 document.getDocumentName(),
                 document.getFileName(),
                 document.getFileSize(),

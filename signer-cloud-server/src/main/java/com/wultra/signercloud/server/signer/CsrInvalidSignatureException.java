@@ -18,12 +18,12 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when requested change of {@link SignerStatus} for a given {@link Signer} is not valid.
+ * Exception thrown when verification of the signature in {@link CreateUpdateSignerRequest#csr} fails.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class SignerStatusTransitionException extends RuntimeException {
-    public SignerStatusTransitionException(final String message) {
+public class CsrInvalidSignatureException extends RuntimeException {
+    public CsrInvalidSignatureException(final String message) {
         super(message);
     }
 }
