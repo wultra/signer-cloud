@@ -21,10 +21,13 @@ import com.wultra.signercloud.server.document.*;
 import com.wultra.signercloud.server.signer.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.Optional;
 
 /**
  * Handler for validation exception producing HTTP 400 response.
@@ -166,7 +169,7 @@ public class RestExceptionHandler {
     }
 
     /**
-     * Handler for {@link CsrVerificationException} producing {@link HttpStatus#INTERNAL_SERVER_ERROR} response.
+     * Handler for {@link CsrVerificationException} producing {@link HttpStatus#SERVICE_UNAVAILABLE} response.
      *
      * @param ex the exception
      * @return response as {@link ResponseEntity}
@@ -174,7 +177,7 @@ public class RestExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleCsrVerificationException(final CsrVerificationException ex) {
         logger.warn("CSR signature verification exception", ex);
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR, ex.getMessage());
+        return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR, ex.getMessage());
     }
 
     /**
@@ -186,7 +189,12 @@ public class RestExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleCertificateAuthorityException(final CertificateAuthorityException ex) {
         logger.warn("Certificate authority exception", ex);
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CERTIFICATE_AUTHORITY_ERROR, ex.getMessage());
+        final var httpStatus = Optional.ofNullable(ex.getHttpStatus())
+                .filter(HttpStatusCode::is4xxClientError)
+                .map(status -> HttpStatus.BAD_REQUEST)
+                .orElse(HttpStatus.SERVICE_UNAVAILABLE);
+
+        return buildErrorResponse(httpStatus, ErrorCode.CERTIFICATE_AUTHORITY_ERROR, ex.getMessage());
     }
 
     /**
@@ -247,7 +255,7 @@ public class RestExceptionHandler {
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleRuntimeException(final RuntimeException ex) {
         logger.error("Unexpected runtime exception occurred", ex);
-        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_GENERIC, ex.getMessage());
+        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.ERROR_GENERIC, ex.getMessage());
     }
 
     private static ResponseEntity<ErrorResponse> buildErrorResponse(final HttpStatus status, final ErrorCode errorCode, final String message) {

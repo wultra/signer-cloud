@@ -274,7 +274,7 @@ class SignerService {
         try {
             return ejbcaService.enrollCertificate(certificateRequest);
         } catch (final RestClientException e) {
-            throw new CertificateAuthorityException("Error from EJBCA server when enrolling certificate: " + e.getResponse(), e);
+            throw new CertificateAuthorityException("Error from EJBCA server when enrolling certificate: " + e.getResponse(), e, e.getStatusCode());
         } catch (final CertificateException | IOException e) {
             throw new CertificateProcessingException("Error when processing enrolled certificate: " + e.getMessage(), e);
         }

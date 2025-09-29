@@ -17,13 +17,21 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import lombok.Getter;
+import org.springframework.http.HttpStatusCode;
+
 /**
  * Exception thrown by Certificate Authority.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
+@Getter
 public class CertificateAuthorityException extends RuntimeException {
-    public CertificateAuthorityException(final String message, final Throwable cause) {
+
+    private final HttpStatusCode httpStatus;
+
+    public CertificateAuthorityException(final String message, final Throwable cause, final HttpStatusCode httpStatus) {
         super(message, cause);
+        this.httpStatus = httpStatus;
     }
 }

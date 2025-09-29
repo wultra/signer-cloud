@@ -140,7 +140,7 @@ class SignerControllerIntTest {
         final var mvcResult = mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(request)))
-            .andExpect(status().isInternalServerError())
+            .andExpect(status().isServiceUnavailable())
             .andReturn();
 
         // then
@@ -193,7 +193,7 @@ class SignerControllerIntTest {
         mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isServiceUnavailable());
 
         // then
         assertEquals(0, signerRepository.count());
@@ -421,7 +421,7 @@ class SignerControllerIntTest {
         mockMvc.perform(put(SIGNER_ENDPOINT_WITH_ID, EXTERNAL_SIGNER_ID)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isServiceUnavailable());
 
         // then
         final var signerAfterTest = signerRepository.findAll().iterator().next();

@@ -199,15 +199,31 @@ class RestExceptionHandlerTest {
     }
 
     @Test
-    void testHandleCertificateAuthorityExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+    void testHandleCertificateAuthorityExceptionWhenExceptionWith4xxHttpStatusIsHandledThenCorrectResponseIsReturned() {
         // Given
         final var message = "Ejbca error";
 
         // When
-        final var response = restExceptionHandler.handleCertificateAuthorityException(new CertificateAuthorityException(message, new RuntimeException()));
+        final var response = restExceptionHandler.handleCertificateAuthorityException(
+                new CertificateAuthorityException(message, new RuntimeException(), HttpStatus.NOT_FOUND)
+        );
 
         // Then
         assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.CERTIFICATE_AUTHORITY_ERROR);
+    }
+
+    @Test
+    void testHandleCertificateAuthorityExceptionWhenExceptionWith5xxHttpStatusIsHandledThenCorrectResponseIsReturned() {
+        // Given
+        final var message = "Ejbca error";
+
+        // When
+        final var response = restExceptionHandler.handleCertificateAuthorityException(
+                new CertificateAuthorityException(message, new RuntimeException(), HttpStatus.INTERNAL_SERVER_ERROR)
+        );
+
+        // Then
+        assertErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, response, message, ErrorCode.CERTIFICATE_AUTHORITY_ERROR);
     }
 
     @Test
@@ -231,7 +247,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleCsrVerificationException(new CsrVerificationException(message, new RuntimeException()));
 
         // Then
-        assertErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, response, message, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR);
+        assertErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, response, message, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR);
     }
 
     @Test
@@ -279,7 +295,7 @@ class RestExceptionHandlerTest {
         final var response = restExceptionHandler.handleRuntimeException(new RuntimeException(message));
 
         // Then
-        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.ERROR_GENERIC);
+        assertErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, response, message, ErrorCode.ERROR_GENERIC);
     }
 
     private void assertErrorResponse(
