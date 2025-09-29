@@ -18,7 +18,7 @@
 package com.wultra.signercloud.server.signer;
 
 /**
- * Exception thrown when Power Auth is not able to verify the CSR (Certificate Signing Request).
+ * Exception thrown when PowerAuth is not able to verify the CSR (Certificate Signing Request).
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */

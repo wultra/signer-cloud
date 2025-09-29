@@ -63,7 +63,7 @@ class SignerController {
                     ),
                     @ApiResponse(
                             responseCode = "503",
-                            description = "Problem with CSR verification via Power Auth or certificate enrollment via Certificate Authority.",
+                            description = "Problem with CSR verification via PowerAuth or certificate enrollment via Certificate Authority.",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }

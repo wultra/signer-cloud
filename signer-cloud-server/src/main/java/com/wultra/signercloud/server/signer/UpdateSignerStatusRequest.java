@@ -32,7 +32,7 @@ record UpdateSignerStatusRequest(
                 allowableValues = {"ACTIVE", "BLOCKED", "REMOVED", "REVOKED"})
         @NotNull SignerStatus signerStatus,
 
-        @Schema(description = "If the new status is 'REVOKED', this is the reason for the revocation. By default it is set to `UNSPECIFIED`.",
+        @Schema(description = "If the new status is `REVOKED`, this is the reason for the revocation. By default it is set to `UNSPECIFIED`.",
                 example = "UNSPECIFIED",
                 defaultValue = "UNSPECIFIED")
         RevocationReason revocationReason

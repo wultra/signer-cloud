@@ -123,7 +123,7 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "503",
-                            description = "Power Auth service is not available",
+                            description = "PowerAuth service is not available",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }

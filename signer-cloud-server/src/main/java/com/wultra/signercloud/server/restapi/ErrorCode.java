@@ -51,7 +51,7 @@ public enum ErrorCode {
     CSR_INVALID_SIGNATURE_ERROR,
 
     /**
-     * Error when Power Auth server could not verify signature of CSR (Certificate Signing Request). Indicates problem with Power Auth server.
+     * Error when Power Auth server could not verify signature of CSR (Certificate Signing Request). Indicates problem with PowerAuth server.
      */
     CSR_SIGNATURE_VERIFICATION_ERROR,
 
