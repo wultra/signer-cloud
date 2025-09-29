@@ -24,19 +24,31 @@ import io.swagger.v3.oas.annotations.media.Schema;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
+@Schema(description = "Response for reject document operation")
 record RejectDocumentResponse(
-        @Schema(description = "Unique identifier of the document in UUID format", example = "9a19a657-24a5-4d9f-9b72-f6b66de8f2c4")
+        @Schema(
+                description = "Unique identifier of the document",
+                example = "9a19a657-24a5-4d9f-9b72-f6b66de8f2c4",
+                format = "uuid")
         String documentId,
 
-        @Schema(description = "Display name of the document.", example = "Customer Contract")
+        @Schema(
+                description = "Display name of the document",
+                example = "Customer Contract")
         String name,
 
-        @Schema(description = "Original filename of the uploaded document.", example = "contract.pdf")
+        @Schema(
+                description = "Original filename of the uploaded document",
+                example = "contract.pdf")
         String filename,
 
-        @Schema(description = "Size of the document in bytes.", example = "27531")
+        @Schema(
+                description = "Size of the document in bytes",
+                example = "27531")
         int size,
 
-        @Schema(description = "Hash of the document content.", example = "x/PQFGarKCBiFs2lzQkH4QDtxBqR+6e6YQSomQEWv+U=")
+        @Schema(
+                description = "Hash of the document content",
+                example = "x/PQFGarKCBiFs2lzQkH4QDtxBqR+6e6YQSomQEWv+U=")
         String hash
 ) {}

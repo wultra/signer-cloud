@@ -17,9 +17,22 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Response for HTTP error.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record ErrorResponse(String status, ErrorDetails responseObject) {}
+@Schema(description = "Response for HTTP error")
+public record ErrorResponse(
+        @Schema(
+                description = "Response status code",
+                example = "ERROR",
+                allowableValues = {"ERROR"}
+        )
+        String status,
+
+        @Schema(description = "Details of the error")
+        ErrorDetails responseObject
+) {}

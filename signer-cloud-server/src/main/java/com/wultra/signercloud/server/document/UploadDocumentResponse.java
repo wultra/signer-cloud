@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
 /**
@@ -24,14 +25,51 @@ import lombok.Builder;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
+@Schema(description = "Response after uploading a document")
 @Builder
 record UploadDocumentResponse(
+        @Schema(
+                description = "ID of the uploaded document",
+                example = "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                format = "uuid"
+        )
         String documentId,
+
+        @Schema(
+                description = "ID of the signer associated with the document",
+                example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+        )
         String signerId,
+
+        @Schema(
+                description = "External ID of the document",
+                example = "example-document-id"
+        )
         String externalId,
+
+        @Schema(
+                description = "Name of the document",
+                example = "Contract Example"
+        )
         String name,
+
+        @Schema(
+                description = "File name of the document",
+                example = "Contract.pdf"
+        )
         String fileName,
+
+        @Schema(
+                description = "Size of the document in bytes",
+                example = "500"
+        )
         int size,
+
+        @Schema(
+                description = "Hash of the document to be signed",
+                example = "X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=",
+                format = "byte"
+        )
         String hash
 ) {
 }
