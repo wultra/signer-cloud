@@ -131,8 +131,9 @@ public class DocumentController {
     @PostMapping("/{documentId}/signature")
     SignDocumentResponse sign(
             @Schema(
-                    description = "UUID of the document",
-                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5"
+                    description = "ID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5",
+                    format = "uuid"
             )
             @PathVariable final String documentId,
             @Valid @RequestBody final SignDocumentRequest requestBody) {
@@ -175,8 +176,9 @@ public class DocumentController {
     @GetMapping(value = "/{documentId}/file", produces = MediaType.APPLICATION_PDF_VALUE)
     Resource download(
             @Schema(
-                    description = "UUID of the document",
-                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5"
+                    description = "ID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5",
+                    format = "uuid"
             )
             @PathVariable final String documentId,
 
@@ -221,8 +223,9 @@ public class DocumentController {
     @PutMapping("/{documentId}")
     RejectDocumentResponse reject(
             @Schema(
-                    description = "UUID of the document",
-                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5"
+                    description = "ID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5",
+                    format = "uuid"
             )
             @PathVariable final String documentId,
             @Valid @RequestBody final RejectDocumentRequest requestBody
@@ -255,8 +258,9 @@ public class DocumentController {
     @DeleteMapping("/{documentId}")
     void delete(
             @Schema(
-                    description = "UUID of the document",
-                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5"
+                    description = "ID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5",
+                    format = "uuid"
             )
             @PathVariable final String documentId
     ) {

@@ -28,7 +28,8 @@ import jakarta.validation.constraints.NotEmpty;
 @Schema(description = "Request to sign a document")
 record SignDocumentRequest(
         @Schema(
-                description = "Signature of the document in Base64 format.",
-                example = "MEUCIA2qnAC9/Iv/WXeacSPzV2G+k+6CyDx/TU7sl8KcfynBAiEApa+s/gSca5MPsdUc+ZjCfbS/ZW3bqGu2tZ3oMPxCUrc=")
+                description = "Signature of the document",
+                example = "MEUCIA2qnAC9/Iv/WXeacSPzV2G+k+6CyDx/TU7sl8KcfynBAiEApa+s/gSca5MPsdUc+ZjCfbS/ZW3bqGu2tZ3oMPxCUrc=",
+                format = "byte")
         @NotEmpty String signature
 ) {}

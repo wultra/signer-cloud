@@ -30,7 +30,8 @@ import lombok.Builder;
 record UploadDocumentResponse(
         @Schema(
                 description = "ID of the uploaded document",
-                example = "d290f1ee-6c54-4b01-90e6-d701748f0851"
+                example = "d290f1ee-6c54-4b01-90e6-d701748f0851",
+                format = "uuid"
         )
         String documentId,
 
@@ -65,8 +66,9 @@ record UploadDocumentResponse(
         int size,
 
         @Schema(
-                description = "Hash of the document to be signed, in Base64 format",
-                example = "X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE="
+                description = "Hash of the document to be signed",
+                example = "X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE=",
+                format = "byte"
         )
         String hash
 ) {
