@@ -96,7 +96,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           tags: |
             ${{ vars.ACR_REGISTRY_URL != ''  && format('{0}/{1}', vars.ACR_REGISTRY_URL, env.IMAGE_NAME) || '' }}
-            ${{ vars.DISTRIBUTION_REGISTRY_URL != '' && format('{0}/{1}', vars.DISTRIBUTION_REGISTRY_URL, env.IMAGE_NAME) || '' }}
+            ${{ vars.DISTRIBUTION_REGISTRY_URL != '' && format('{0}/powerauth/{1}', vars.DISTRIBUTION_REGISTRY_URL, env.IMAGE_NAME) || '' }}
           file: ./Dockerfile
           context: .
     outputs:
