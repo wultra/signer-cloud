@@ -50,7 +50,7 @@ public class DocumentController {
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Successful upload",
+                            description = "Document uploaded successfully",
                             content = @Content(schema = @Schema(implementation = UploadDocumentResponse.class))
                     ),
                     @ApiResponse(
@@ -118,12 +118,12 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "500",
-                            description = "Problem with certificate",
+                            description = "Certificate processing error",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     ),
                     @ApiResponse(
                             responseCode = "503",
-                            description = "Problem with Power Auth service",
+                            description = "Power Auth service is not available",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
@@ -162,12 +162,12 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "206",
-                            description = "Partial document content according to the `Range` header.",
+                            description = "Partial document content according to the `Range` header",
                             content = @Content(schema = @Schema(implementation = Resource.class))
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Document not found or not signed yet. See the error message for details",
+                            description = "Document not found or not signed yet",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }

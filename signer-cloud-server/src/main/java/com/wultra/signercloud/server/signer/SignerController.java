@@ -49,18 +49,23 @@ class SignerController {
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "REST API call was successful."
+                            description = "Signer created or updated successfully"
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid CSR or it's signature",
+                            description = "Invalid CSR or its signature",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Certificate processing error",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     ),
                     @ApiResponse(
                             responseCode = "503",
                             description = "Problem with CSR verification via Power Auth or certificate enrollment via Certificate Authority.",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
-                    ),
+                    )
             }
     )
     @PostMapping
@@ -81,16 +86,21 @@ class SignerController {
 
     @Operation(
             summary = "Change status of a signer",
-            description = "Change status of Signer identified by `externalSignerId`. If status is changed to `REVOKED`, " +
-                    "then Certificate Authority is called and all certificates linked to the Signer are invalidated",
+            description = "Change status of signer identified by `externalSignerId`. If status is changed to `REVOKED`, " +
+                    "then Certificate Authority is called and all certificates linked to the signer are invalidated",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "REST API call was successful."
+                            description = "Status successfully changed"
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Signer not found, illegal signer state, or problem with Certificate Authority",
+                            description = "Signer not found, illegal signer state, or 4xx HTTP status returned by Certificate Authority",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Certificate authority is not available",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
@@ -119,11 +129,11 @@ class SignerController {
 
     @Operation(
             summary = "Gets details of a signer",
-            description = "Gets the details of a Signer, including `userId` and `signerStatus`.",
+            description = "Gets the details of a signer, including `userId` and `signerStatus`.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Response contains details of the signer",
+                            description = "Response with details of the signer",
                             content = @Content(schema = @Schema(implementation = SignerDetailResponse.class))
                     ),
                     @ApiResponse(
