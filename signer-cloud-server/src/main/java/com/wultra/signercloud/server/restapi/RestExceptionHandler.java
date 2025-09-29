@@ -65,6 +65,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentContentNotFoundException(final DocumentContentNotFoundException ex) {
+        logger.warn("Document content not found", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
@@ -76,6 +77,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentNotFoundException(final DocumentNotFoundException ex) {
+        logger.warn("Document not found", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
@@ -87,6 +89,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentStateException(final DocumentStateException ex) {
+        logger.warn("Illegal document operation", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
@@ -98,6 +101,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentStatusTransitionException(final DocumentStatusTransitionException ex) {
+        logger.warn("Illegal document status transition", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
@@ -109,6 +113,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentUploadException(final DocumentUploadException ex) {
+        logger.warn("Document upload error", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.DOCUMENT_UPLOAD_ERROR, ex.getMessage());
     }
 
@@ -120,6 +125,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentInvalidSignatureException(final DocumentInvalidSignatureException ex) {
+        logger.warn("Document invalid signature", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.DOCUMENT_INVALID_SIGNATURE_ERROR, ex.getMessage());
     }
 
@@ -131,6 +137,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleDocumentSigningException(final DocumentSigningException ex) {
+        logger.warn("Document signing exception", ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.DOCUMENT_SIGNING_ERROR, ex.getMessage());
     }
 
@@ -142,6 +149,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleCertificateProcessingException(final CertificateProcessingException ex) {
+        logger.warn("Certificate processing exception", ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.CERTIFICATE_PROCESSING_ERROR, ex.getMessage());
     }
 
@@ -153,6 +161,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleCsrProcessingException(final CsrProcessingException ex) {
+        logger.warn("CSR processing exception", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CSR_INVALID_SIGNATURE_ERROR, ex.getMessage());
     }
 
@@ -164,6 +173,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleCsrVerificationException(final CsrVerificationException ex) {
+        logger.warn("CSR signature verification exception", ex);
         return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ErrorCode.CSR_SIGNATURE_VERIFICATION_ERROR, ex.getMessage());
     }
 
@@ -175,6 +185,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleCertificateAuthorityException(final CertificateAuthorityException ex) {
+        logger.warn("Certificate authority exception", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CERTIFICATE_AUTHORITY_ERROR, ex.getMessage());
     }
 
@@ -186,6 +197,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignatureVerificationException(final CsrInvalidSignatureException ex) {
+        logger.warn("CSR invalid signature", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.CSR_INVALID_SIGNATURE_ERROR, ex.getMessage());
     }
 
@@ -197,6 +209,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerNotFoundException(final SignerNotFoundException ex) {
+        logger.warn("Signer not found", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ERROR_RESOURCE_NOT_FOUND, ex.getMessage());
     }
 
@@ -208,6 +221,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerStateException(final SignerStateException ex) {
+        logger.warn("Illegal Signer operation", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 
@@ -219,6 +233,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleSignerStatusTransitionException(final SignerStatusTransitionException ex) {
+        logger.warn("Illegal Signer status transition", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.ILLEGAL_OPERATION_ERROR, ex.getMessage());
     }
 

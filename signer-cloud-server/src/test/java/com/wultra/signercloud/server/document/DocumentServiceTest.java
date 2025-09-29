@@ -184,7 +184,7 @@ class DocumentServiceTest {
         );
 
         // then
-        assertEquals("Failed to read file: Test IO exception", exception.getMessage());
+        assertEquals("Exception when reading upload file: Test IO exception", exception.getMessage());
     }
 
     @Test

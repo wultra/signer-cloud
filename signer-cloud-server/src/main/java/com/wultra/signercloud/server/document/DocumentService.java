@@ -183,8 +183,7 @@ class DocumentService {
         try {
             return file.getBytes();
         } catch (final IOException e) {
-            logger.warn("Exception when reading upload file", e);
-            throw new DocumentUploadException("Failed to read file: " + e.getMessage(), e);
+            throw new DocumentUploadException("Exception when reading upload file: " + e.getMessage(), e);
         }
     }
 
@@ -306,7 +305,6 @@ class DocumentService {
             final var x509Certificate = signer.getX509Certificate();
             return new CertificateToken(x509Certificate);
         } catch (final CertificateException e) {
-            logger.warn("Exception when processing certificate", e);
             throw new CertificateProcessingException("Exception when processing certificate: " + e.getMessage(), e);
         }
     }
@@ -322,7 +320,6 @@ class DocumentService {
 
             return chain;
         } catch (final CertificateException e) {
-            logger.warn("Exception when processing certificate chain", e);
             throw new CertificateProcessingException("Exception when processing certificate chain: " + e.getMessage(), e);
         }
     }
@@ -345,8 +342,7 @@ class DocumentService {
         try (final var stream = signedDocument.openStream()) {
             return stream.readAllBytes();
         } catch (final IOException e) {
-            logger.warn("Exception when reading bytes of signed document", e);
-            throw new DocumentSigningException("Failed to read signed document: " + e.getMessage(), e);
+            throw new DocumentSigningException("Exception when reading bytes of signed document: " + e.getMessage(), e);
         }
     }
 

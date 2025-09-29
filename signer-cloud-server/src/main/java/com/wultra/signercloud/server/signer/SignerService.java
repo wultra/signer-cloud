@@ -231,7 +231,6 @@ class SignerService {
             final var savedSigner = signerRepository.save(signer);
             saveIssuedCertificate(savedSigner.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
-            logger.warn("Error when processing certificate, externalSignerId: {}", externalSignerId, e);
             throw new CertificateProcessingException("Error when processing certificate: " + e.getMessage(), e);
         }
     }
@@ -256,7 +255,6 @@ class SignerService {
 
             return request;
         } catch (final RuntimeException | IOException e) {
-            logger.warn("Error when processing CSR", e);
             throw new CsrProcessingException("Error when processing CSR: " + e.getMessage(), e);
         }
     }
@@ -268,7 +266,6 @@ class SignerService {
                 throw new CsrInvalidSignatureException("Signature is not valid.");
             }
         } catch (final PowerAuthClientException e) {
-            logger.warn("Error response from PowerAuth server", e);
             throw new CsrVerificationException("Signature could not be verified due to PowerAuth error: " + e.getMessage(), e);
         }
     }
@@ -277,10 +274,8 @@ class SignerService {
         try {
             return ejbcaService.enrollCertificate(certificateRequest);
         } catch (final RestClientException e) {
-            logger.warn("Error from EJBCA server when enrolling certificate: {}", e.getResponse(), e);
             throw new CertificateAuthorityException("Error from EJBCA server when enrolling certificate: " + e.getResponse(), e);
         } catch (final CertificateException | IOException e) {
-            logger.warn("Error when processing enrolled certificate", e);
             throw new CertificateProcessingException("Error when processing enrolled certificate: " + e.getMessage(), e);
         }
     }
