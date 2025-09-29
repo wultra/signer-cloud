@@ -25,6 +25,7 @@ import jakarta.validation.constraints.NotBlank;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
+@Schema(description = "Request to create or update a `signer`")
 record CreateUpdateSignerRequest(
         @Schema(
                 description = "Unique identifier of the signer in the external system.",
@@ -34,7 +35,7 @@ record CreateUpdateSignerRequest(
 
         @Schema(
                 description = "Identifier of the user owning the signer.",
-                example = "demo-user"
+                example = "example-user-id"
         )
         @NotBlank String userId,
 

@@ -25,6 +25,7 @@ import jakarta.validation.constraints.NotNull;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
+@Schema(description = "Request to reject a document")
 record RejectDocumentRequest(
         @Schema(
                 description = "The document status. Must be REJECTED.",

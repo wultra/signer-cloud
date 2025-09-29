@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
 
 /**
@@ -24,4 +25,10 @@ import jakarta.validation.constraints.NotEmpty;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-record SignDocumentRequest(@NotEmpty String signature) {}
+@Schema(description = "Request to sign a document")
+record SignDocumentRequest(
+        @Schema(
+                description = "Signature of the document in Base64 format.",
+                example = "MEUCIA2qnAC9/Iv/WXeacSPzV2G+k+6CyDx/TU7sl8KcfynBAiEApa+s/gSca5MPsdUc+ZjCfbS/ZW3bqGu2tZ3oMPxCUrc=")
+        @NotEmpty String signature
+) {}

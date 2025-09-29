@@ -17,9 +17,24 @@
  */
 package com.wultra.signercloud.server.restapi;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * Details for {@link ErrorResponse}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record ErrorDetails(ErrorCode code, String message) {}
+@Schema(description = "Details of the error")
+public record ErrorDetails(
+        @Schema(
+                description = "Error code indicating the type of error",
+                example = "RESOURCE_NOT_FOUND"
+        )
+        ErrorCode code,
+
+        @Schema(
+                description = "Message providing more details about the error",
+                example = "Document with 9d18fb83-ea0f-4ce4-afc1-e4382a8222a5 not found"
+        )
+        String message
+) {}

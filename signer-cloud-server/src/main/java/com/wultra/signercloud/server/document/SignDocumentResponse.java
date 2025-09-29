@@ -28,10 +28,13 @@ import lombok.Builder;
 @Schema(description = "Response for document signing operation")
 @Builder
 record SignDocumentResponse(
-        @Schema(description = "Identifier of the signed document as UUID", example = "3f5e8c7a-2d91-4f9b-bc3e-1a7d2f8e6c42")
+        @Schema(
+                description = "Identifier of the signed document as UUID",
+                example = "3f5e8c7a-2d91-4f9b-bc3e-1a7d2f8e6c42")
         String documentId,
 
-        @Schema(description = "URI to access the signed document. It uses X-Forwarded* headers from request for building the URI.",
+        @Schema(
+                description = "URI to access the signed document. It uses X-Forwarded* headers from request for building the URI.",
                 example = "https://example.com:8080/documents/3f5e8c7a-2d91-4f9b-bc3e-1a7d2f8e6c42/download")
         String uri
 ) {}

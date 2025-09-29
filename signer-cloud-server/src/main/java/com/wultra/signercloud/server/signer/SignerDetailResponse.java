@@ -17,14 +17,31 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 /**
  * REST API response for details of a {@link Signer}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
+@Schema(description = "Response with details of a `Signer`")
 record SignerDetailResponse(
+        @Schema(
+                description = "ID of the signer",
+                example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+        )
         String externalSignerId,
+
+        @Schema(
+                description = "ID of the user owning the signer",
+                example = "example-user-id"
+        )
         String userId,
+
+        @Schema(
+                description = "Status of the signer",
+                example = "ACTIVE"
+        )
         SignerStatus signerStatus
 ) {
 }

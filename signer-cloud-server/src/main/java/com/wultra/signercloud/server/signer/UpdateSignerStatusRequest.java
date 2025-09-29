@@ -28,10 +28,12 @@ import jakarta.validation.constraints.NotNull;
 @Schema(description = "Request to update the status of a signer")
 record UpdateSignerStatusRequest(
         @Schema(description = "New status of the signer",
-                example = "REVOKED")
+                example = "REVOKED",
+                allowableValues = {"ACTIVE", "BLOCKED", "REMOVED", "REVOKED"})
         @NotNull SignerStatus signerStatus,
 
-        @Schema(description = "If the new status is 'REVOKED', this is the reason for the revocation. By default it is set to 'UNSPECIFIED'.",
-                example = "UNSPECIFIED")
+        @Schema(description = "If the new status is 'REVOKED', this is the reason for the revocation. By default it is set to `UNSPECIFIED`.",
+                example = "UNSPECIFIED",
+                defaultValue = "UNSPECIFIED")
         RevocationReason revocationReason
 ) {}

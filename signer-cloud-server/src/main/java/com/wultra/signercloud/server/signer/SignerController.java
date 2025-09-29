@@ -17,7 +17,7 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import com.wultra.core.rest.client.base.RestClientException;
+import com.wultra.signercloud.server.restapi.ErrorResponse;
 import com.wultra.signercloud.server.restapi.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,7 +45,7 @@ class SignerController {
             summary = "Create a new signer or update an existing one",
             description = "Creates a new signer with the provided data. If a signer with the specified `externalSignerId` " +
                     "already exists, it is updated. In both cases, the signature in `csr` is verified using PowerAuth, " +
-                    "and a certificate is generated in EJBCA.",
+                    "and a certificate is generated in Certificate Authority.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -53,8 +53,14 @@ class SignerController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "In case of error. Check response body for details."
-                    )
+                            description = "Invalid CSR or it's signature",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Problem with CSR verification or certificate enrollment.",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    ),
             }
     )
     @PostMapping
@@ -76,7 +82,7 @@ class SignerController {
     @Operation(
             summary = "Change status of a signer",
             description = "Change status of Signer identified by `externalSignerId`. If status is changed to `REVOKED`, " +
-                    "then EJBCA is called and all certificates linked to the Signer are invalidated",
+                    "then Certificate Authority is called and all certificates linked to the Signer are invalidated",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -84,12 +90,19 @@ class SignerController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "In case of error. Check response body for details."
+                            description = "Signer not found, illegal signer state, or problem with Certificate Authority",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
     )
     @PutMapping("/{externalSignerId}")
-    void updateStatus(@PathVariable final String externalSignerId, @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
+    void updateStatus(
+            @Schema(
+                    description = "ID of the signer",
+                    example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+            )
+            @PathVariable final String externalSignerId,
+            @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
         logger.info("action: updateSignerStatus, state: initiated, externalSignerId: {}, newStatus: {}", externalSignerId, requestBody.signerStatus());
         final var result =  Try.execute(
                 () -> signerService.updateStatus(externalSignerId, requestBody)
@@ -115,12 +128,19 @@ class SignerController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Signer for given `externalSignerId` not found"
+                            description = "Signer for given `externalSignerId` not found",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
     )
     @GetMapping("/{externalSignerId}")
-    SignerDetailResponse getDetail(@PathVariable final String externalSignerId) {
+    SignerDetailResponse getDetail(
+            @Schema(
+                    description = "ID of the signer",
+                    example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+            )
+            @PathVariable final String externalSignerId
+    ) {
         logger.info("action: getSignerDetail, state: initiated, externalSignerId: {}", externalSignerId);
         final var result = Try.execute(
                 () -> signerService.getDetail(externalSignerId)

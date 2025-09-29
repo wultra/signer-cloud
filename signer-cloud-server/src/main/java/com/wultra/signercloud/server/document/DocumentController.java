@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.restapi.ErrorResponse;
 import com.wultra.signercloud.server.restapi.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -45,7 +46,7 @@ public class DocumentController {
 
     @Operation(
             summary = "Uploads a document for signing",
-            description = "Stores document in the database with its hash (calculated using the configured algorithm) and associates it with the Signer.",
+            description = "Stores document in the database with its hash (calculated using the configured algorithm) and associates it with the `Signer`.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -54,17 +55,38 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Invalid input data or Signer not found"
+                            description = "Invalid input data or Signer not found",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
     )
     @PostMapping
     UploadDocumentResponse upload(
+            @Schema(
+                    description = "ID of the signer",
+                    example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+            )
             @RequestParam("signerId") final String externalSignerId,
+
+            @Schema(
+                    description = "External ID of the document",
+                    example = "example-document-id"
+            )
             @RequestParam("externalId") final String externalDocumentId,
+
+            @Schema(
+                    description = "Name of the document",
+                    example = "Document Contract"
+            )
             @RequestParam("name") final String documentName,
+
+            @Schema(
+                    description = "File to be uploaded",
+                    type = "string",
+                    format = "binary"
+            )
             @RequestParam("file") final MultipartFile file
-    ) throws Throwable {
+    ) {
         logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, externalDocumentId: {}", externalSignerId, externalDocumentId);
         final var result = Try.execute(
                 () -> documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, file)
@@ -91,12 +113,24 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Signer or document not found, invalid document state or invalid signature"
+                            description = "Signer or document not found, illegal document state or invalid signature",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Problem with certificate or assembling the signed document",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
     )
     @PostMapping("/{documentId}/signature")
-    SignDocumentResponse sign(@PathVariable final String documentId, @Valid @RequestBody final SignDocumentRequest requestBody) throws Throwable {
+    SignDocumentResponse sign(
+            @Schema(
+                    description = "UUID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5"
+            )
+            @PathVariable final String documentId,
+            @Valid @RequestBody final SignDocumentRequest requestBody) {
         logger.info("action: signDocument, state: initiated, documentId: {}", documentId);
         final var result = Try.execute(
                 () -> documentService.signDocument(documentId, requestBody)
@@ -128,12 +162,26 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Document not found, not signed yet. See the error message for details"
+                            description = "Document not found or not signed yet. See the error message for details",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
     )
     @GetMapping(value = "/{documentId}/file", produces = MediaType.APPLICATION_PDF_VALUE)
-    Resource download(@PathVariable final String documentId, @RequestHeader(value = "Range", required = false) final String rangeHeader) throws Throwable {
+    Resource download(
+            @Schema(
+                    description = "UUID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5"
+            )
+            @PathVariable final String documentId,
+
+            @Schema(
+                    description = "Optional Range header to download a specific byte range of the document (according to RFC 7233). " +
+                            "If not provided, the full document is returned.",
+                    example = "bytes=0-1023"
+            )
+            @RequestHeader(value = "Range", required = false) final String rangeHeader
+    ) {
         logger.info("action: downloadDocument, state: initiated, documentId: {}, ranges: {}", documentId, rangeHeader);
         final var result = Try.execute(
                 () -> documentService.downloadDocument(documentId)
@@ -151,7 +199,7 @@ public class DocumentController {
 
     @Operation(
             summary = "Rejects a document",
-            description = "Rejects a document and doesn't matter in which state it is. It sets the document state to REJECTED.",
+            description = "Rejects a document, regardless of its state. It sets the document state to `REJECTED`.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -160,12 +208,20 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "400",
-                            description = "Document not found or invalid status in request body"
+                            description = "Document not found or invalid request",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
     )
     @PutMapping("/{documentId}")
-    RejectDocumentResponse reject(@PathVariable final String documentId, @Valid @RequestBody final RejectDocumentRequest requestBody) throws Throwable {
+    RejectDocumentResponse reject(
+            @Schema(
+                    description = "UUID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5"
+            )
+            @PathVariable final String documentId,
+            @Valid @RequestBody final RejectDocumentRequest requestBody
+    ) {
         logger.info("action: rejectDocument, state: initiated, documentId: {}", documentId);
         final var result = Try.execute(
                 () -> documentService.rejectDocument(documentId, requestBody)
@@ -183,7 +239,7 @@ public class DocumentController {
 
     @Operation(
             summary = "Deletes a document",
-            description = "Permanently deletes a document from the database, regardless of its state. This operation cannot be undone.",
+            description = "Permanently deletes a document, regardless of its state. This operation cannot be undone.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",
@@ -192,7 +248,13 @@ public class DocumentController {
             }
     )
     @DeleteMapping("/{documentId}")
-    void delete(@PathVariable final String documentId) {
+    void delete(
+            @Schema(
+                    description = "UUID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5"
+            )
+            @PathVariable final String documentId
+    ) {
         logger.info("action: deleteDocument, state: initiated, documentId: {}", documentId);
         documentService.deleteDocument(documentId);
         logger.info("action: deleteDocument, state: succeeded");
