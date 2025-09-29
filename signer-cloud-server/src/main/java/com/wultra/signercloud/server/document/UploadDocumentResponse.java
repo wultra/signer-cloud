@@ -65,7 +65,7 @@ record UploadDocumentResponse(
         int size,
 
         @Schema(
-                description = "Hahs of the document to be signed, in Base64 format",
+                description = "Hash of the document to be signed, in Base64 format",
                 example = "X48E9qOokqqrvdts8nOJRJN3OWDUoyWxBf7kbu9DBPE="
         )
         String hash
