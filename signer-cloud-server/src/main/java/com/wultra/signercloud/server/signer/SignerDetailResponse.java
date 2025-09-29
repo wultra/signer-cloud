@@ -28,7 +28,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 record SignerDetailResponse(
         @Schema(
                 description = "ID of the signer",
-                example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+                example = "756419e1-1d85-4172-815d-d8653ecd3a89",
+                format = "uuid"
         )
         String externalSignerId,
 

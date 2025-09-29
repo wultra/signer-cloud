@@ -109,7 +109,8 @@ class SignerController {
     void updateStatus(
             @Schema(
                     description = "ID of the signer",
-                    example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+                    example = "756419e1-1d85-4172-815d-d8653ecd3a89",
+                    format = "uuid"
             )
             @PathVariable final String externalSignerId,
             @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
@@ -147,7 +148,8 @@ class SignerController {
     SignerDetailResponse getDetail(
             @Schema(
                     description = "ID of the signer",
-                    example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+                    example = "756419e1-1d85-4172-815d-d8653ecd3a89",
+                    format = "uuid"
             )
             @PathVariable final String externalSignerId
     ) {

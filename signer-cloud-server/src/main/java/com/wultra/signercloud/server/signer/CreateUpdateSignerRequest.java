@@ -29,7 +29,8 @@ import jakarta.validation.constraints.NotBlank;
 record CreateUpdateSignerRequest(
         @Schema(
                 description = "Unique identifier of the signer in the external system.",
-                example = "756419e1-1d85-4172-815d-d8653ecd3a89"
+                example = "756419e1-1d85-4172-815d-d8653ecd3a89",
+                format = "uuid"
         )
         @NotBlank String signerId,
 
