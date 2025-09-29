@@ -118,7 +118,12 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "500",
-                            description = "Problem with certificate or assembling the signed document",
+                            description = "Problem with certificate",
+                            content = @Content(schema = @Schema(implementation = ErrorResponse.class))
+                    ),
+                    @ApiResponse(
+                            responseCode = "503",
+                            description = "Problem with Power Auth service",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
