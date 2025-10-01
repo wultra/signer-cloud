@@ -45,10 +45,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 /**
  * Document service.
@@ -134,10 +131,13 @@ class DocumentService {
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
 
+        final var documentUuid = UUID.randomUUID().toString();
+        final var timestampCreated = Instant.now();
+
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = computeHash(fileContent, configurationProperties.getContentHashAlgorithm());
+        final var hash = computeHash(fileContent, signer, documentUuid, timestampCreated);
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)
@@ -146,8 +146,8 @@ class DocumentService {
         final var savedDocumentContent = documentContentRepository.save(documentContent);
 
         final var document = Document.builder()
-                .timestampCreated(Instant.now())
-                .documentId(UUID.randomUUID().toString())
+                .timestampCreated(timestampCreated)
+                .documentId(documentUuid)
                 .externalId(externalDocumentId)
                 .signer(AggregateReference.to(signer.getId()))
                 .documentName(documentName)
@@ -187,15 +187,18 @@ class DocumentService {
         }
     }
 
-    private static String computeHash(final byte[] content, final DigestAlgorithm hashAlgorithm) {
-        try {
-            final var digest = hashAlgorithm.getMessageDigest();
-            final var hashBytes = digest.digest(content);
-            return Base64.getEncoder().encodeToString(hashBytes);
-        } catch (final NoSuchAlgorithmException e) {
-            logger.error("Hash algorithm not found: {}", hashAlgorithm, e);
-            throw new DocumentUploadException("Hash algorithm not found: " + hashAlgorithm, e);
-        }
+    private String computeHash(final byte[] content, final Signer signer, final String documentUuid, final Instant signingDate) {
+        final var certificate = convertCertificate(signer);
+        final var certificateChain = convertCertificateChain(signer);
+
+        final var signatureParams = createSignatureParameters(certificate, certificateChain);
+        //signatureParams.getContext().setDeterministicId(documentUuid);
+        signatureParams.bLevel().setSigningDate(Date.from(signingDate));
+
+        final var document = new InMemoryDocument(content);
+        final var toSignBytes = padesService.getDataToSign(document, signatureParams);
+
+        return Base64.getEncoder().encodeToString(toSignBytes.getBytes());
     }
 
     /**
@@ -232,7 +235,7 @@ class DocumentService {
                 document.getHash(),
                 signature,
                 documentContent.getContent(),
-                configurationProperties.getSignatureHashAlgorithm());
+                document);
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -276,26 +279,38 @@ class DocumentService {
             final String hashBase64,
             final String hashSignatureBase64,
             final byte[] documentBytes,
-            final DigestAlgorithm signatureAlgorithm) {
+            final Document document) {
 
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, signatureAlgorithm, certificateChain);
+        final var signatureParams = createSignatureParameters(certificate, certificateChain);
+        //signatureParams.getContext().setDeterministicId(document.getDocumentId());
+        signatureParams.bLevel().setSigningDate(
+                Date.from(document.getTimestampCreated())
+        );
 
-        final var hashBytes = Base64.getDecoder().decode(hashBase64);
-        final var hash = new ToBeSigned(hashBytes);
+        final var unsignedDocument = new InMemoryDocument(documentBytes);
+
+//        final var hashBytes = Base64.getDecoder().decode(hashBase64);
+//        final var documentHash = new ToBeSigned(hashBytes);
+        final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
 
         final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
         final var signatureValue = new SignatureValue(signatureParams.getSignatureAlgorithm(), signatureBytes);
 
-        final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificate);
+        final var isSignatureValid = padesService.isValidSignatureValue(documentHash, signatureValue, certificate);
         if (!isSignatureValid) {
             throw new DocumentInvalidSignatureException("Invalid signature");
         }
 
-        final var unsignedDocument = new InMemoryDocument(documentBytes);
         final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
+
+        try {
+            signedDocument.save(Instant.now().toEpochMilli() + ".pdf");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         return readSignedDocumentBytes(signedDocument);
     }
@@ -324,13 +339,12 @@ class DocumentService {
         }
     }
 
-    private static PAdESSignatureParameters createSignatureParameters(
+    private PAdESSignatureParameters createSignatureParameters(
             final CertificateToken certificateToken,
-            final DigestAlgorithm algorithm,
             final List<CertificateToken> certificateChain
     ) {
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(algorithm);
+        params.setDigestAlgorithm(configurationProperties.getContentHashAlgorithm());
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
