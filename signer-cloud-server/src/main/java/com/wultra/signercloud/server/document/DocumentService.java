@@ -353,6 +353,7 @@ class DocumentService {
         params.setCertificateChain(certificateChain);
 
         params.bLevel().setSigningDate(Date.from(timestampSigned));
+        params.setSigningTimeZone(TimeZone.getTimeZone("UTC"));
 
         return params;
     }

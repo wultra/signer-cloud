@@ -93,18 +93,18 @@ class DocumentControllerIntTest {
     private static final String CERTIFICATE_BASE64 = "MIIB+TCCAX6gAwIBAgIUdgfxsvHbkb+D10cB0tlVop1pxBwwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MTAwMTE3NDMyNVoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPgmQeRkdACiXX3DVWqRtS4GcImFufgtYbMIo4Zr3ARJQxi2NpnJE1VoHWzSyYgSxYvQZu3wd8G5ooS8kKtkFOGjgYswgYgwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAoBgNVHSUEITAfBggrBgEFBQcDAgYIKwYBBQUHAwQGCSqGSIb3LwEBBTAdBgNVHQ4EFgQUinG5zjCVx7zoDsQq1wQMDAp2ee0wDgYDVR0PAQH/BAQDAgXgMAoGCCqGSM49BAMDA2kAMGYCMQCIvu/aKPHIu5eaKa7/zLFZMcyBy5g+2l16ZMiNYdAlZcRXc9w1MPdRziUmG72ATPYCMQCF2ljZll2bB+MeHuifHxP6fAqXAZCTgDvjovRxWjgUWCdVYa69DKfML2Yv3QZ518g=";
 
     // Document
-    private static final Instant DOCUMENT_TIMESTAMP_CREATED = Instant.ofEpochMilli(1759382917473L);
-    private static final String DOCUMENT_UUID = "5ae8fce9-6d1e-4350-8ee6-cde0c3850b65";
+    private static final Instant DOCUMENT_TIMESTAMP_CREATED = Instant.ofEpochMilli(1759409592827L);
+    private static final String DOCUMENT_UUID = "75142815-7adc-4962-afd2-1e498d38b90d";
     private static final String EXTERNAL_SIGNER_ID = "6fdbc9a0-7dd8-4891-adcf-ebceac188e13";
     private static final String EXTERNAL_DOCUMENT_ID = "external-document-id";
     private static final String DOCUMENT_NAME = "Document Test";
-    private static final String HASH = "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEIAMoUPx4TGkVEM9/1eP8QCpmbUUSJvVT5OcLl3hD96TdMGkGCyqGSIb3DQEJEAIvMVowWDBWMFQEIBco05OSwhsoq1BOh2Yxsrw5OarRAQOexhk3jLCQiRvBMDAwGKQWMBQxEjAQBgNVBAMMCUlzc3VpbmdDQQIUdgfxsvHbkb+D10cB0tlVop1pxBw=";
+    private static final String HASH = "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEIDjaW5HYNxwEDsi5/frhcx8k/DBC4o0ngYaLqKI6MS//MGkGCyqGSIb3DQEJEAIvMVowWDBWMFQEIBco05OSwhsoq1BOh2Yxsrw5OarRAQOexhk3jLCQiRvBMDAwGKQWMBQxEjAQBgNVBAMMCUlzc3VpbmdDQQIUdgfxsvHbkb+D10cB0tlVop1pxBw=";
 
     // echo "value_of_hash" | base64 --decode > hash.bin
     // openssl pkcs12 -in keystore-ecdsa.p12 -nocerts -nodes -out mykey.pem
     // openssl dgst -sha384 -sign mykey.pem -out signature.bin hash.bin
     // base64 < signature.bin
-    private static final String SIGNATURE = "MEUCIBvV6tJrAw9VyEvcBNjxl6fLSNOhTL4IQRpuAv0SqcbdAiEAhEk2Ju9QLSkllByGBvY3WXlUlucUpk14LcHVJ7DjjsU=";
+    private static final String SIGNATURE = "MEUCIQC4K+g3kluK8KEMAXitVLGatjRVXZMF5OjxLoU0MzBspwIge1SOPpGXaiGU0933uO+NAnu5+2uIsI9Dxco5LZine00=";
     private static final String FILENAME = "input.pdf";
     private static final int UPLOADED_FILE_SIZE = 7757;
     private static final int SIGNED_FILE_SIZE = 27780;
