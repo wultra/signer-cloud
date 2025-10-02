@@ -19,12 +19,10 @@ package com.wultra.signercloud.server.document;
 
 import com.wultra.signercloud.server.signer.*;
 import com.wultra.signercloud.server.utils.CertificateUtils;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
@@ -41,7 +39,6 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.time.Instant;
@@ -137,7 +134,7 @@ class DocumentService {
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = computeHash(fileContent, signer, documentUuid, timestampCreated);
+        final var hash = computeHash(fileContent, signer, timestampCreated);
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)
@@ -187,13 +184,11 @@ class DocumentService {
         }
     }
 
-    private String computeHash(final byte[] content, final Signer signer, final String documentUuid, final Instant signingDate) {
+    private String computeHash(final byte[] content, final Signer signer, final Instant timestampSigned) {
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, certificateChain);
-        //signatureParams.getContext().setDeterministicId(documentUuid);
-        signatureParams.bLevel().setSigningDate(Date.from(signingDate));
+        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned);
 
         final var document = new InMemoryDocument(content);
         final var toSignBytes = padesService.getDataToSign(document, signatureParams);
@@ -231,11 +226,11 @@ class DocumentService {
         verifyDocumentCanBeSigned(signer, document);
 
         final var signature = requestBody.signature();
-        final var signedDocumentBytes = verifySignatureAndSignDocument(signer,
-                document.getHash(),
+        final var signedDocumentBytes = verifySignatureAndSignDocument(
+                signer,
                 signature,
                 documentContent.getContent(),
-                document);
+                document.getTimestampCreated());
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -276,24 +271,17 @@ class DocumentService {
 
     private byte[] verifySignatureAndSignDocument(
             final Signer signer,
-            final String hashBase64,
             final String hashSignatureBase64,
             final byte[] documentBytes,
-            final Document document) {
+            final Instant timestampSigned) {
 
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, certificateChain);
-        //signatureParams.getContext().setDeterministicId(document.getDocumentId());
-        signatureParams.bLevel().setSigningDate(
-                Date.from(document.getTimestampCreated())
-        );
+        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned);
 
         final var unsignedDocument = new InMemoryDocument(documentBytes);
 
-//        final var hashBytes = Base64.getDecoder().decode(hashBase64);
-//        final var documentHash = new ToBeSigned(hashBytes);
         final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
 
         final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
@@ -305,12 +293,6 @@ class DocumentService {
         }
 
         final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
-
-        try {
-            signedDocument.save(Instant.now().toEpochMilli() + ".pdf");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
 
         return readSignedDocumentBytes(signedDocument);
     }
@@ -341,13 +323,16 @@ class DocumentService {
 
     private PAdESSignatureParameters createSignatureParameters(
             final CertificateToken certificateToken,
-            final List<CertificateToken> certificateChain
+            final List<CertificateToken> certificateChain,
+            final Instant timestampSigned
     ) {
         final var params = new PAdESSignatureParameters();
         params.setDigestAlgorithm(configurationProperties.getContentHashAlgorithm());
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
+
+        params.bLevel().setSigningDate(Date.from(timestampSigned));
 
         return params;
     }
