@@ -402,6 +402,9 @@ class DocumentServiceTest {
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
         when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class))).thenReturn(
+                new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH))
+        );
 
         // when
         final var exception = assertThrows(
