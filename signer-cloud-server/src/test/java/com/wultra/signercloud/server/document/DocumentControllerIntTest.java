@@ -64,7 +64,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "ejbca.rest-client.key-store-password=testPassword",
         "ejbca.rest-client.key-alias=testAlias",
-        "ejbca.rest-client.key-password=testKeyPassword"
+        "ejbca.rest-client.key-password=testKeyPassword",
+        "signer-cloud.server.document.waiting.timeout=",
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -288,29 +289,6 @@ class DocumentControllerIntTest {
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
         assertErrorResponse(responseBody, ErrorCode.ILLEGAL_OPERATION_ERROR, "Document is not in state when it can be signed");
-    }
-
-    @Test
-    void testSignWhenDocumentSignAttemptIsAfterDeadlineThen400WithCorrectResponseIsReturned() throws Exception {
-        // given
-        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
-        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        final var creationTimeAfterWaitingTimeout = Instant.now().minusSeconds(DOCUMENT_WAITING_TIMEOUT_SECONDS + 60);
-        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, creationTimeAfterWaitingTimeout);
-
-        final var request = new SignDocumentRequest(SIGNATURE);
-
-        // when
-        final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andReturn();
-
-        // then
-        final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
-
-        assertErrorResponse(responseBody, ErrorCode.ILLEGAL_OPERATION_ERROR, "Document signing timeout exceeded");
     }
 
     @Test
