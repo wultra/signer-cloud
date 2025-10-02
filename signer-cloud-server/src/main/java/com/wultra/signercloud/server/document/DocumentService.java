@@ -128,7 +128,6 @@ class DocumentService {
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
 
-        final var documentUuid = UUID.randomUUID().toString();
         final var timestampCreated = Instant.now();
 
         final var fileName = file.getOriginalFilename();
@@ -144,7 +143,7 @@ class DocumentService {
 
         final var document = Document.builder()
                 .timestampCreated(timestampCreated)
-                .documentId(documentUuid)
+                .documentId(UUID.randomUUID().toString())
                 .externalId(externalDocumentId)
                 .signer(AggregateReference.to(signer.getId()))
                 .documentName(documentName)
