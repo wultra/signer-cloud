@@ -345,7 +345,7 @@ class DocumentService {
             final Instant timestampSigned
     ) {
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(configurationProperties.getContentHashAlgorithm());
+        params.setDigestAlgorithm(configurationProperties.getHashAlgorithm());
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);

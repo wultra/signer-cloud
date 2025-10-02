@@ -193,7 +193,7 @@ class DocumentServiceTest {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(documentConfigurationProperties.getContentHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class))).thenReturn(
                 new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH))
         );
@@ -401,7 +401,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
-        when(documentConfigurationProperties.getContentHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
 
         // when
         final var exception = assertThrows(
@@ -438,7 +438,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
-        when(documentConfigurationProperties.getContentHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class)))
                 .thenReturn(new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH)));
         when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
@@ -481,7 +481,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
-        when(documentConfigurationProperties.getContentHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class)))
                 .thenReturn(new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH)));
         when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
