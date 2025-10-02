@@ -321,6 +321,25 @@ class DocumentService {
         }
     }
 
+    /**
+     * Creates signature parameters with a deterministic context.
+     *
+     * This method always creates a new instance. These parameters affect the {@link eu.europa.esig.dss.model.ToBeSigned}
+     * value returned by {@link PAdESService#getDataToSign(DSSDocument, PAdESSignatureParameters)}
+     * and computed internally in {@link PAdESService#signDocument(DSSDocument, PAdESSignatureParameters, SignatureValue)}.
+     * Therefore, it is important that the same context is used for the same signature, so that {@link eu.europa.esig.dss.model.ToBeSigned}
+     * is computed deterministically (i.e., the value is always the same).
+     * Pay attention to the {@code signingDate} in {@link PAdESSignatureParameters#bLevel}. From this value, the
+     * {@code deterministicId} in {@link PAdESSignatureParameters#getContext()} is computed.
+     * If {@code signingDate} is not explicitly set, the current machine time is used by default, and each call
+     * to obtain {@link eu.europa.esig.dss.model.ToBeSigned} will produce a different value.
+     * A list of signed parameters is available <a href="https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#_table_with_all_attributes_per_format_and_class">here</a>.
+     *
+     * @param certificateToken signature certificate
+     * @param certificateChain signature certificate chain
+     * @param timestampSigned timestamp set as {@code signingDate} in order to create deterministic context
+     * @return parameters with deterministic context
+     */
     private PAdESSignatureParameters createSignatureParameters(
             final CertificateToken certificateToken,
             final List<CertificateToken> certificateChain,

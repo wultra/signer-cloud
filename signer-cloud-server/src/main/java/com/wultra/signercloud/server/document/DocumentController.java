@@ -46,7 +46,11 @@ public class DocumentController {
 
     @Operation(
             summary = "Uploads a document for signing",
-            description = "Stores document in the database with its hash (calculated using the configured algorithm) and associates it with the `Signer`.",
+            description = """
+                    Stores document in the database with its hash (calculated using the configured algorithm) and associates it with the `Signer`.
+                    Because the `hash` of the document (including signature metadata) is calculated at this step, the document cannot be updated later.
+                    For example, this affects the signature timestamp in the signed document, since the time of upload is used rather than the time when the document is actually signed (assembled).
+                    """,
             responses = {
                     @ApiResponse(
                             responseCode = "200",
