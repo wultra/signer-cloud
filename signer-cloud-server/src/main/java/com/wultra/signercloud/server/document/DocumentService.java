@@ -282,6 +282,12 @@ class DocumentService {
         final var unsignedDocument = new InMemoryDocument(documentBytes);
 
         final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
+        logger.info("TEST DEBUG: documentHash: {}, timestampSigned: {} | {} | {} | {}",
+                Base64.getEncoder().encodeToString(documentHash.getBytes()),
+                timestampSigned,
+                timestampSigned.toEpochMilli(),
+                Date.from(timestampSigned),
+                Date.from(timestampSigned).getTime());
 
         final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
         final var signatureValue = new SignatureValue(signatureParams.getSignatureAlgorithm(), signatureBytes);
