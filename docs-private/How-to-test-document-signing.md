@@ -8,7 +8,9 @@ These components are required:
 - [PowerAuth cmd tool](https://github.com/wultra/powerauth-cmd-tool)
 - [EJBCA](https://docs.keyfactor.com/ejbca/9.1.1/ejbca-introduction)
 
-The minimum required version of the **PowerAuth** stack is `>= 1.10`. The only exception is the **PowerAuth cmd tool**, which requires version `>= 2.0`.
+The minimum required version of the **PowerAuth** stack is `>= 1.10`. 
+The only exception is the **PowerAuth cmd tool**, which requires version `>= 2.0`. Since version `2.0` has not been published yet, 
+download the repository and build it from the `develop` branch. This is why version `2.0.0-SNAPSHOT` is used in all commands.
 
 **EJBCA** Community Edition version `9.1.1` is required. A Docker image is available [here](https://hub.docker.com/r/keyfactor/ejbca-ce).
 
@@ -141,7 +143,7 @@ An HTTP `200 OK` response should be returned:
 Register your "device" via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0.jar \
+java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --url "http://localhost:8081/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -196,7 +198,7 @@ An HTTP `200 OK` response should be returned.
 As optional step, you can verify status of the registration.
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0.jar \
+java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --url "http://localhost:8081/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -228,7 +230,7 @@ echo "MIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1
 Sign the CRI via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0.jar \
+java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --url "http://localhost:8081/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -316,7 +318,7 @@ echo "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEILlesfCjaWxckr
 Now sign the hash via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0.jar \
+java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --url "http://localhost:8081/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -524,7 +526,7 @@ An HTTP `200 OK` response should be returned:
 Register your "device" via **PowerAuth cmd tool**. The `--url` is `serviceBaseUrl` from response when application was created.
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0.jar \
+java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -593,7 +595,7 @@ echo "MIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1
 Sign the CRI via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0.jar \
+java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -681,7 +683,7 @@ echo "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEIDjaW5HYNxwEDs
 Now sign the hash via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0.jar \
+java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
