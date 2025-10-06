@@ -14,6 +14,13 @@ download the repository and build it from the `develop` branch. This is why vers
 
 **EJBCA** Community Edition version `9.1.1` is required. A Docker image is available [here](https://hub.docker.com/r/keyfactor/ejbca-ce).
 
+Used abbreviations:
+
+| Abbreviation | Description                                                                                                                                                                         |
+|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| CRI          | Certificate Request Information, part of CSR that contains all the information needed for certificate issuance, including the owner’s details, public key, and requested extensions |
+| CSR          | Certificate Signing Request, the full request sent to a Certification Authority to enroll a certificate                                                                             |
+
 
 ## Local Environment
 
