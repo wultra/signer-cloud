@@ -29,6 +29,7 @@ import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.Signature;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,6 +60,7 @@ class SignatureTest {
     private void testSignature(final SignatureType signatureType) throws Exception {
         final File pdfFile = new ClassPathResource("input.pdf").getFile();
         final DSSDocument toSignDocument = new FileDocument(pdfFile);
+        final Date signingDate = new Date();
 
         // keytool -genkeypair -alias myAlias -keyalg RSA -keysize 2048 -keystore keystore-rsa.p12 -storetype PKCS12 -validity 365
         // keytool -genkeypair -alias myAlias -keyalg EC -groupname secp384r1 -keystore keystore-ecdsa.p12 -storetype PKCS12 -validity 365
@@ -71,22 +73,29 @@ class SignatureTest {
             }
             final DSSPrivateKeyEntry privateKey = keys.get(0);
 
-            final PAdESSignatureParameters parameters = createPAdESSignatureParameters(privateKey);
+            final PAdESSignatureParameters parametersForHash = createPAdESSignatureParameters(privateKey, signingDate);
 
             final CertificateVerifier certificateVerifier = new CommonCertificateVerifier();
             final PAdESService padesService = new PAdESService(certificateVerifier);
             // padesService.setTspSource(createTsa()); to make TSA working
 
-            final ToBeSigned dataToBeSigned = padesService.getDataToSign(toSignDocument, parameters);
+            final ToBeSigned dataToBeSignedForHash = padesService.getDataToSign(toSignDocument, parametersForHash);
 
             final SignatureValue signatureValue = switch (signatureType) {
-                case DSS -> signingToken.sign(dataToBeSigned, parameters.getSignatureAlgorithm(), privateKey);
-                case EXTERNAL -> new SignatureValue(parameters.getSignatureAlgorithm(), signExternally(dataToBeSigned.getBytes()));
+                case DSS -> signingToken.sign(dataToBeSignedForHash, parametersForHash.getSignatureAlgorithm(), privateKey);
+                case EXTERNAL -> new SignatureValue(parametersForHash.getSignatureAlgorithm(), signExternally(dataToBeSignedForHash.getBytes()));
             };
 
-            assertTrue(padesService.isValidSignatureValue(dataToBeSigned, signatureValue, privateKey.getCertificate()));
+            // In our case, we generate the hash and assemble the signed document in two isolated steps.
+            // That’s why we need to create new instances of the PAdESSignatureParameters and the ToBeSigned object.
+            // We need to ensure that the context is exactly the same in both steps.
+            // Even the smallest difference will cause the signature to be invalid in the signed document.
+            final PAdESSignatureParameters parametersForAssembling = createPAdESSignatureParameters(privateKey, signingDate);
+            final ToBeSigned dataToBeSignedForAssembling = padesService.getDataToSign(toSignDocument, parametersForAssembling);
 
-            final DSSDocument signedDocument = padesService.signDocument(toSignDocument, parameters, signatureValue);
+            assertTrue(padesService.isValidSignatureValue(dataToBeSignedForAssembling, signatureValue, privateKey.getCertificate()));
+
+            final DSSDocument signedDocument = padesService.signDocument(toSignDocument, parametersForAssembling, signatureValue);
 
             final String targetFilePath = "target/signed-document-" + UUID.randomUUID() + ".pdf";
             signedDocument.save(targetFilePath);
@@ -129,7 +138,7 @@ class SignatureTest {
         System.out.println(DSSUtils.toHex(timestampToken.getBytes()));
     }
 
-    private static PAdESSignatureParameters createPAdESSignatureParameters(final DSSPrivateKeyEntry privateKey) {
+    private static PAdESSignatureParameters createPAdESSignatureParameters(final DSSPrivateKeyEntry privateKey, final Date signingDate) {
         final PAdESSignatureParameters parameters = new PAdESSignatureParameters();
         parameters.setSigningCertificate(privateKey.getCertificate());
         parameters.setCertificateChain(privateKey.getCertificateChain());
@@ -139,6 +148,7 @@ class SignatureTest {
         parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         // parameters.setSignatureLevel(SignatureLevel.PAdES_BASELINE_T); to make TSA working
         parameters.setImageParameters(createSignatureImageParameters());
+        parameters.bLevel().setSigningDate(signingDate);
         return parameters;
     }
 
