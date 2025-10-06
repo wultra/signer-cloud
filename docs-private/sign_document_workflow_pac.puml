@@ -1,0 +1,20 @@
+@startuml
+
+autonumber
+
+Device -> "PowerAuth Cloud": Create application
+Device -> "PowerAuth Cloud": Create user
+Device -> "PowerAuth Cloud": Bind user and application
+Device -> "PowerAuth Cloud": Create registration
+"Device" -> "PowerAuth Cloud": Activate registration (pair device)
+Device -> "PowerAuth Cloud": Commit registration
+Device -> Device: Generate CRI
+Device -> "PowerAuth Cloud": Sign CRI
+Device -> Device: Generate CSR
+Device -> "Signer Cloud": Create signer
+Device -> "Signer Cloud": Upload document
+Device -> "PowerAuth Cloud": Sign document hash
+Device -> "Signer Cloud": Sign document
+Device -> "Signer Cloud": Download document
+
+@enduml
