@@ -93,7 +93,7 @@ The values for `applicationName` and `mobileSdkConfig` are taken from the respon
 
 ```json
 {
-  "applicationName": "mr-demo-app",
+  "applicationName": "sc-demo-app",
   "mobileSdkConfig": "ARDkuRq0SpHSMbUC8ni9B61kEIl8gnqNaaxyRXhqTdZujIIBAUEEsKfN8p0/Bq8FyJENixBQtKWQRMZnxkWRW1cBe9m611YFjhAyTr3VGqFXEtUXuHIJHVNRsuRlEdjkBgtJlcWQYw=="
 }
 ```
@@ -101,7 +101,7 @@ The values for `applicationName` and `mobileSdkConfig` are taken from the respon
 
 ### Create registration
 
-Create a new device registration request for the application `mr-demo-app` in **PowerAuth Server**. 
+Create a new device registration request for the application `sc-demo-app` in **PowerAuth Server**. 
 The `userId` can be any arbitrary value, as there are no checks or preconditions.
 
 This step and the next two steps (committing the operation as the last one) must be completed quickly, 
@@ -141,7 +141,7 @@ An HTTP `200 OK` response should be returned:
 Register your "device" via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
+java -jar powerauth-java-cmd-2.0.0.jar \
     --url "http://localhost:8081/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -196,7 +196,7 @@ An HTTP `200 OK` response should be returned.
 As optional step, you can verify status of the registration.
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
+java -jar powerauth-java-cmd-2.0.0.jar \
     --url "http://localhost:8081/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -225,10 +225,10 @@ echo "MIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1
 
 ### Sign CRI
 
-Sign teh CRI via **PowerAuth cmd tool**:
+Sign the CRI via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
+java -jar powerauth-java-cmd-2.0.0.jar \
     --url "http://localhost:8081/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -316,7 +316,7 @@ echo "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEILlesfCjaWxckr
 Now sign the hash via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
+java -jar powerauth-java-cmd-2.0.0.jar \
     --url "http://localhost:8081/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -336,7 +336,7 @@ You can find the signature in `signature` field in output:
 
 ### Sign the document
 
-Use the `signatrue` value from previous step and `documentId` in path from document upload response:
+Use the `signature` value from previous step and `documentId` in path from document upload response:
 
 ```shell
 curl --location 'http://127.0.0.1:8090/documents/747019f6-a39f-447a-9649-47050413d085/signature' \
@@ -489,7 +489,7 @@ An HTTP `200 OK` response should be returned:
 
 ### Create registration
 
-Create a new device registration request for the application `mr-demo-app` in **PowerAuth Cloud**.
+Create a new device registration request for the application `sc-demo-app` in **PowerAuth Cloud**.
 
 This step and the next two steps (committing the operation as the last one) must be completed quickly,
 because by default there is only a short time window of a few minutes to finish the registration.
@@ -524,7 +524,7 @@ An HTTP `200 OK` response should be returned:
 Register your "device" via **PowerAuth cmd tool**. The `--url` is `serviceBaseUrl` from response when application was created.
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
+java -jar powerauth-java-cmd-2.0.0.jar \
     --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -593,7 +593,7 @@ echo "MIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1
 Sign the CRI via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
+java -jar powerauth-java-cmd-2.0.0.jar \
     --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -634,7 +634,7 @@ curl --location 'https://smoke-signer-dev.wultra.app/signers' \
 --header 'Authorization: Bearer <TOKEN>' \
 --data '{
     "signerId" : "0a23495a-b159-4d06-ad4c-5a832c305605",
-    "userId" : "mr-demo-user",
+    "userId" : "sc-demo-user",
     "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIHyMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxl\nQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASHTq/W\nL3lk89Jk5IXqn7Kl8c7zswVMSho+NLnBwOoj9Tin5BWk4p5uH4fXd2lcolod0xKT\n2j1vUU5S6JnXHbkboAAwCgYIKoZIzj0EAwIDSQAwRgIhAKSykwJ0ef+rmtsS1RbV\nuLMDLACN/eL4iSR+2R+udH/cAiEA4PAPzYU2S3m5oMLWhLlx5db3HiI8o+rsctLb\n/7kH5d8=\n-----END CERTIFICATE REQUEST-----\n"
 }'
 ```
@@ -681,7 +681,7 @@ echo "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEIDjaW5HYNxwEDs
 Now sign the hash via **PowerAuth cmd tool**:
 
 ```shell
-java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
+java -jar powerauth-java-cmd-2.0.0.jar \
     --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
@@ -701,7 +701,7 @@ You can find the signature in `signature` field in output:
 
 ### Sign the document
 
-Use the `signatrue` value from previous step and `documentId` in path from document upload response:
+Use the `signature` value from previous step and `documentId` in path from document upload response:
 
 ```shell
 curl --location 'https://smoke-signer-dev.wultra.app/documents/d8a06ea4-e9c8-4f0c-ac22-c009a1f351b5/signature' \
