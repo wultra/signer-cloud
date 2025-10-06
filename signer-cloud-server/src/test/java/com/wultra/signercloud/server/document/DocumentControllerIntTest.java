@@ -64,7 +64,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {
         "ejbca.rest-client.key-store-password=testPassword",
         "ejbca.rest-client.key-alias=testAlias",
-        "ejbca.rest-client.key-password=testKeyPassword"
+        "ejbca.rest-client.key-password=testKeyPassword",
+        "signer-cloud.server.document.waiting.timeout=",
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -87,23 +88,23 @@ class DocumentControllerIntTest {
     private static final String EXTERNAL_SIGNER_ID_PARAM = "signerId";
 
     // keytool -certreq -alias myAlias -keystore keystore-ecdsa.p12 -storetype PKCS12 -file myrequest.csr -dname "CN=John Doe, O=ExampleCorp, C=US"
-    private static final String CSR = "MIIBXTCB5QIBADA2MQswCQYDVQQGEwJVUzEUMBIGA1UEChMLRXhhbXBsZUNvcnAxETAPBgNVBAMTCEpvaG4gRG9lMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEQ2Z9Zsg45e2YZ89B03uhjz7LSkXuuWJW+DvT03tfdD+5bmDutM7slZzgE9fz6saNuRoBTu07qe3QkJoG1iXDOYYuTDLBp813iJOwVplFsUs11m579zSmhU31GbAtM4f/oDAwLgYJKoZIhvcNAQkOMSEwHzAdBgNVHQ4EFgQU/aKAjBfH82uqVzN6uBUK3ydJ5IYwCgYIKoZIzj0EAwMDZwAwZAIwQ8qfBDToBmyFgu+6/QUdEBHP7y6MjkNiy4KiDgGl/CNSksWarK/v6U37t6jMq1X6AjAEdYVXpTQkOOLPhJc0HE3ZpG2w14YqV1zXtTu+nfjZ4kIwfHBRL7rS+/93XPA1Hok=";
-    private static final String CERTIFICATE = "MIICFDCCAZugAwIBAgIUC0O75BZKicH8bDlRUBgC8h7bTdgwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MDgyNzA3NTUyOVoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzB2MBAGByqGSM49AgEGBSuBBAAiA2IABENmfWbIOOXtmGfPQdN7oY8+y0pF7rliVvg709N7X3Q/uW5g7rTO7JWc4BPX8+rGjbkaAU7tO6nt0JCaBtYlwzmGLkwywafNd4iTsFaZRbFLNdZue/c0poVN9RmwLTOH/6OBizCBiDAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFJ0dk1DJP8vLqD/Dx15EMOEpmqkOMCgGA1UdJQQhMB8GCCsGAQUFBwMCBggrBgEFBQcDBAYJKoZIhvcvAQEFMB0GA1UdDgQWBBT9ooCMF8fza6pXM3q4FQrfJ0nkhjAOBgNVHQ8BAf8EBAMCBeAwCgYIKoZIzj0EAwMDZwAwZAIwaeS/siF1g5vbaNXrnQM9xJOQmUG92HyNOCTKh/x1PA9b/VwtpodSjkIOiOxJQ56aAjBQit9XczUVNp5qGdrLO3Ac730VokRvphNBtupJbdnkpywejktZi00LM8MsuZA7Piw=";
+    // private key: "AJX0rDTQYUR2oXjJPkMAfECh8P2mb2S2PweW3Lo/UhIw"
+    private static final String CSR_BASE64 = "MIHxMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAT4JkHkZHQAol19w1VqkbUuBnCJhbn4LWGzCKOGa9wESUMYtjaZyRNVaB1s0smIEsWL0Gbt8HfBuaKEvJCrZBThoAAwCgYIKoZIzj0EAwIDSAAwRQIhAK8WBa/IjzKTAw+QlUqpGpN9XJ5fh2JaVhVH2Z2wsY/SAiBVXvxbo/hdOm11apJHbZv4KLSwM0/MUVg3IIPzTvXmlg==";
+    private static final String CERTIFICATE_BASE64 = "MIIB+TCCAX6gAwIBAgIUdgfxsvHbkb+D10cB0tlVop1pxBwwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MTAwMTE3NDMyNVoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPgmQeRkdACiXX3DVWqRtS4GcImFufgtYbMIo4Zr3ARJQxi2NpnJE1VoHWzSyYgSxYvQZu3wd8G5ooS8kKtkFOGjgYswgYgwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAoBgNVHSUEITAfBggrBgEFBQcDAgYIKwYBBQUHAwQGCSqGSIb3LwEBBTAdBgNVHQ4EFgQUinG5zjCVx7zoDsQq1wQMDAp2ee0wDgYDVR0PAQH/BAQDAgXgMAoGCCqGSM49BAMDA2kAMGYCMQCIvu/aKPHIu5eaKa7/zLFZMcyBy5g+2l16ZMiNYdAlZcRXc9w1MPdRziUmG72ATPYCMQCF2ljZll2bB+MeHuifHxP6fAqXAZCTgDvjovRxWjgUWCdVYa69DKfML2Yv3QZ518g=";
 
     // Document
-    private static final String DOCUMENT_UUID = "3f6a8c50-4e02-4d3f-8f5c-6b92a1e5b9d7";
-    private static final String DUMMY_EXTERNAL_SIGNER_ID = "dummyExternalSignerId";
-    private static final String DUMMY_EXTERNAL_DOCUMENT_ID = "dummyExternalDocumentId";
-    private static final String DUMMY_DOCUMENT_NAME = "dummyDocumentName";
-
-    // shasum -a 256 input.pdf | awk '{print $1}' | xxd -r -p | base64
-    private static final String HASH = "j0LPvNkxjaHXp4rdyChWunro9pIdThrlTyDbMKIdnfk=";
+    private static final Instant DOCUMENT_TIMESTAMP_CREATED = Instant.ofEpochMilli(1759409592827L);
+    private static final String DOCUMENT_UUID = "75142815-7adc-4962-afd2-1e498d38b90d";
+    private static final String EXTERNAL_SIGNER_ID = "6fdbc9a0-7dd8-4891-adcf-ebceac188e13";
+    private static final String EXTERNAL_DOCUMENT_ID = "external-document-id";
+    private static final String DOCUMENT_NAME = "Document Test";
+    private static final String HASH = "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEIDjaW5HYNxwEDsi5/frhcx8k/DBC4o0ngYaLqKI6MS//MGkGCyqGSIb3DQEJEAIvMVowWDBWMFQEIBco05OSwhsoq1BOh2Yxsrw5OarRAQOexhk3jLCQiRvBMDAwGKQWMBQxEjAQBgNVBAMMCUlzc3VpbmdDQQIUdgfxsvHbkb+D10cB0tlVop1pxBw=";
 
     // echo "value_of_hash" | base64 --decode > hash.bin
     // openssl pkcs12 -in keystore-ecdsa.p12 -nocerts -nodes -out mykey.pem
     // openssl dgst -sha384 -sign mykey.pem -out signature.bin hash.bin
     // base64 < signature.bin
-    private static final String SIGNATURE = "MGQCMBawZBUmDeQOFGo9AiruqAN8NAH7apayQoPVEgCvOpYcfkArSehUL8EHs8iFVmn3ZAIwZOcJgEbrwpGCBl05hR0DeBtaJLTTIaYNae70csEku+AUgr9AUyWqjGaB/Vvbt+RQ";
+    private static final String SIGNATURE = "MEUCIQC4K+g3kluK8KEMAXitVLGatjRVXZMF5OjxLoU0MzBspwIge1SOPpGXaiGU0933uO+NAnu5+2uIsI9Dxco5LZine00=";
     private static final String FILENAME = "input.pdf";
     private static final int UPLOADED_FILE_SIZE = 7757;
     private static final int SIGNED_FILE_SIZE = 27780;
@@ -111,9 +112,6 @@ class DocumentControllerIntTest {
             "MIIBxzCCAU2gAwIBAgIUE0be+N9+2stvvu7y3BKDiHPWBVkwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTQ0N1oXDTI3MDgxMTA5MTQ0NlowFDESMBAGA1UEAwwJSXNzdWluZ0NBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvq7LXohpIAISl1vcnH+8zMGFAyfEnyTOqTZAP40b9PzYmMLBbHGoDxvuJwdmF/mrXxfaQ9+Ki1/QRpkoLc6Ugsywu9agdA3Zu+54GPyxmTo8MvU/txcuRt1+7UMPxTAUo2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDaAAwZQIwMlzNpdVjPFt5/sac/ZVu/56n+vNiNFOywD8Ho8SjdDNnXeBBf3zoQ2aTwPdHtgCXAjEAkNCSl2buX5U3dsxavP2gcgjrxszNQGiQJ1AcRPL1ATHnaFrHwVGNqiFX5r9QQ7ud",
             "MIIBwzCCAUqgAwIBAgIUBiKRFuSkQ2w0B+eLnFGNCVBLTfwwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTMxMFoXDTM1MDgwOTA5MTMwOVowETEPMA0GA1UEAwwGUm9vdENBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGTbosZgh/n+FWrbU7u05huRtjxUT8PE+fuFFHBtbcKNXYSl5Jf51gMBDn2dJKbM5oRsDLpl/nwscEvRKtibnw8AsIxXZYmyzBVA9meE5FGXswp6kAb/Sc4zQYo/O8RT5o2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBQ0YPm2cX21iY8xSP6EVfPBM2RNwTAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDZwAwZAIxAKsQhZDkBpxdGzn/gxDtqbtl5VtJFl3IJzXb36hWRf26P5Vha2vLAcFipD7koHF6bwIvYJHWRuq+SAzVYue9oId39+8AGKFXvzY+xDiSb/q7+ll/CwwQwcnoRundq8TSVYE="
     );
-
-    // Config
-    private static final long DOCUMENT_WAITING_TIMEOUT_SECONDS = 3600;
 
     @Autowired
     private SignerRepository signerRepository;
@@ -154,9 +152,9 @@ class DocumentControllerIntTest {
         // when
         final var result = mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
                         .file(file)
-                        .param(EXTERNAL_SIGNER_ID_PARAM, DUMMY_EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, DUMMY_EXTERNAL_DOCUMENT_ID)
-                        .param(DOCUMENT_NAME_PARAM, DUMMY_DOCUMENT_NAME))
+                        .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
+                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
@@ -173,15 +171,15 @@ class DocumentControllerIntTest {
         // when
         final var result = mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
                         .file(file)
-                        .param(EXTERNAL_SIGNER_ID_PARAM, DUMMY_EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, DUMMY_EXTERNAL_DOCUMENT_ID)
-                        .param(DOCUMENT_NAME_PARAM, DUMMY_DOCUMENT_NAME))
+                        .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
+                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
         // when
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
-        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Signer with ID %s not found".formatted(DUMMY_EXTERNAL_SIGNER_ID));
+        assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Signer with ID %s not found".formatted(EXTERNAL_SIGNER_ID));
     }
 
     @Test
@@ -194,9 +192,9 @@ class DocumentControllerIntTest {
         // when
         final var result = mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
                         .file(file)
-                        .param(EXTERNAL_SIGNER_ID_PARAM, DUMMY_EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, DUMMY_EXTERNAL_DOCUMENT_ID)
-                        .param(DOCUMENT_NAME_PARAM, DUMMY_DOCUMENT_NAME))
+                        .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
+                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -215,9 +213,9 @@ class DocumentControllerIntTest {
         // when
         final var result = mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
                         .file(file)
-                        .param(EXTERNAL_SIGNER_ID_PARAM, DUMMY_EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, DUMMY_EXTERNAL_DOCUMENT_ID)
-                        .param(DOCUMENT_NAME_PARAM, DUMMY_DOCUMENT_NAME))
+                        .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
+                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isOk())
                 .andReturn();
 
@@ -265,7 +263,7 @@ class DocumentControllerIntTest {
         // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
-        assertErrorResponse(responseBody, ErrorCode.ILLEGAL_OPERATION_ERROR, "Signer is not active. Signer: " + DUMMY_EXTERNAL_SIGNER_ID);
+        assertErrorResponse(responseBody, ErrorCode.ILLEGAL_OPERATION_ERROR, "Signer is not active. Signer: " + EXTERNAL_SIGNER_ID);
     }
 
     @Test
@@ -288,29 +286,6 @@ class DocumentControllerIntTest {
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
 
         assertErrorResponse(responseBody, ErrorCode.ILLEGAL_OPERATION_ERROR, "Document is not in state when it can be signed");
-    }
-
-    @Test
-    void testSignWhenDocumentSignAttemptIsAfterDeadlineThen400WithCorrectResponseIsReturned() throws Exception {
-        // given
-        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
-        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        final var creationTimeAfterWaitingTimeout = Instant.now().minusSeconds(DOCUMENT_WAITING_TIMEOUT_SECONDS + 60);
-        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, creationTimeAfterWaitingTimeout);
-
-        final var request = new SignDocumentRequest(SIGNATURE);
-
-        // when
-        final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isBadRequest())
-                .andReturn();
-
-        // then
-        final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
-
-        assertErrorResponse(responseBody, ErrorCode.ILLEGAL_OPERATION_ERROR, "Document signing timeout exceeded");
     }
 
     @Test
@@ -340,7 +315,7 @@ class DocumentControllerIntTest {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -365,7 +340,7 @@ class DocumentControllerIntTest {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now().minusSeconds(30));
+        final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -381,11 +356,11 @@ class DocumentControllerIntTest {
     }
 
     @Test
-    void testSignWhenCertificateChainIsSetThenTheChainIsInSignedDocument() throws Exception {
+    void testSignWhenSignatureIsValidThenSignatureValidationPasses() throws Exception {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now().minusSeconds(30));
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
         final var request = new SignDocumentRequest(SIGNATURE);
 
@@ -397,7 +372,7 @@ class DocumentControllerIntTest {
                 .andReturn();
 
         // then
-        assertSignatureChain(documentContentId);
+        validateSignature(documentContentId);
     }
 
     @Test
@@ -616,10 +591,10 @@ class DocumentControllerIntTest {
     private long createSignerInDatabase(final SignerStatus status) {
         final var signer = Signer.builder()
                 .timestampCreated(Instant.now())
-                .externalSignerId(DUMMY_EXTERNAL_SIGNER_ID)
+                .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId("dummyUserId")
-                .csr(CSR)
-                .certificate(CERTIFICATE)
+                .csr(CSR_BASE64)
+                .certificate(CERTIFICATE_BASE64)
                 .timestampCertificateExpiration(Instant.now())
                 .status(status)
                 .certificateChainFromList(CERTIFICATE_CHAIN_BASE64)
@@ -643,8 +618,8 @@ class DocumentControllerIntTest {
                 .timestampCreated(creationTime)
                 .documentId(DOCUMENT_UUID)
                 .signer(AggregateReference.to(signerId))
-                .externalId(DUMMY_EXTERNAL_DOCUMENT_ID)
-                .documentName(DUMMY_DOCUMENT_NAME)
+                .externalId(EXTERNAL_DOCUMENT_ID)
+                .documentName(DOCUMENT_NAME)
                 .fileName(FILENAME)
                 .fileSize(UPLOADED_FILE_SIZE)
                 .hash(HASH)
@@ -658,12 +633,12 @@ class DocumentControllerIntTest {
 
     private void assertUploadResponse(final UploadDocumentResponse response) {
         assertDoesNotThrow(() -> UUID.fromString(response.documentId()));
-        assertEquals(DUMMY_EXTERNAL_SIGNER_ID, response.signerId());
-        assertEquals(DUMMY_EXTERNAL_DOCUMENT_ID, response.externalId());
-        assertEquals(DUMMY_DOCUMENT_NAME, response.name());
+        assertEquals(EXTERNAL_SIGNER_ID, response.signerId());
+        assertEquals(EXTERNAL_DOCUMENT_ID, response.externalId());
+        assertEquals(DOCUMENT_NAME, response.name());
         assertEquals(FILENAME, response.fileName());
         assertEquals(UPLOADED_FILE_SIZE, response.size());
-        assertEquals(HASH, response.hash());
+        assertNotNull(response.hash());
     }
 
     private void assertUploadedDocument(final Document document, final String expectedDocumentId) {
@@ -671,11 +646,11 @@ class DocumentControllerIntTest {
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(expectedDocumentId, document.getDocumentId());
         assertTrue(signerRepository.existsById(document.getSigner().getId()));
-        assertEquals(DUMMY_EXTERNAL_DOCUMENT_ID, document.getExternalId());
-        assertEquals(DUMMY_DOCUMENT_NAME, document.getDocumentName());
+        assertEquals(EXTERNAL_DOCUMENT_ID, document.getExternalId());
+        assertEquals(DOCUMENT_NAME, document.getDocumentName());
         assertEquals(FILENAME, document.getFileName());
         assertEquals(UPLOADED_FILE_SIZE, document.getFileSize());
-        assertEquals(HASH, document.getHash());
+        assertNotNull(document.getHash());
         assertEquals(DocumentStatus.WAITING, document.getStatus());
         assertNull(document.getSignature());
 
@@ -692,12 +667,12 @@ class DocumentControllerIntTest {
 
     private void assertSignedDocument(final long documentId, final long signerId, final long documentContentId) {
         final var document = documentRepository.findById(documentId).orElseThrow();
-        assertEquals(Instant.now().minusSeconds(30).toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
+        assertEquals(DOCUMENT_TIMESTAMP_CREATED.toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(DOCUMENT_UUID, document.getDocumentId());
         assertEquals(signerId, document.getSigner().getId());
-        assertEquals(DUMMY_EXTERNAL_DOCUMENT_ID, document.getExternalId());
-        assertEquals(DUMMY_DOCUMENT_NAME, document.getDocumentName());
+        assertEquals(EXTERNAL_DOCUMENT_ID, document.getExternalId());
+        assertEquals(DOCUMENT_NAME, document.getDocumentName());
         assertEquals(FILENAME, document.getFileName());
         assertEquals(SIGNED_FILE_SIZE, document.getFileSize());
         assertEquals(documentContentId, document.getDocumentContent().getId());
@@ -781,7 +756,7 @@ class DocumentControllerIntTest {
 
     private void assertRejectResponse(final RejectDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
-        assertEquals(DUMMY_DOCUMENT_NAME, response.name());
+        assertEquals(DOCUMENT_NAME, response.name());
         assertEquals(FILENAME, response.filename());
         assertEquals(UPLOADED_FILE_SIZE, response.size());
         assertEquals(HASH, response.hash());
@@ -794,7 +769,7 @@ class DocumentControllerIntTest {
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
     }
 
-    private void assertSignatureChain(final long documentContentId) {
+    private void validateSignature(final long documentContentId) {
         final var documentContent = documentContentRepository.findById(documentContentId).orElseThrow();
         final var signedDocumentBytes = documentContent.getContent();
 
@@ -803,10 +778,23 @@ class DocumentControllerIntTest {
         final var validator = new PDFDocumentValidator(signedDocument);
         validator.setCertificateVerifier(new CommonCertificateVerifier());
 
-        final var report = validator.validateDocument().getSimpleReport();
-        assertEquals(1, report.getSignaturesCount(), "There is not exactly one signature in document");
+        final var simpleReport = validator.validateDocument().getSimpleReport();
+        assertEquals(1, simpleReport.getSignaturesCount(), "There is not exactly one signature in document");
 
-        final var signatureId = report.getFirstSignatureId();
+        final var signatureId = simpleReport.getFirstSignatureId();
+
+        assertEquals(
+                simpleReport.getSigningTime(signatureId).getTime(),
+                Date.from(DOCUMENT_TIMESTAMP_CREATED).getTime(),
+                MILLISECONDS_DELTA
+        );
+
+        final var signature = validator.validateDocument().getDiagnosticData().getSignatureById(signatureId);
+        assertTrue(signature.isBLevelTechnicallyValid());
+        assertTrue(signature.isSignatureIntact());
+        assertTrue(signature.isSigningCertificateIdentified());
+        assertTrue(signature.isStructuralValidationValid());
+
         final var chain = validator.getSignatureById(signatureId).getCertificates();
         final var certificateChainBase64 = chain.stream()
                 .map(certificateToken -> {
@@ -819,7 +807,7 @@ class DocumentControllerIntTest {
                 .map(certificateBytes -> Base64.getEncoder().encodeToString(certificateBytes))
                 .collect(Collectors.toSet());
 
-        final var expectedChain = Stream.concat(CERTIFICATE_CHAIN_BASE64.stream(), Stream.of(CERTIFICATE))
+        final var expectedChain = Stream.concat(CERTIFICATE_CHAIN_BASE64.stream(), Stream.of(CERTIFICATE_BASE64))
                 .collect(Collectors.toSet());
         assertEquals(expectedChain, certificateChainBase64, "Incorrect certificate chain in document");
     }

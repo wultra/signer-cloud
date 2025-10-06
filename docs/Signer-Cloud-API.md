@@ -268,6 +268,12 @@ Content-Type: application/pdf
 Maximum file size limitations depends on server configuration (web/apps server, database, network) with max size around 50MB.
 
 Document mime-type validation is performed.
+
+<!-- begin box warning -->
+Because the `hash` of the document (including signature metadata) is calculated at this step, the document cannot be updated later.
+For example, this affects the signature timestamp in the signed document, since the time of upload is used rather than the time when the document is actually signed (assembled).
+<!-- end -->
+
 <!-- end -->
 
 <!-- begin api PUT /documents/{documentId} -->

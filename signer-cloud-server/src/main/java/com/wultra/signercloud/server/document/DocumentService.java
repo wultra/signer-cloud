@@ -19,12 +19,10 @@ package com.wultra.signercloud.server.document;
 
 import com.wultra.signercloud.server.signer.*;
 import com.wultra.signercloud.server.utils.CertificateUtils;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
@@ -41,14 +39,10 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 /**
  * Document service.
@@ -134,10 +128,12 @@ class DocumentService {
         final var signer = signerRepository.findByExternalSignerId(externalSignerId)
                 .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
 
+        final var timestampCreated = Instant.now();
+
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = computeHash(fileContent, configurationProperties.getContentHashAlgorithm());
+        final var hash = computeHash(fileContent, signer, timestampCreated);
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)
@@ -146,7 +142,7 @@ class DocumentService {
         final var savedDocumentContent = documentContentRepository.save(documentContent);
 
         final var document = Document.builder()
-                .timestampCreated(Instant.now())
+                .timestampCreated(timestampCreated)
                 .documentId(UUID.randomUUID().toString())
                 .externalId(externalDocumentId)
                 .signer(AggregateReference.to(signer.getId()))
@@ -187,15 +183,16 @@ class DocumentService {
         }
     }
 
-    private static String computeHash(final byte[] content, final DigestAlgorithm hashAlgorithm) {
-        try {
-            final var digest = hashAlgorithm.getMessageDigest();
-            final var hashBytes = digest.digest(content);
-            return Base64.getEncoder().encodeToString(hashBytes);
-        } catch (final NoSuchAlgorithmException e) {
-            logger.error("Hash algorithm not found: {}", hashAlgorithm, e);
-            throw new DocumentUploadException("Hash algorithm not found: " + hashAlgorithm, e);
-        }
+    private String computeHash(final byte[] content, final Signer signer, final Instant timestampSigned) {
+        final var certificate = convertCertificate(signer);
+        final var certificateChain = convertCertificateChain(signer);
+
+        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned);
+
+        final var document = new InMemoryDocument(content);
+        final var toSignBytes = padesService.getDataToSign(document, signatureParams);
+
+        return Base64.getEncoder().encodeToString(toSignBytes.getBytes());
     }
 
     /**
@@ -228,11 +225,11 @@ class DocumentService {
         verifyDocumentCanBeSigned(signer, document);
 
         final var signature = requestBody.signature();
-        final var signedDocumentBytes = verifySignatureAndSignDocument(signer,
-                document.getHash(),
+        final var signedDocumentBytes = verifySignatureAndSignDocument(
+                signer,
                 signature,
                 documentContent.getContent(),
-                configurationProperties.getSignatureHashAlgorithm());
+                document.getTimestampCreated());
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -273,28 +270,27 @@ class DocumentService {
 
     private byte[] verifySignatureAndSignDocument(
             final Signer signer,
-            final String hashBase64,
             final String hashSignatureBase64,
             final byte[] documentBytes,
-            final DigestAlgorithm signatureAlgorithm) {
+            final Instant timestampSigned) {
 
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, signatureAlgorithm, certificateChain);
+        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned);
 
-        final var hashBytes = Base64.getDecoder().decode(hashBase64);
-        final var hash = new ToBeSigned(hashBytes);
+        final var unsignedDocument = new InMemoryDocument(documentBytes);
+
+        final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
 
         final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
         final var signatureValue = new SignatureValue(signatureParams.getSignatureAlgorithm(), signatureBytes);
 
-        final var isSignatureValid = padesService.isValidSignatureValue(hash, signatureValue, certificate);
+        final var isSignatureValid = padesService.isValidSignatureValue(documentHash, signatureValue, certificate);
         if (!isSignatureValid) {
             throw new DocumentInvalidSignatureException("Invalid signature");
         }
 
-        final var unsignedDocument = new InMemoryDocument(documentBytes);
         final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
 
         return readSignedDocumentBytes(signedDocument);
@@ -324,16 +320,38 @@ class DocumentService {
         }
     }
 
-    private static PAdESSignatureParameters createSignatureParameters(
+    /**
+     * Creates signature parameters with a deterministic context.
+     *
+     * This method always creates a new instance. These parameters affect the {@link eu.europa.esig.dss.model.ToBeSigned}
+     * value returned by {@link PAdESService#getDataToSign(DSSDocument, PAdESSignatureParameters)}
+     * and computed internally in {@link PAdESService#signDocument(DSSDocument, PAdESSignatureParameters, SignatureValue)}.
+     * Therefore, it is important that the same context is used for the same signature, so that {@link eu.europa.esig.dss.model.ToBeSigned}
+     * is computed deterministically (i.e., the value is always the same).
+     * Pay attention to the {@link eu.europa.esig.dss.model.BLevelParameters#setSigningDate(Date)} in {@link PAdESSignatureParameters#bLevel}. From this value, the
+     * {@code deterministicId} in {@link PAdESSignatureParameters#getContext()} is computed.
+     * If {@code signingDate} is not explicitly set, the current machine time is used by default, and each call
+     * to obtain {@link eu.europa.esig.dss.model.ToBeSigned} will produce a different value.
+     * A list of signed parameters is available <a href="https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#_table_with_all_attributes_per_format_and_class">here</a>.
+     *
+     * @param certificateToken signature certificate
+     * @param certificateChain signature certificate chain
+     * @param timestampSigned timestamp in UTC set as {@code signingDate} in order to create deterministic context
+     * @return parameters with deterministic context
+     */
+    private PAdESSignatureParameters createSignatureParameters(
             final CertificateToken certificateToken,
-            final DigestAlgorithm algorithm,
-            final List<CertificateToken> certificateChain
+            final List<CertificateToken> certificateChain,
+            final Instant timestampSigned
     ) {
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(algorithm);
+        params.setDigestAlgorithm(configurationProperties.getHashAlgorithm());
         params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
+
+        params.bLevel().setSigningDate(Date.from(timestampSigned));
+        params.setSigningTimeZone(TimeZone.getTimeZone("UTC"));
 
         return params;
     }
