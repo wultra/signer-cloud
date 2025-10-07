@@ -1,0 +1,26 @@
+@startuml
+
+autonumber
+
+participant Device
+participant "Enrollment Server"
+participant "PowerAuth Server"
+participant "Signer Cloud"
+
+Device -> "PowerAuth Server": Create application
+Device -> "PowerAuth Server": Create registration
+Device -> "Enrollment Server": Activate registration (pair device)
+"Enrollment Server" -> "PowerAuth Server": Activate registration (pair device)
+Device -> "PowerAuth Server": Commit registration
+Device -> Device: Generate CRI
+Device -> "Enrollment Server": Sign CRI
+"Enrollment Server" -> "PowerAuth Server": Sign CRI
+Device -> Device: Generate CSR
+Device -> "Signer Cloud": Create signer
+Device -> "Signer Cloud": Upload document
+Device -> "Enrollment Server": Sign document hash
+"Enrollment Server" -> "PowerAuth Server": Sign document hash
+Device -> "Signer Cloud": Sign document
+Device -> "Signer Cloud": Download document
+
+@enduml
