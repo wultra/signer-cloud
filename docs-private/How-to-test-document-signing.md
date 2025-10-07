@@ -3,10 +3,12 @@
 This is a step-by-step guide on how to test PDF document signing via **Signer Cloud** using the **PowerAuth** stack.
 
 These components are required:
-- [PowerAuth Server](https://github.com/wultra/powerauth-server) with [Enrollment Server](https://github.com/wultra/enrollment-server) OR [PowerAuth cloud](https://developers.wultra.com/components/powerauth-cloud/1.10.x/documentation/)
-- [Signer Cloud](https://github.com/wultra/signer-cloud)
-- [PowerAuth cmd tool](https://github.com/wultra/powerauth-cmd-tool)
-- [EJBCA](https://docs.keyfactor.com/ejbca/9.1.1/ejbca-introduction)
+- **PowerAuth Server** ([code](https://github.com/wultra/powerauth-server), [portal](https://developers.wultra.com/components/powerauth-server/develop/documentation/)) 
+with **Enrollment Server** ([code](https://github.com/wultra/enrollment-server), [portal](https://developers.wultra.com/components/enrollment-server/develop/documentation/)) 
+OR **PowerAuth Cloud** ([code](https://developers.wultra.com/components/powerauth-cloud/1.10.x/documentation/), [portal](https://developers.wultra.com/components/powerauth-cloud/develop/documentation/))
+- **Signer Cloud** ([code](https://github.com/wultra/signer-cloud), [portal](https://developers.wultra.com/components/signer-cloud/develop/documentation/))
+- **PowerAuth cmd tool** ([code](https://github.com/wultra/powerauth-cmd-tool))
+- **EJBCA** ([documentation](https://docs.keyfactor.com/ejbca/9.1.1/ejbca-introduction))
 
 The minimum required version of the **PowerAuth** stack is `>= 1.10`. 
 The only exception is the **PowerAuth cmd tool**, which requires version `>= 2.0`. Since version `2.0` has not been published yet, 
