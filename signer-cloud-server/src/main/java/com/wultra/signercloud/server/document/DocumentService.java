@@ -17,9 +17,9 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.configuration.PAdESServiceConfig;
 import com.wultra.signercloud.server.signer.*;
 import com.wultra.signercloud.server.utils.CertificateUtils;
-import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
@@ -61,6 +61,7 @@ class DocumentService {
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
     private final PAdESService padesService;
+    private final PAdESServiceConfig pAdESServiceConfig;
 
     /**
      * Cleanup documents.
@@ -346,7 +347,7 @@ class DocumentService {
     ) {
         final var params = new PAdESSignatureParameters();
         params.setDigestAlgorithm(configurationProperties.getHashAlgorithm());
-        params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        params.setSignatureLevel(pAdESServiceConfig.getSignatureLevel());
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
 

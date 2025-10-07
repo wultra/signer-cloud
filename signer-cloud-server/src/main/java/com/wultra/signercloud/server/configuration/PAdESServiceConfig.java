@@ -17,8 +17,14 @@
  */
 package com.wultra.signercloud.server.configuration;
 
+import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
+import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -27,12 +33,28 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
+@Getter
 @Configuration
-class PAdESServiceConfig {
+public class PAdESServiceConfig {
+
+    @Value("${signer-cloud.server.pades.tsa-url}")
+    private String tsaUrl;
+
+    @Value("${signer-cloud.server.pades.signature-level}")
+    private SignatureLevel signatureLevel;
 
     @Bean
     public PAdESService padesService() {
-        return new PAdESService(new CommonCertificateVerifier());
+        final var padesService = new PAdESService(new CommonCertificateVerifier());
+
+        if (StringUtils.isNotEmpty(tsaUrl)) {
+            final var tspSource = new OnlineTSPSource(tsaUrl);
+            tspSource.setDataLoader(new TimestampDataLoader());
+
+            padesService.setTspSource(tspSource);
+        }
+
+        return padesService;
     }
 
 }
