@@ -233,8 +233,7 @@ class DocumentService {
         verifyDocumentCanBeSigned(signer, document);
 
         final var signature = requestBody.signature();
-        final var signatureLevel = Optional.ofNullable(requestBody.signatureLevel())
-                .orElse(pAdESServiceConfig.getSignatureLevel());
+        final var signatureLevel = resolveDocumentSignatureLevel(requestBody.signatureLevel());
         final var signedDocumentBytes = verifySignatureAndSignDocument(
                 signer,
                 signature,
@@ -277,6 +276,17 @@ class DocumentService {
                 throw new DocumentStateException("Document signing timeout exceeded");
             }
         }
+    }
+
+    private DocumentSignatureLevel resolveDocumentSignatureLevel(final DocumentSignatureLevel requestedSignatureLevel) {
+        final var signatureLevel = Optional.ofNullable(requestedSignatureLevel)
+                .orElse(pAdESServiceConfig.getSignatureLevel());
+
+        if (signatureLevel == DocumentSignatureLevel.PADES_B_T && StringUtils.isEmpty(pAdESServiceConfig.getTsaUrl())) {
+            throw new TimestampAuthorityException("TSA URL not set in configuration");
+        }
+
+        return signatureLevel;
     }
 
     private byte[] verifySignatureAndSignDocument(
@@ -362,26 +372,17 @@ class DocumentService {
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
 
-        final var signatureLevel = convertSignatureLevel(documentSignatureLevel);
+        final var signatureLevel = switch (documentSignatureLevel) {
+            case PADES_B_B -> SignatureLevel.PAdES_BASELINE_B;
+            case PADES_B_T -> SignatureLevel.PAdES_BASELINE_T;
+        };
+
         params.setSignatureLevel(signatureLevel);
 
         params.bLevel().setSigningDate(Date.from(timestampSigned));
         params.setSigningTimeZone(TimeZone.getTimeZone("UTC"));
 
         return params;
-    }
-
-    private SignatureLevel convertSignatureLevel(final DocumentSignatureLevel requestedSignatureLevel) {
-        return switch (requestedSignatureLevel) {
-            case PADES_B_B -> SignatureLevel.PAdES_BASELINE_B;
-
-            case PADES_B_T -> {
-                if (StringUtils.isEmpty(pAdESServiceConfig.getTsaUrl())) {
-                    throw new TimestampAuthorityException("TSA URL not set in configuration");
-                }
-                yield SignatureLevel.PAdES_BASELINE_T;
-            }
-        };
     }
 
     private static byte[] readSignedDocumentBytes(final DSSDocument signedDocument) {
