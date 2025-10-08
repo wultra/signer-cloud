@@ -17,31 +17,35 @@
  */
 package com.wultra.signercloud.server.configuration;
 
-import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuration for {@link PAdESService}.
+ * Configuration for TSA source.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Configuration
 @AllArgsConstructor
-public class PAdESServiceConfig {
+@Slf4j
+public class OnlineTSPSourceConfig {
 
     private final PAdESConfigurationProperties pAdESConfigurationProperties;
 
     @Bean
-    public PAdESService padesService(@Autowired(required = false) final OnlineTSPSource tspSource) {
-        final var padesService = new PAdESService(new CommonCertificateVerifier());
-        padesService.setTspSource(tspSource);
+    @ConditionalOnProperty("signer-cloud.server.pades.tsa-url")
+    public OnlineTSPSource tspSource() {
+        final var tsaUrl = pAdESConfigurationProperties.getTsaUrl();
+        logger.info("Setting TSA URL: {}", tsaUrl);
 
-        return padesService;
+        final var onlineTspSource = new OnlineTSPSource(tsaUrl);
+        onlineTspSource.setDataLoader(new TimestampDataLoader());
+
+        return onlineTspSource;
     }
-
 }
