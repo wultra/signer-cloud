@@ -17,27 +17,13 @@
  */
 package com.wultra.signercloud.server.document;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotEmpty;
-
 /**
- * REST API request for signing the {@link Document}.
+ * Exception thrown in case of TSA (Timestamp Authority) issue.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Schema(description = "Request to sign a document")
-record SignDocumentRequest(
-        @Schema(
-                description = "Signature of the document",
-                example = "MEUCIA2qnAC9/Iv/WXeacSPzV2G+k+6CyDx/TU7sl8KcfynBAiEApa+s/gSca5MPsdUc+ZjCfbS/ZW3bqGu2tZ3oMPxCUrc=",
-                format = "byte")
-        @NotEmpty String signature,
-
-        @Schema(
-                description = "PAdES baseline signature level. If not specified, the level from the server configuration is used.",
-                example = "PADES_B_B",
-                format = "enum",
-                defaultValue = "null"
-        )
-        DocumentSignatureLevel signatureLevel
-) {}
+public class TimestampAuthorityException extends RuntimeException {
+    public TimestampAuthorityException(final String message) {
+        super(message);
+    }
+}

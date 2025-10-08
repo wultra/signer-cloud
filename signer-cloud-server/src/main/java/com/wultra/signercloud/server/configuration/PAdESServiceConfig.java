@@ -17,7 +17,7 @@
  */
 package com.wultra.signercloud.server.configuration;
 
-import eu.europa.esig.dss.enumerations.SignatureLevel;
+import com.wultra.signercloud.server.document.DocumentSignatureLevel;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
@@ -41,7 +41,7 @@ public class PAdESServiceConfig {
     private String tsaUrl;
 
     @Value("${signer-cloud.server.pades.signature-level}")
-    private SignatureLevel signatureLevel;
+    private DocumentSignatureLevel signatureLevel;
 
     @Bean
     public PAdESService padesService() {

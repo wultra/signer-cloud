@@ -20,6 +20,7 @@ package com.wultra.signercloud.server.document;
 import com.wultra.signercloud.server.configuration.PAdESServiceConfig;
 import com.wultra.signercloud.server.signer.*;
 import com.wultra.signercloud.server.utils.CertificateUtils;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
@@ -29,6 +30,7 @@ import eu.europa.esig.dss.pades.signature.PAdESService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.ContentType;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -188,7 +190,12 @@ class DocumentService {
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned);
+        final var signatureParams = createSignatureParameters(
+                certificate,
+                certificateChain,
+                timestampSigned,
+                pAdESServiceConfig.getSignatureLevel()
+        );
 
         final var document = new InMemoryDocument(content);
         final var toSignBytes = padesService.getDataToSign(document, signatureParams);
@@ -226,11 +233,14 @@ class DocumentService {
         verifyDocumentCanBeSigned(signer, document);
 
         final var signature = requestBody.signature();
+        final var signatureLevel = Optional.ofNullable(requestBody.signatureLevel())
+                .orElse(pAdESServiceConfig.getSignatureLevel());
         final var signedDocumentBytes = verifySignatureAndSignDocument(
                 signer,
                 signature,
                 documentContent.getContent(),
-                document.getTimestampCreated());
+                document.getTimestampCreated(),
+                signatureLevel);
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -273,12 +283,13 @@ class DocumentService {
             final Signer signer,
             final String hashSignatureBase64,
             final byte[] documentBytes,
-            final Instant timestampSigned) {
+            final Instant timestampSigned,
+            final DocumentSignatureLevel signatureLevel) {
 
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned);
+        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned, signatureLevel);
 
         final var unsignedDocument = new InMemoryDocument(documentBytes);
 
@@ -343,18 +354,34 @@ class DocumentService {
     private PAdESSignatureParameters createSignatureParameters(
             final CertificateToken certificateToken,
             final List<CertificateToken> certificateChain,
-            final Instant timestampSigned
+            final Instant timestampSigned,
+            final DocumentSignatureLevel documentSignatureLevel
     ) {
         final var params = new PAdESSignatureParameters();
         params.setDigestAlgorithm(configurationProperties.getHashAlgorithm());
-        params.setSignatureLevel(pAdESServiceConfig.getSignatureLevel());
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
+
+        final var signatureLevel = convertSignatureLevel(documentSignatureLevel);
+        params.setSignatureLevel(signatureLevel);
 
         params.bLevel().setSigningDate(Date.from(timestampSigned));
         params.setSigningTimeZone(TimeZone.getTimeZone("UTC"));
 
         return params;
+    }
+
+    private SignatureLevel convertSignatureLevel(final DocumentSignatureLevel requestedSignatureLevel) {
+        return switch (requestedSignatureLevel) {
+            case PADES_B_B -> SignatureLevel.PAdES_BASELINE_B;
+
+            case PADES_B_T -> {
+                if (StringUtils.isEmpty(pAdESServiceConfig.getTsaUrl())) {
+                    throw new TimestampAuthorityException("URL is not set");
+                }
+                yield SignatureLevel.PAdES_BASELINE_T;
+            }
+        };
     }
 
     private static byte[] readSignedDocumentBytes(final DSSDocument signedDocument) {
