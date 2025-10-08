@@ -721,7 +721,6 @@ class DocumentServiceTest {
         when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
                 .thenReturn(new InMemoryDocument(signedDocumentContent));
 
-
         prepareRequestContext();
         final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T);
 

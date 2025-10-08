@@ -893,7 +893,7 @@ Values for `<CLIENT_ID>` and `<CLIENT_SECRET>` are stored in password manager.
 
 ### Document signature level
 
-By default, the **PAdES B-B** level is used for signatures. Another supported level is **PAdES B-L**. 
+By default, the **PAdES B-B (Baseline-Basic)** level is used for signatures. Another supported level is **PAdES B-T (Baseline-Timestamp)**. 
 To use it, make sure you set the TSA URL in the configuration property `signer-cloud.server.pades.tsa-url`. 
 Then, you can include the `signatureLevel` value in the request body when calling the document signing endpoint.
 
