@@ -17,7 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
-import com.wultra.signercloud.server.configuration.PAdESServiceConfig;
+import com.wultra.signercloud.server.configuration.PAdESConfigurationProperties;
 import com.wultra.signercloud.server.signer.*;
 import com.wultra.signercloud.server.utils.CertificateUtils;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
@@ -58,12 +58,12 @@ import java.util.function.Consumer;
 class DocumentService {
     private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/download";
 
-    private final DocumentConfigurationProperties configurationProperties;
+    private final DocumentConfigurationProperties documentConfigurationProperties;
     private final DocumentRepository documentRepository;
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
     private final PAdESService padesService;
-    private final PAdESServiceConfig pAdESServiceConfig;
+    private final PAdESConfigurationProperties pAdESConfigurationProperties;
 
     /**
      * Cleanup documents.
@@ -77,21 +77,21 @@ class DocumentService {
 
         processRetention(
                 DocumentStatus.REJECTED,
-                configurationProperties.getRejected().getRetentionPeriod(),
+                documentConfigurationProperties.getRejected().getRetentionPeriod(),
                 cleanupResultBuilder::rejectedDocuments,
                 now
         );
 
         processRetention(
                 DocumentStatus.SIGNED,
-                configurationProperties.getSigned().getRetentionPeriod(),
+                documentConfigurationProperties.getSigned().getRetentionPeriod(),
                 cleanupResultBuilder::signedDocuments,
                 now
         );
 
         processRetention(
                 DocumentStatus.WAITING,
-                configurationProperties.getWaiting().getRetentionPeriod(),
+                documentConfigurationProperties.getWaiting().getRetentionPeriod(),
                 cleanupResultBuilder::waitingDocuments,
                 now
         );
@@ -194,7 +194,7 @@ class DocumentService {
                 certificate,
                 certificateChain,
                 timestampSigned,
-                pAdESServiceConfig.getSignatureLevel()
+                pAdESConfigurationProperties.getSignatureLevel()
         );
 
         final var document = new InMemoryDocument(content);
@@ -270,7 +270,7 @@ class DocumentService {
             throw new DocumentStateException("Document is not in state when it can be signed");
         }
 
-        final var waitingTimeout = configurationProperties.getWaiting().getTimeout();
+        final var waitingTimeout = documentConfigurationProperties.getWaiting().getTimeout();
         if (waitingTimeout != null) {
             final var documentSigningDeadline = document.getTimestampCreated().plus(waitingTimeout);
             if (Instant.now().isAfter(documentSigningDeadline)) {
@@ -281,9 +281,9 @@ class DocumentService {
 
     private DocumentSignatureLevel resolveDocumentSignatureLevel(final DocumentSignatureLevel requestedSignatureLevel) {
         final var signatureLevel = Optional.ofNullable(requestedSignatureLevel)
-                .orElse(pAdESServiceConfig.getSignatureLevel());
+                .orElse(pAdESConfigurationProperties.getSignatureLevel());
 
-        if (signatureLevel == DocumentSignatureLevel.PADES_B_T && StringUtils.isEmpty(pAdESServiceConfig.getTsaUrl())) {
+        if (signatureLevel == DocumentSignatureLevel.PADES_B_T && StringUtils.isEmpty(pAdESConfigurationProperties.getTsaUrl())) {
             throw new TimestampAuthorityException("TSA URL not set in configuration");
         }
 
@@ -369,7 +369,7 @@ class DocumentService {
             final DocumentSignatureLevel documentSignatureLevel
     ) {
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(pAdESServiceConfig.getHashAlgorithm());
+        params.setDigestAlgorithm(pAdESConfigurationProperties.getHashAlgorithm());
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
 

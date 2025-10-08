@@ -17,15 +17,13 @@
  */
 package com.wultra.signercloud.server.configuration;
 
-import com.wultra.signercloud.server.document.DocumentSignatureLevel;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
-import lombok.Getter;
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -34,30 +32,17 @@ import org.springframework.context.annotation.Configuration;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Getter
 @Configuration
+@AllArgsConstructor
+@Slf4j
 public class PAdESServiceConfig {
 
-    /**
-     * URL of TSA endpoint providing timestamp for {@link DocumentSignatureLevel#PADES_B_T} according to RFC 3161.
-     */
-    @Value("${signer-cloud.server.pades.tsa-url}")
-    private String tsaUrl;
-
-    /**
-     * Default signature for the document.
-     */
-    @Value("${signer-cloud.server.pades.signature-level}")
-    private DocumentSignatureLevel signatureLevel;
-
-    /**
-     * Algorithm used to compute the hash of the document for signing.
-     */
-    @Value("${signer-cloud.server.pades.hash-algorithm}")
-    private DigestAlgorithm hashAlgorithm;
+    private final PAdESConfigurationProperties pAdESConfigurationProperties;
 
     @Bean
     public PAdESService padesService() {
+        final var tsaUrl = pAdESConfigurationProperties.getTsaUrl();
+
         final var padesService = new PAdESService(new CommonCertificateVerifier());
 
         if (StringUtils.isNotEmpty(tsaUrl)) {
@@ -65,6 +50,7 @@ public class PAdESServiceConfig {
             tspSource.setDataLoader(new TimestampDataLoader());
 
             padesService.setTspSource(tspSource);
+            logger.info("Set TSA URL: {}", tsaUrl);
         }
 
         return padesService;
