@@ -38,9 +38,15 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class PAdESServiceConfig {
 
+    /**
+     * URL of TSA endpoint providing timestamp for {@link DocumentSignatureLevel#PADES_B_T} according to RFC 3161.
+     */
     @Value("${signer-cloud.server.pades.tsa-url}")
     private String tsaUrl;
 
+    /**
+     * Default signature for the document.
+     */
     @Value("${signer-cloud.server.pades.signature-level}")
     private DocumentSignatureLevel signatureLevel;
 
