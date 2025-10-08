@@ -368,7 +368,7 @@ class DocumentService {
             final DocumentSignatureLevel documentSignatureLevel
     ) {
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(configurationProperties.getHashAlgorithm());
+        params.setDigestAlgorithm(pAdESServiceConfig.getHashAlgorithm());
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
 

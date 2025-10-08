@@ -18,6 +18,7 @@
 package com.wultra.signercloud.server.configuration;
 
 import com.wultra.signercloud.server.document.DocumentSignatureLevel;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.service.http.commons.TimestampDataLoader;
 import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
@@ -42,6 +43,12 @@ public class PAdESServiceConfig {
 
     @Value("${signer-cloud.server.pades.signature-level}")
     private DocumentSignatureLevel signatureLevel;
+
+    /**
+     * Algorithm used to compute the hash of the document for signing.
+     */
+    @Value("${signer-cloud.server.pades.hash-algorithm}")
+    private DigestAlgorithm hashAlgorithm;
 
     @Bean
     public PAdESService padesService() {

@@ -40,11 +40,6 @@ class DocumentConfigurationProperties {
 
     private DocumentConfiguration signed = new DocumentConfiguration();
 
-    /**
-     * Algorithm used to compute the hash of the document for signing.
-     */
-    private DigestAlgorithm hashAlgorithm;
-
     @Getter
     @Setter
     static class DocumentConfiguration {
