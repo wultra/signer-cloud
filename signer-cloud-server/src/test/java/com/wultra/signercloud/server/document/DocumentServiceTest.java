@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.configuration.PAdESServiceConfig;
 import com.wultra.signercloud.server.signer.*;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.model.DSSDocument;
@@ -98,6 +99,9 @@ class DocumentServiceTest {
 
     @Mock
     private PAdESService pAdESService;
+
+    @Mock
+    private PAdESServiceConfig pAdESServiceConfig;
 
     @InjectMocks
     private DocumentService documentService;
@@ -206,6 +210,7 @@ class DocumentServiceTest {
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class))).thenReturn(
                 new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH))
         );
+        when(pAdESServiceConfig.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         final var documentContent = DocumentContent.builder()
                 .id(1L)
@@ -414,6 +419,7 @@ class DocumentServiceTest {
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class))).thenReturn(
                 new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH))
         );
+        when(pAdESServiceConfig.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         // when
         final var exception = assertThrows(
@@ -457,6 +463,7 @@ class DocumentServiceTest {
                 .thenReturn(true);
         when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
                 .thenReturn(new InMemoryDocument(signedDocumentContent));
+        when(pAdESServiceConfig.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         prepareRequestContext();
         final var request = new SignDocumentRequest(SIGNATURE, null);
@@ -500,6 +507,7 @@ class DocumentServiceTest {
                 .thenReturn(true);
         when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
                 .thenReturn(new InMemoryDocument(signedDocumentContent));
+        when(pAdESServiceConfig.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         prepareRequestContext();
         final var request = new SignDocumentRequest(SIGNATURE, null);
