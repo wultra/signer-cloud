@@ -377,7 +377,7 @@ class DocumentService {
 
             case PADES_B_T -> {
                 if (StringUtils.isEmpty(pAdESServiceConfig.getTsaUrl())) {
-                    throw new TimestampAuthorityException("URL is not set");
+                    throw new TimestampAuthorityException("TSA URL not set in configuration");
                 }
                 yield SignatureLevel.PAdES_BASELINE_T;
             }

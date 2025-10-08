@@ -229,7 +229,7 @@ class DocumentControllerIntTest {
     @Test
     void testSignWhenDocumentIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
         // given
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -251,7 +251,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -273,7 +273,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -295,7 +295,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
-        final var request = new SignDocumentRequest("invalidSignature");
+        final var request = new SignDocumentRequest("invalidSignature", null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -317,7 +317,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -342,7 +342,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -362,7 +362,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)

@@ -287,6 +287,18 @@ class RestExceptionHandlerTest {
     }
 
     @Test
+    void testHandleTimestampAuthorityExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // given
+        final var message = "TSA URL not set in configuration";
+
+        // when
+        final var response = restExceptionHandler.handleTimestampAuthorityException(new TimestampAuthorityException(message));
+
+        // then
+        assertErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, response, message, ErrorCode.TIMESTAMP_AUTHORITY_ERROR);
+    }
+
+    @Test
     void testHandleRuntimeExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
         final var message = "Generic runtime exception";

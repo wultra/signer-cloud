@@ -233,7 +233,7 @@ class DocumentServiceTest {
         // given
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -255,7 +255,7 @@ class DocumentServiceTest {
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -281,7 +281,7 @@ class DocumentServiceTest {
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -309,7 +309,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -338,7 +338,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -372,7 +372,7 @@ class DocumentServiceTest {
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -404,7 +404,7 @@ class DocumentServiceTest {
         final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
         waitingDuration.setTimeout(WAITING_TIMEOUT);
 
-        final var request = new SignDocumentRequest("invalidSignature");
+        final var request = new SignDocumentRequest("invalidSignature", null);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
@@ -459,7 +459,7 @@ class DocumentServiceTest {
                 .thenReturn(new InMemoryDocument(signedDocumentContent));
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var response = documentService.signDocument(DOCUMENT_UUID, request);
@@ -502,7 +502,7 @@ class DocumentServiceTest {
                 .thenReturn(new InMemoryDocument(signedDocumentContent));
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         documentService.signDocument(DOCUMENT_UUID, request);

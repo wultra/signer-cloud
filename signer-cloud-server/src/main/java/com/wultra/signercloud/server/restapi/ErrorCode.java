@@ -81,6 +81,11 @@ public enum ErrorCode {
     ILLEGAL_OPERATION_ERROR,
 
     /**
+     * Problem with TSA (Timestamp authority) server.
+     */
+    TIMESTAMP_AUTHORITY_ERROR,
+
+    /**
      * Any other error not covered by a specific error code.
      */
     ERROR_GENERIC,
