@@ -33,7 +33,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @AllArgsConstructor
 @Slf4j
-public class OnlineTSPSourceConfig {
+class OnlineTSPSourceConfig {
 
     private final PAdESConfigurationProperties pAdESConfigurationProperties;
 
