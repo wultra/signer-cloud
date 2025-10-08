@@ -702,6 +702,7 @@ class DocumentControllerIntTest {
         assertEquals(HASH, document.getHash());
         assertEquals(DocumentStatus.SIGNED, document.getStatus());
         assertEquals(SIGNATURE, document.getSignature());
+        assertEquals(DocumentSignatureLevel.PADES_B_B, document.getSignatureLevel());
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContent()).orElseThrow();
         final var fileContent = documentContent.getContent();

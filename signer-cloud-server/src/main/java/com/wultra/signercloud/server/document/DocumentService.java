@@ -252,6 +252,7 @@ class DocumentService {
                 .fileSize(signedDocumentBytes.length)
                 .status(DocumentStatus.SIGNED)
                 .signature(signature)
+                .signatureLevel(signatureLevel)
                 .build();
 
         documentRepository.save(updatedDocument);
