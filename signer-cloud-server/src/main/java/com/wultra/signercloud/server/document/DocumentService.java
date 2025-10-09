@@ -64,6 +64,7 @@ class DocumentService {
     private final SignerRepository signerRepository;
     private final PAdESService padesService;
     private final PAdESConfigurationProperties pAdESConfigurationProperties;
+    private final DocumentVisualSignatureService documentVisualSignatureService;
 
     /**
      * Cleanup documents.
@@ -121,7 +122,8 @@ class DocumentService {
             final String externalSignerId,
             final String externalDocumentId,
             final String documentName,
-            final MultipartFile file
+            final MultipartFile file,
+            final DocumentVisualSignature visualSignature
     ) {
         final var contentType = file.getContentType();
         if (!ContentType.APPLICATION_PDF.getMimeType().equals(contentType)) {
@@ -136,7 +138,7 @@ class DocumentService {
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = computeHash(fileContent, signer, timestampCreated);
+        final var hash = computeHash(fileContent, signer, timestampCreated, visualSignature);
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)
@@ -155,6 +157,7 @@ class DocumentService {
                 .documentContent(AggregateReference.to(savedDocumentContent.getId()))
                 .hash(hash)
                 .status(DocumentStatus.WAITING)
+                .visualSignature(visualSignature)
                 .build();
 
         documentRepository.save(document);
@@ -186,18 +189,27 @@ class DocumentService {
         }
     }
 
-    private String computeHash(final byte[] content, final Signer signer, final Instant timestampSigned) {
+    private String computeHash(
+            final byte[] content,
+            final Signer signer,
+            final Instant timestampSigned,
+            final DocumentVisualSignature visualSignature
+    ) {
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
+
+        final var document = new InMemoryDocument(content);
 
         final var signatureParams = createSignatureParameters(
                 certificate,
                 certificateChain,
                 timestampSigned,
-                pAdESConfigurationProperties.getSignatureLevel()
+                pAdESConfigurationProperties.getSignatureLevel(),
+                visualSignature,
+                document
         );
 
-        final var document = new InMemoryDocument(content);
+
         final var toSignBytes = padesService.getDataToSign(document, signatureParams);
 
         return Base64.getEncoder().encodeToString(toSignBytes.getBytes());
@@ -239,7 +251,8 @@ class DocumentService {
                 signature,
                 documentContent.getContent(),
                 document.getTimestampCreated(),
-                signatureLevel);
+                signatureLevel,
+                document.getVisualSignature());
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -295,14 +308,22 @@ class DocumentService {
             final String hashSignatureBase64,
             final byte[] documentBytes,
             final Instant timestampSigned,
-            final DocumentSignatureLevel signatureLevel) {
+            final DocumentSignatureLevel signatureLevel,
+            final DocumentVisualSignature visualSignature) {
 
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned, signatureLevel);
-
         final var unsignedDocument = new InMemoryDocument(documentBytes);
+
+        final var signatureParams = createSignatureParameters(
+                certificate,
+                certificateChain,
+                timestampSigned,
+                signatureLevel,
+                visualSignature,
+                unsignedDocument
+        );
 
         final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
 
@@ -366,7 +387,9 @@ class DocumentService {
             final CertificateToken certificateToken,
             final List<CertificateToken> certificateChain,
             final Instant timestampSigned,
-            final DocumentSignatureLevel documentSignatureLevel
+            final DocumentSignatureLevel documentSignatureLevel,
+            final DocumentVisualSignature visualSignature,
+            final DSSDocument dssDocument
     ) {
         final var params = new PAdESSignatureParameters();
         params.setDigestAlgorithm(pAdESConfigurationProperties.getHashAlgorithm());
@@ -379,6 +402,10 @@ class DocumentService {
         };
 
         params.setSignatureLevel(signatureLevel);
+
+        Optional.ofNullable(visualSignature)
+                .map(vs -> documentVisualSignatureService.createVisualSignature(vs, dssDocument))
+                .ifPresent(params::setImageParameters);
 
         params.bLevel().setSigningDate(Date.from(timestampSigned));
         params.setSigningTimeZone(TimeZone.getTimeZone("UTC"));

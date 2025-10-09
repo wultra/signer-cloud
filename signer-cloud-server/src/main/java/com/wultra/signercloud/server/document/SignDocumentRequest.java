@@ -39,5 +39,7 @@ record SignDocumentRequest(
                 format = "enum",
                 defaultValue = "null"
         )
-        DocumentSignatureLevel signatureLevel
+        DocumentSignatureLevel signatureLevel,
+
+        DocumentVisualSignature documentVisualSignature
 ) {}

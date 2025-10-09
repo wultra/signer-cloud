@@ -232,7 +232,7 @@ class DocumentControllerIntTest {
     @Test
     void testSignWhenDocumentIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
         // given
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -254,7 +254,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -276,7 +276,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -298,7 +298,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
-        final var request = new SignDocumentRequest("invalidSignature", null);
+        final var request = new SignDocumentRequest("invalidSignature", null, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -320,7 +320,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -345,7 +345,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -365,7 +365,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -385,7 +385,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T);
+        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)

@@ -89,11 +89,13 @@ public class DocumentController {
                     type = "string",
                     format = "binary"
             )
-            @RequestParam("file") final MultipartFile file
+            @RequestParam("file") final MultipartFile file,
+
+            @RequestPart(value = "visualSignature", required = false) final DocumentVisualSignature visualSignature
     ) {
         logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, externalDocumentId: {}", externalSignerId, externalDocumentId);
         final var result = Try.execute(
-                () -> documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, file)
+                () -> documentService.uploadDocument(externalSignerId, externalDocumentId, documentName, file, visualSignature)
         );
 
         if (result.isSuccess()) {

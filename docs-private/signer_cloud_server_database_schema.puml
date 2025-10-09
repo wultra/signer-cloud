@@ -31,6 +31,7 @@ class sc_document <<table>> {
     status varchar(50) NN I (WAITING/REJECTED/SIGNED)
     signature varchar(255)
     signature_level varchar(50)
+    visual_signature_json clob
 }
 
 class sc_document_content <<table>>{

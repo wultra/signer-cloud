@@ -132,7 +132,7 @@ class DocumentServiceTest {
         // when
         final var exception = assertThrows(
                 DocumentUploadException.class,
-                () -> documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file)
+                () -> documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file, null)
         );
 
         // then
@@ -154,7 +154,7 @@ class DocumentServiceTest {
         // when
         final var exception = assertThrows(
                 SignerNotFoundException.class,
-                () -> documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file)
+                () -> documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file, null)
         );
 
         // then
@@ -174,7 +174,7 @@ class DocumentServiceTest {
         // when
         final var exception = assertThrows(
                 DocumentUploadException.class,
-                () -> documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file)
+                () -> documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file, null)
         );
 
         // then
@@ -195,7 +195,7 @@ class DocumentServiceTest {
         // when
         final var exception = assertThrows(
                 DocumentUploadException.class,
-                () -> documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file)
+                () -> documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file, null)
         );
 
         // then
@@ -228,7 +228,7 @@ class DocumentServiceTest {
         );
 
         // when
-        final var response = documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file);
+        final var response = documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file, null);
 
         // then
         assertSuccessUploadResult(response);
@@ -260,7 +260,7 @@ class DocumentServiceTest {
         );
 
         // when
-        documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file);
+        documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file, null);
 
         // then
         verify(pAdESService).getDataToSign(any(DSSDocument.class), signatureParamsArgumentCaptor.capture());
@@ -273,7 +273,7 @@ class DocumentServiceTest {
         // given
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var exception = assertThrows(
@@ -295,7 +295,7 @@ class DocumentServiceTest {
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var exception = assertThrows(
@@ -321,7 +321,7 @@ class DocumentServiceTest {
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var exception = assertThrows(
@@ -349,7 +349,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var exception = assertThrows(
@@ -378,7 +378,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var exception = assertThrows(
@@ -412,7 +412,7 @@ class DocumentServiceTest {
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var exception = assertThrows(
@@ -444,7 +444,7 @@ class DocumentServiceTest {
         final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
         waitingDuration.setTimeout(WAITING_TIMEOUT);
 
-        final var request = new SignDocumentRequest("invalidSignature", null);
+        final var request = new SignDocumentRequest("invalidSignature", null, null);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
@@ -501,7 +501,7 @@ class DocumentServiceTest {
         when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         final var response = documentService.signDocument(DOCUMENT_UUID, request);
@@ -545,7 +545,7 @@ class DocumentServiceTest {
         when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         documentService.signDocument(DOCUMENT_UUID, request);
@@ -592,7 +592,7 @@ class DocumentServiceTest {
         when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(SIGNATURE, null, null);
 
         // when
         documentService.signDocument(DOCUMENT_UUID, request);
@@ -638,7 +638,7 @@ class DocumentServiceTest {
         when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_T);
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_B);
+        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_B, null);
 
         // when
         documentService.signDocument(DOCUMENT_UUID, request);
@@ -677,7 +677,7 @@ class DocumentServiceTest {
         when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T);
+        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T, null);
 
         // when
         final var exception = assertThrows(TimestampAuthorityException.class, () -> documentService.signDocument(DOCUMENT_UUID, request));
@@ -722,7 +722,7 @@ class DocumentServiceTest {
                 .thenReturn(new InMemoryDocument(signedDocumentContent));
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T);
+        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T, null);
 
         // when
         documentService.signDocument(DOCUMENT_UUID, request);

@@ -13,5 +13,6 @@
     <include file="20250912-issued-certificate.xml" relativeToChangelogFile="true" />
     <include file="20250919-certificate-chain.xml" relativeToChangelogFile="true" />
     <include file="20251008-signature-level.xml" relativeToChangelogFile="true" />
+    <include file="20251009-visual-signature-params.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

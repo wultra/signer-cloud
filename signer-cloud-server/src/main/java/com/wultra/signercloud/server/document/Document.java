@@ -17,6 +17,8 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wultra.signercloud.server.signer.Signer;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,6 +28,7 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
+import java.io.IOException;
 import java.time.Instant;
 
 /**
@@ -69,4 +72,27 @@ public class Document {
     private String signature;
 
     private DocumentSignatureLevel signatureLevel;
+
+    private byte[] visualSignatureJson;
+
+    public DocumentVisualSignature getVisualSignature() {
+        try {
+            return new ObjectMapper().readValue(visualSignatureJson, DocumentVisualSignature.class);
+        } catch (final IOException e) {
+            throw new DocumentVisualSignatureException("Problem with deserialization", e);
+        }
+    }
+
+    public static class DocumentBuilder {
+
+        public DocumentBuilder visualSignature(final DocumentVisualSignature visualSignature) {
+            try {
+                this.visualSignatureJson = new ObjectMapper().writeValueAsBytes(visualSignature);
+                return this;
+            } catch (final JsonProcessingException e) {
+                throw new DocumentVisualSignatureException("Problem with serialization", e);
+            }
+        }
+
+    }
 }
