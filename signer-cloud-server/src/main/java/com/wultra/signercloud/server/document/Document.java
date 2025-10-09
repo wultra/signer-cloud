@@ -77,6 +77,10 @@ public class Document {
 
     public DocumentVisualSignature getVisualSignature() {
         try {
+            if (visualSignatureJson == null) {
+                return null;
+            }
+
             return new ObjectMapper().readValue(visualSignatureJson, DocumentVisualSignature.class);
         } catch (final IOException e) {
             throw new DocumentVisualSignatureException("Problem with deserialization", e);

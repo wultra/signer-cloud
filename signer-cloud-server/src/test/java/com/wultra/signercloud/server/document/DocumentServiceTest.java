@@ -17,6 +17,8 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wultra.signercloud.server.configuration.PAdESConfigurationProperties;
 import com.wultra.signercloud.server.signer.*;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
@@ -27,7 +29,11 @@ import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.pdf.AnnotationBox;
+import eu.europa.esig.dss.pdf.PdfDocumentReader;
+import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
 import org.apache.hc.core5.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -53,8 +59,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for {@link DocumentService}.
@@ -104,11 +109,20 @@ class DocumentServiceTest {
     @Mock
     private PAdESConfigurationProperties pAdESConfigurationProperties;
 
+    @Mock
+    private  DocumentVisualSignatureService documentVisualSignatureService;
+
+    @Mock
+    private PdfSignatureFieldPositionChecker visualSignatureChecker;
+
     @InjectMocks
     private DocumentService documentService;
 
     @Captor
     private ArgumentCaptor<PAdESSignatureParameters> signatureParamsArgumentCaptor;
+
+    @Captor
+    private ArgumentCaptor<Document> documentArgumentCaptor;
 
     private byte[] uploadedDocumentContent;
     private byte[] signedDocumentContent;
@@ -266,6 +280,90 @@ class DocumentServiceTest {
         verify(pAdESService).getDataToSign(any(DSSDocument.class), signatureParamsArgumentCaptor.capture());
 
         assertEquals(SignatureLevel.PAdES_BASELINE_T, signatureParamsArgumentCaptor.getValue().getSignatureLevel());
+    }
+
+    @Test
+    void testUploadDocumentWhenInvalidVisualSignatureIsProvidedThenExceptionIsThrown() {
+        // given
+        final var visualSignature = prepareDocumentVisualSignature();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var file = new MockMultipartFile(
+                MULTIPART_FILE_FIELD_NAME,
+                DUMMY_FILE_NAME,
+                ContentType.APPLICATION_PDF.getMimeType(),
+                uploadedDocumentContent
+        );
+
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+        when(documentVisualSignatureService.createVisualSignature(eq(visualSignature), any(DSSDocument.class)))
+                .thenReturn(new SignatureImageParameters());
+        doThrow(new RuntimeException("Text Visual Signature Assert"))
+                .when(visualSignatureChecker)
+                .assertSignatureFieldPositionValid(any(PdfDocumentReader.class), any(AnnotationBox.class), eq(1));
+
+        // when
+        final var exception = assertThrows(DocumentVisualSignatureException.class, () -> documentService.uploadDocument(
+                EXTERNAL_SIGNER_ID,
+                EXTERNAL_DOCUMENT_ID,
+                DOCUMENT_NAME,
+                file,
+                visualSignature
+        ));
+
+        // then
+        assertEquals("Text Visual Signature Assert", exception.getMessage());
+    }
+
+    @Test
+    void testUploadDocumentWhenValidVisualSignatureIsProvidedThenItIsSavedInDatabase() throws JsonProcessingException {
+        // given
+        final var visualSignature = prepareDocumentVisualSignature();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var file = new MockMultipartFile(
+                MULTIPART_FILE_FIELD_NAME,
+                DUMMY_FILE_NAME,
+                ContentType.APPLICATION_PDF.getMimeType(),
+                uploadedDocumentContent
+        );
+
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+        when(documentVisualSignatureService.createVisualSignature(eq(visualSignature), any(DSSDocument.class)))
+                .thenReturn(new SignatureImageParameters());
+        when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class))).thenReturn(
+                new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH))
+        );
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+
+        final var documentContent = DocumentContent.builder()
+                .id(1L)
+                .content(uploadedDocumentContent)
+                .build();
+
+        when(documentContentRepository.save(any(DocumentContent.class))).thenReturn(documentContent);
+
+        // when
+        documentService.uploadDocument(
+                EXTERNAL_SIGNER_ID,
+                EXTERNAL_DOCUMENT_ID,
+                DOCUMENT_NAME,
+                file,
+                visualSignature
+        );
+
+        // then
+        verify(documentRepository).save(documentArgumentCaptor.capture());
+
+        final var savedDocument =  documentArgumentCaptor.getValue();
+        final var expectedVisualSignatureJson = new ObjectMapper().writeValueAsBytes(prepareDocumentVisualSignature());
+        assertArrayEquals(expectedVisualSignatureJson, savedDocument.getVisualSignatureJson());
     }
 
     @Test
@@ -962,5 +1060,19 @@ class DocumentServiceTest {
                 .toList();
 
         assertEquals(CERTIFICATE_CHAIN_BASE64, certificateChainBase64);
+    }
+
+    private DocumentVisualSignature prepareDocumentVisualSignature() {
+        return new DocumentVisualSignature(
+                null,
+                300,
+                DocumentVisualSignature.AlignmentHorizontal.CENTER,
+                DocumentVisualSignature.AlignmentVertical.MIDDLE,
+                100,
+                "#4f4e4d",
+                DocumentVisualSignature.ImageScaling.CENTER,
+                null,
+                null
+        );
     }
 }

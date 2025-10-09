@@ -26,6 +26,7 @@ import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
+import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.pdf.AnnotationBox;
 import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
@@ -213,7 +214,8 @@ class DocumentService {
                 dssDocument
         );
 
-        verifyVisualSignature(dssDocument, signatureParams);
+        Optional.ofNullable(signatureParams.getImageParameters())
+                .ifPresent(imageParams -> verifyVisualSignature(dssDocument, imageParams));
 
         final var toSignBytes = padesService.getDataToSign(dssDocument, signatureParams);
 
@@ -222,10 +224,10 @@ class DocumentService {
 
     private void verifyVisualSignature(
             final DSSDocument dssDocument,
-            final PAdESSignatureParameters signatureParameters
+            final SignatureImageParameters signatureImageParameters
     ) {
         try (final var pdfReader = new PdfBoxDocumentReader(dssDocument)) {
-            final var fieldParams = signatureParameters.getImageParameters().getFieldParameters();
+            final var fieldParams = signatureImageParameters.getFieldParameters();
             visualSignatureChecker.assertSignatureFieldPositionValid(pdfReader, new AnnotationBox(fieldParams), fieldParams.getPage());
         } catch (final IOException | RuntimeException e) {
             throw new DocumentVisualSignatureException(e.getMessage(), e);
