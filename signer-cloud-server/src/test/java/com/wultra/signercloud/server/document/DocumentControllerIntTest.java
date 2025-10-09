@@ -914,7 +914,7 @@ class DocumentControllerIntTest {
         );
 
         final var textParams = new DocumentVisualSignature.TextParameters(
-                "Text Signature",
+                "Test Signature",
                 "#E65C8A",
                 "#2BCB9A",
                 15f,
@@ -931,9 +931,9 @@ class DocumentControllerIntTest {
                 300,
                 DocumentVisualSignature.AlignmentHorizontal.RIGHT,
                 DocumentVisualSignature.AlignmentVertical.BOTTOM,
-                75,
+                90,
                 "#3A7DFF",
-                DocumentVisualSignature.ImageScaling.ZOOM_AND_CENTER,
+                DocumentVisualSignature.ImageScaling.CENTER,
                 fieldParams,
                 textParams
         );
@@ -951,9 +951,9 @@ class DocumentControllerIntTest {
     private void assertVisualSignature(final DocumentVisualSignature visualSignature) {
         assertEquals(signatureImageBase64, visualSignature.image());
         assertEquals(300, visualSignature.dpi());
-        assertEquals(DocumentVisualSignature.AlignmentHorizontal.LEFT, visualSignature.alignmentHorizontal());
+        assertEquals(DocumentVisualSignature.AlignmentHorizontal.RIGHT, visualSignature.alignmentHorizontal());
         assertEquals(DocumentVisualSignature.AlignmentVertical.BOTTOM, visualSignature.alignmentVertical());
-        assertEquals(100, visualSignature.zoom());
+        assertEquals(90, visualSignature.zoom());
         assertEquals("#3A7DFF", visualSignature.backgroundColor());
         assertEquals(DocumentVisualSignature.ImageScaling.CENTER, visualSignature.imageScaling());
 

@@ -73,7 +73,7 @@ public class Document {
 
     private DocumentSignatureLevel signatureLevel;
 
-    private byte[] visualSignatureJson;
+    private String visualSignatureJson;
 
     public DocumentVisualSignature getVisualSignature() {
         try {
@@ -95,7 +95,7 @@ public class Document {
                     return this;
                 }
 
-                this.visualSignatureJson = new ObjectMapper().writeValueAsBytes(visualSignature);
+                this.visualSignatureJson = new ObjectMapper().writeValueAsString(visualSignature);
                 return this;
             } catch (final JsonProcessingException e) {
                 throw new DocumentVisualSignatureException("Problem with serialization", e);

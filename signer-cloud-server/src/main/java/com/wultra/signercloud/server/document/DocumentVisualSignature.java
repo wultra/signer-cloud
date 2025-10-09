@@ -22,7 +22,7 @@ package com.wultra.signercloud.server.document;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-record DocumentVisualSignature(
+public record DocumentVisualSignature(
         String image,
         Integer dpi,
         AlignmentHorizontal alignmentHorizontal,
