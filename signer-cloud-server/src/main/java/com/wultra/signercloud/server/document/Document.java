@@ -91,6 +91,10 @@ public class Document {
 
         public DocumentBuilder visualSignature(final DocumentVisualSignature visualSignature) {
             try {
+                if (visualSignature == null) {
+                    return this;
+                }
+
                 this.visualSignatureJson = new ObjectMapper().writeValueAsBytes(visualSignature);
                 return this;
             } catch (final JsonProcessingException e) {

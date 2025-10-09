@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wultra.signercloud.server.restapi.ErrorCode;
 import com.wultra.signercloud.server.restapi.ErrorResponse;
@@ -40,6 +41,7 @@ import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.mock.web.MockPart;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -133,11 +135,15 @@ class DocumentControllerIntTest {
 
     private byte[] uploadedDocumentContent;
     private byte[] signedDocumentContent;
+    private String signatureImageBase64;
 
     @BeforeEach
     void setUp() throws IOException {
         uploadedDocumentContent = new ClassPathResource("input.pdf").getContentAsByteArray();
         signedDocumentContent = new ClassPathResource("input_signed.pdf").getContentAsByteArray();
+        signatureImageBase64 = Base64.getEncoder().encodeToString(
+                new ClassPathResource("signature-pen.png").getContentAsByteArray()
+        );
     }
 
     @AfterEach
@@ -161,7 +167,7 @@ class DocumentControllerIntTest {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        // when
+        // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
         assertErrorResponse(responseBody, ErrorCode.DOCUMENT_UPLOAD_ERROR, "Unsupported content type: image/png");
     }
@@ -180,7 +186,7 @@ class DocumentControllerIntTest {
                 .andExpect(status().isBadRequest())
                 .andReturn();
 
-        // when
+        // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), ErrorResponse.class);
         assertErrorResponse(responseBody, ErrorCode.ERROR_RESOURCE_NOT_FOUND, "Signer with ID %s not found".formatted(EXTERNAL_SIGNER_ID));
     }
@@ -201,7 +207,7 @@ class DocumentControllerIntTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        // when
+        // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), UploadDocumentResponse.class);
         assertUploadResponse(responseBody);
     }
@@ -222,11 +228,34 @@ class DocumentControllerIntTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        // when
+        // then
         final var responseBody = objectMapper.readValue(result.getResponse().getContentAsString(), UploadDocumentResponse.class);
 
         final var document = documentRepository.findAll().iterator().next();
         assertUploadedDocument(document, responseBody.documentId());
+    }
+
+    @Test
+    void testUploadWhenVisualSignatureIsProvidedThenItIsStoredIntoDatabase() throws Exception {
+        // given
+        createSignerInDatabase(SignerStatus.ACTIVE);
+
+        final var file = loadFile(CONTENT_TYPE);
+        final var visualSignature = createVisualSignaturePart();
+
+        // when
+        mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
+                        .file(file)
+                        .part(visualSignature)
+                        .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
+                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        final var document = documentRepository.findAll().iterator().next();
+        assertVisualSignature(document.getVisualSignature());
     }
 
     @Test
@@ -871,5 +900,81 @@ class DocumentControllerIntTest {
         final var expectedChain = Stream.concat(CERTIFICATE_CHAIN_BASE64.stream(), Stream.of(CERTIFICATE_BASE64))
                 .collect(Collectors.toSet());
         assertEquals(expectedChain, certificateChainBase64, "Incorrect certificate chain in document");
+    }
+
+    private MockPart createVisualSignaturePart() throws JsonProcessingException {
+        final var fieldParams = new DocumentVisualSignature.FieldParameters(
+                null,
+                1,
+                150f,
+                300f,
+                200f,
+                50f,
+                DocumentVisualSignature.FieldParameters.Rotation.AUTOMATIC
+        );
+
+        final var textParams = new DocumentVisualSignature.TextParameters(
+                "Text Signature",
+                "#E65C8A",
+                "#2BCB9A",
+                15f,
+                DocumentVisualSignature.TextParameters.TextWrapping.FILL_BOX_AND_LINEBREAK,
+                DocumentVisualSignature.TextParameters.SignerTextPosition.LEFT,
+                DocumentVisualSignature.TextParameters.SignerTextHorizontalAlignment.RIGHT,
+                DocumentVisualSignature.TextParameters.SignerTextVerticalAlignment.BOTTOM,
+                DocumentVisualSignature.TextParameters.Standard14Font.COURIER_BOLD_OBLIQUE,
+                null
+        );
+
+        final var params = new DocumentVisualSignature(
+                signatureImageBase64,
+                300,
+                DocumentVisualSignature.AlignmentHorizontal.RIGHT,
+                DocumentVisualSignature.AlignmentVertical.BOTTOM,
+                75,
+                "#3A7DFF",
+                DocumentVisualSignature.ImageScaling.ZOOM_AND_CENTER,
+                fieldParams,
+                textParams
+        );
+
+        final var visualSignature = new ObjectMapper().writeValueAsBytes(params);
+
+        return new MockPart(
+                "visualSignature",
+                "visualSignature.json",
+                visualSignature,
+                MediaType.APPLICATION_JSON
+        );
+    }
+
+    private void assertVisualSignature(final DocumentVisualSignature visualSignature) {
+        assertEquals(signatureImageBase64, visualSignature.image());
+        assertEquals(300, visualSignature.dpi());
+        assertEquals(DocumentVisualSignature.AlignmentHorizontal.LEFT, visualSignature.alignmentHorizontal());
+        assertEquals(DocumentVisualSignature.AlignmentVertical.BOTTOM, visualSignature.alignmentVertical());
+        assertEquals(100, visualSignature.zoom());
+        assertEquals("#3A7DFF", visualSignature.backgroundColor());
+        assertEquals(DocumentVisualSignature.ImageScaling.CENTER, visualSignature.imageScaling());
+
+        final var fieldParams = visualSignature.fieldParameters();
+        assertNull(fieldParams.fieldId());
+        assertEquals(1, fieldParams.page());
+        assertEquals(150f, fieldParams.originX());
+        assertEquals(300f, fieldParams.originY());
+        assertEquals(200f, fieldParams.width());
+        assertEquals(50f, fieldParams.height());
+        assertEquals(DocumentVisualSignature.FieldParameters.Rotation.AUTOMATIC, fieldParams.rotation());
+
+        final var textParams = visualSignature.textParameters();
+        assertEquals("Test Signature", textParams.text());
+        assertEquals("#E65C8A", textParams.textColor());
+        assertEquals("#2BCB9A", textParams.backgroundColor());
+        assertEquals(15f, textParams.padding());
+        assertEquals(DocumentVisualSignature.TextParameters.TextWrapping.FILL_BOX_AND_LINEBREAK, textParams.textWrapping());
+        assertEquals(DocumentVisualSignature.TextParameters.SignerTextPosition.LEFT, textParams.signerTextPosition());
+        assertEquals(DocumentVisualSignature.TextParameters.SignerTextHorizontalAlignment.RIGHT, textParams.signerTextHorizontalAlignment());
+        assertEquals(DocumentVisualSignature.TextParameters.SignerTextVerticalAlignment.BOTTOM, textParams.signerTextVerticalAlignment());
+        assertEquals(DocumentVisualSignature.TextParameters.Standard14Font.COURIER_BOLD_OBLIQUE, textParams.standard14Font());
     }
 }
