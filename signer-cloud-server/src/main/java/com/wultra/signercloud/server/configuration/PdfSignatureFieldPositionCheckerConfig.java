@@ -17,27 +17,20 @@
  */
 package com.wultra.signercloud.server.configuration;
 
-import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
-import org.springframework.beans.factory.annotation.Autowired;
+import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Configuration for {@link PAdESService}.
+ * TODO description
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Configuration
-public class PAdESServiceConfig {
+class PdfSignatureFieldPositionCheckerConfig {
 
     @Bean
-    public PAdESService padesService(@Autowired(required = false) final OnlineTSPSource tspSource) {
-        final var padesService = new PAdESService(new CommonCertificateVerifier());
-        padesService.setTspSource(tspSource);
-
-        return padesService;
+    public PdfSignatureFieldPositionChecker pdfSignatureFieldPositionChecker() {
+        return new PdfSignatureFieldPositionChecker();
     }
-
 }

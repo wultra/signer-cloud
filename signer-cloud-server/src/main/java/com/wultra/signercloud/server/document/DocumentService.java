@@ -27,6 +27,9 @@ import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
+import eu.europa.esig.dss.pdf.AnnotationBox;
+import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
+import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDocumentReader;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
@@ -65,6 +68,7 @@ class DocumentService {
     private final PAdESService padesService;
     private final PAdESConfigurationProperties pAdESConfigurationProperties;
     private final DocumentVisualSignatureService documentVisualSignatureService;
+    private final PdfSignatureFieldPositionChecker visualSignatureChecker;
 
     /**
      * Cleanup documents.
@@ -198,7 +202,7 @@ class DocumentService {
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var document = new InMemoryDocument(content);
+        final var dssDocument = new InMemoryDocument(content);
 
         final var signatureParams = createSignatureParameters(
                 certificate,
@@ -206,13 +210,26 @@ class DocumentService {
                 timestampSigned,
                 pAdESConfigurationProperties.getSignatureLevel(),
                 visualSignature,
-                document
+                dssDocument
         );
 
+        verifyVisualSignature(dssDocument, signatureParams);
 
-        final var toSignBytes = padesService.getDataToSign(document, signatureParams);
+        final var toSignBytes = padesService.getDataToSign(dssDocument, signatureParams);
 
         return Base64.getEncoder().encodeToString(toSignBytes.getBytes());
+    }
+
+    private void verifyVisualSignature(
+            final DSSDocument dssDocument,
+            final PAdESSignatureParameters signatureParameters
+    ) {
+        try (final var pdfReader = new PdfBoxDocumentReader(dssDocument)) {
+            final var fieldParams = signatureParameters.getImageParameters().getFieldParameters();
+            visualSignatureChecker.assertSignatureFieldPositionValid(pdfReader, new AnnotationBox(fieldParams), fieldParams.getPage());
+        } catch (final IOException | RuntimeException e) {
+            throw new DocumentVisualSignatureException(e.getMessage(), e);
+        }
     }
 
     /**
