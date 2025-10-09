@@ -3,7 +3,7 @@
 - [Introduction](./Introduction.md)
 - [Basic Definitions](./Basic-Definitions.md)
 - [Architecture](./Architecture.md)
-- [Common Tasks](./Common-Tasks.md)
+- [User Journeys](./User-Journeys.md)
 
 **Technical Details**
 - [Integration](./Integration.md)
