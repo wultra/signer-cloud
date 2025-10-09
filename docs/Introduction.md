@@ -17,4 +17,4 @@ Signer Cloud supports PDF Advanced Electronic Signatures (PAdES) defined by ETSI
 
 PAdES is [recognized by eIDAS](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/Standards+and+specifications#Standardsandspecifications-PAdES(PDFAdvancedElectronicSignature)BaselineProfile) as [Advanced Electronic Signature](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/What+is+eSignature#WhatiseSignature-AdvancedElectronicSignatures(AdES)) (AdES).
 
-Signer Cloud supports **PDF 2.0** documents defined by ISO 32000-2 standard.
+Signer Cloud supports **PDF 1.7** documents defined by ISO 32000-1 standard.
