@@ -17,27 +17,20 @@
  */
 package com.wultra.signercloud.server.document;
 
-import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotEmpty;
-
 /**
- * REST API request for signing the {@link Document}.
+ * Supported levels of PAdES baseline signatures.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Schema(description = "Request to sign a document")
-record SignDocumentRequest(
-        @Schema(
-                description = "Signature of the document",
-                example = "MEUCIA2qnAC9/Iv/WXeacSPzV2G+k+6CyDx/TU7sl8KcfynBAiEApa+s/gSca5MPsdUc+ZjCfbS/ZW3bqGu2tZ3oMPxCUrc=",
-                format = "byte")
-        @NotEmpty String signature,
+public enum DocumentSignatureLevel {
 
-        @Schema(
-                description = "PAdES baseline signature level. If not specified, the level from the server configuration is used.",
-                example = "PADES_B_B",
-                format = "enum",
-                defaultValue = "null"
-        )
-        DocumentSignatureLevel signatureLevel
-) {}
+    /**
+     * PAdES-B-B (Baseline-Basic)
+     */
+    PADES_B_B,
+
+    /**
+     * PAdES-B-T (Baseline-Timestamp)
+     */
+    PADES_B_T
+}

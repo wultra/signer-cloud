@@ -67,4 +67,6 @@ public class Document {
     private DocumentStatus status;
 
     private String signature;
+
+    private DocumentSignatureLevel signatureLevel;
 }

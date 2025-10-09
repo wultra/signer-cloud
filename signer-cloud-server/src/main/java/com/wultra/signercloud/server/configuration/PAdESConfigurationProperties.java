@@ -17,31 +17,35 @@
  */
 package com.wultra.signercloud.server.configuration;
 
+import com.wultra.signercloud.server.document.DocumentSignatureLevel;
+import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
-import lombok.AllArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
- * Configuration for {@link PAdESService}.
+ * Configuration properties for {@link PAdESService}
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Configuration
-@AllArgsConstructor
-public class PAdESServiceConfig {
+@ConfigurationProperties(prefix = "signer-cloud.server.pades")
+@Getter
+@Setter
+public class PAdESConfigurationProperties {
 
-    private final PAdESConfigurationProperties pAdESConfigurationProperties;
+    /**
+     * URL of TSA endpoint providing timestamp for {@link DocumentSignatureLevel#PADES_B_T} according to RFC 3161.
+     */
+    private String tsaUrl;
 
-    @Bean
-    public PAdESService padesService(@Autowired(required = false) final OnlineTSPSource tspSource) {
-        final var padesService = new PAdESService(new CommonCertificateVerifier());
-        padesService.setTspSource(tspSource);
+    /**
+     * Default signature for the document.
+     */
+    private DocumentSignatureLevel signatureLevel;
 
-        return padesService;
-    }
-
+    /**
+     * Algorithm used to compute the hash of the document for signing.
+     */
+    private DigestAlgorithm hashAlgorithm;
 }

@@ -246,6 +246,18 @@ public class RestExceptionHandler {
     }
 
     /**
+     * Handler for {@link TimestampAuthorityException} producing {@link HttpStatus#SERVICE_UNAVAILABLE} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleTimestampAuthorityException(final TimestampAuthorityException ex) {
+        logger.warn("TSA exception", ex);
+        return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, ErrorCode.TIMESTAMP_AUTHORITY_ERROR, ex.getMessage());
+    }
+
+    /**
      * Handler for generic {@link RuntimeException} producing {@link HttpStatus#BAD_REQUEST} response.
      * This is a fallback handler for all unhandled runtime exceptions.
      *

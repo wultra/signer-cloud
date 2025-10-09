@@ -17,8 +17,10 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.configuration.PAdESConfigurationProperties;
 import com.wultra.signercloud.server.signer.*;
 import eu.europa.esig.dss.enumerations.DigestAlgorithm;
+import eu.europa.esig.dss.enumerations.SignatureLevel;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.SignatureValue;
@@ -98,6 +100,9 @@ class DocumentServiceTest {
 
     @Mock
     private PAdESService pAdESService;
+
+    @Mock
+    private PAdESConfigurationProperties pAdESConfigurationProperties;
 
     @InjectMocks
     private DocumentService documentService;
@@ -202,10 +207,11 @@ class DocumentServiceTest {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class))).thenReturn(
                 new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH))
         );
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         final var documentContent = DocumentContent.builder()
                 .id(1L)
@@ -229,11 +235,45 @@ class DocumentServiceTest {
     }
 
     @Test
+    void testUploadDocumentWhenFileIsUploadedThenSignatureLevelFromConfigIsUsed() {
+        // given
+        final var signer = createSigner(SignerStatus.ACTIVE);
+        when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class))).thenReturn(
+                new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH))
+        );
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_T);
+
+        final var documentContent = DocumentContent.builder()
+                .id(1L)
+                .content(uploadedDocumentContent)
+                .build();
+
+        when(documentContentRepository.save(any(DocumentContent.class))).thenReturn(documentContent);
+
+        final var file = new MockMultipartFile(
+                MULTIPART_FILE_FIELD_NAME,
+                DUMMY_FILE_NAME,
+                ContentType.APPLICATION_PDF.getMimeType(),
+                uploadedDocumentContent
+        );
+
+        // when
+        documentService.uploadDocument(EXTERNAL_SIGNER_ID, EXTERNAL_DOCUMENT_ID, DOCUMENT_NAME, file);
+
+        // then
+        verify(pAdESService).getDataToSign(any(DSSDocument.class), signatureParamsArgumentCaptor.capture());
+
+        assertEquals(SignatureLevel.PAdES_BASELINE_T, signatureParamsArgumentCaptor.getValue().getSignatureLevel());
+    }
+
+    @Test
     void testSignDocumentWhenDocumentIsNotFoundThenExceptionIsThrown() {
         // given
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -255,7 +295,7 @@ class DocumentServiceTest {
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -281,7 +321,7 @@ class DocumentServiceTest {
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.empty());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -309,7 +349,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -338,7 +378,7 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -372,7 +412,7 @@ class DocumentServiceTest {
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var exception = assertThrows(
@@ -404,16 +444,17 @@ class DocumentServiceTest {
         final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
         waitingDuration.setTimeout(WAITING_TIMEOUT);
 
-        final var request = new SignDocumentRequest("invalidSignature");
+        final var request = new SignDocumentRequest("invalidSignature", null);
 
         when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
-        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class))).thenReturn(
                 new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH))
         );
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         // when
         final var exception = assertThrows(
@@ -450,16 +491,17 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
-        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class)))
                 .thenReturn(new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH)));
         when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
                 .thenReturn(true);
         when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
                 .thenReturn(new InMemoryDocument(signedDocumentContent));
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var response = documentService.signDocument(DOCUMENT_UUID, request);
@@ -493,16 +535,17 @@ class DocumentServiceTest {
         when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
         when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
         when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
-        when(documentConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
         when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class)))
                 .thenReturn(new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH)));
         when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
                 .thenReturn(true);
         when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
                 .thenReturn(new InMemoryDocument(signedDocumentContent));
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
 
         prepareRequestContext();
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         documentService.signDocument(DOCUMENT_UUID, request);
@@ -512,6 +555,180 @@ class DocumentServiceTest {
 
         final var signatureParams = signatureParamsArgumentCaptor.getValue();
         assertCertificateChain(signatureParams.getCertificateChain());
+    }
+
+    @Test
+    void testSignDocumentWhenSignatureLevelIsNotSpecifiedInRequestThenValueFromConfigIsUsed() {
+        // given
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentContent(AggregateReference.to(DOCUMENT_CONTENT_ID))
+                .signer(AggregateReference.to(SIGNER_ID))
+                .status(DocumentStatus.WAITING)
+                .hash(DOCUMENT_HASH)
+                .documentId(DOCUMENT_UUID)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(uploadedDocumentContent)
+                .build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
+        waitingDuration.setTimeout(WAITING_TIMEOUT);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class)))
+                .thenReturn(new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH)));
+        when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
+                .thenReturn(true);
+        when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
+                .thenReturn(new InMemoryDocument(signedDocumentContent));
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+
+        prepareRequestContext();
+        final var request = new SignDocumentRequest(SIGNATURE, null);
+
+        // when
+        documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        verify(pAdESService).signDocument(any(InMemoryDocument.class), signatureParamsArgumentCaptor.capture(), any(SignatureValue.class));
+
+        assertEquals(SignatureLevel.PAdES_BASELINE_B, signatureParamsArgumentCaptor.getValue().getSignatureLevel());
+    }
+
+    @Test
+    void testSignDocumentWhenSignatureLevelIsSpecifiedInRequestThenThisValueIsUsed() {
+        // given
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentContent(AggregateReference.to(DOCUMENT_CONTENT_ID))
+                .signer(AggregateReference.to(SIGNER_ID))
+                .status(DocumentStatus.WAITING)
+                .hash(DOCUMENT_HASH)
+                .documentId(DOCUMENT_UUID)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(uploadedDocumentContent)
+                .build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
+        waitingDuration.setTimeout(WAITING_TIMEOUT);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class)))
+                .thenReturn(new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH)));
+        when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
+                .thenReturn(true);
+        when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
+                .thenReturn(new InMemoryDocument(signedDocumentContent));
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_T);
+
+        prepareRequestContext();
+        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_B);
+
+        // when
+        documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        verify(pAdESService).signDocument(any(InMemoryDocument.class), signatureParamsArgumentCaptor.capture(), any(SignatureValue.class));
+
+        assertEquals(SignatureLevel.PAdES_BASELINE_B, signatureParamsArgumentCaptor.getValue().getSignatureLevel());
+    }
+
+    @Test
+    void testSignDocumentWhenSignatureLevelTIsRequestedAndTsaUrlIsNotSetThenCorrectExceptionIsThrown() {
+        // given
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentContent(AggregateReference.to(DOCUMENT_CONTENT_ID))
+                .signer(AggregateReference.to(SIGNER_ID))
+                .status(DocumentStatus.WAITING)
+                .hash(DOCUMENT_HASH)
+                .documentId(DOCUMENT_UUID)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(uploadedDocumentContent)
+                .build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
+        waitingDuration.setTimeout(WAITING_TIMEOUT);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+
+        prepareRequestContext();
+        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T);
+
+        // when
+        final var exception = assertThrows(TimestampAuthorityException.class, () -> documentService.signDocument(DOCUMENT_UUID, request));
+
+        // then
+        assertEquals("TSA URL not set in configuration", exception.getMessage());
+    }
+
+    @Test
+    void testSignDocumentWhenSignatureLevelTIsRequestedAndTsaUrlIsSetThenDocumentIsSigned() {
+        // given
+        final var document = Document.builder()
+                .timestampCreated(Instant.now())
+                .documentContent(AggregateReference.to(DOCUMENT_CONTENT_ID))
+                .signer(AggregateReference.to(SIGNER_ID))
+                .status(DocumentStatus.WAITING)
+                .hash(DOCUMENT_HASH)
+                .documentId(DOCUMENT_UUID)
+                .build();
+
+        final var documentContent = DocumentContent.builder()
+                .content(uploadedDocumentContent)
+                .build();
+
+        final var signer = createSigner(SignerStatus.ACTIVE);
+
+        final var waitingDuration = new DocumentConfigurationProperties.DocumentConfiguration();
+        waitingDuration.setTimeout(WAITING_TIMEOUT);
+
+        when(documentRepository.findByDocumentId(DOCUMENT_UUID)).thenReturn(Optional.of(document));
+        when(documentContentRepository.findById(AggregateReference.to(DOCUMENT_CONTENT_ID))).thenReturn(Optional.of(documentContent));
+        when(signerRepository.findById(AggregateReference.to(SIGNER_ID))).thenReturn(Optional.of(signer));
+        when(documentConfigurationProperties.getWaiting()).thenReturn(waitingDuration);
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+        when(pAdESConfigurationProperties.getTsaUrl()).thenReturn("https://freetsa.org/tsr");
+        when(pAdESConfigurationProperties.getHashAlgorithm()).thenReturn(DigestAlgorithm.SHA256);
+        when(pAdESService.getDataToSign(any(DSSDocument.class), any(PAdESSignatureParameters.class)))
+                .thenReturn(new ToBeSigned(Base64.getDecoder().decode(DOCUMENT_HASH)));
+        when(pAdESService.isValidSignatureValue(any(ToBeSigned.class), any(SignatureValue.class), any(CertificateToken.class)))
+                .thenReturn(true);
+        when(pAdESService.signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class)))
+                .thenReturn(new InMemoryDocument(signedDocumentContent));
+
+        prepareRequestContext();
+        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T);
+
+        // when
+        documentService.signDocument(DOCUMENT_UUID, request);
+
+        // then
+        verify(pAdESService).signDocument(any(InMemoryDocument.class), any(PAdESSignatureParameters.class), any(SignatureValue.class));
     }
 
     @Test

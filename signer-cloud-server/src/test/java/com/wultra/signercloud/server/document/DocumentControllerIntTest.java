@@ -23,7 +23,9 @@ import com.wultra.signercloud.server.restapi.ErrorResponse;
 import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
+import eu.europa.esig.dss.diagnostic.SignatureWrapper;
 import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.validation.PDFDocumentValidator;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import org.apache.commons.text.StringSubstitutor;
@@ -66,6 +68,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "ejbca.rest-client.key-alias=testAlias",
         "ejbca.rest-client.key-password=testKeyPassword",
         "signer-cloud.server.document.waiting.timeout=",
+        "signer-cloud.server.pades.tsa-url=https://freetsa.org/tsr"
 })
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
@@ -229,7 +232,7 @@ class DocumentControllerIntTest {
     @Test
     void testSignWhenDocumentIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
         // given
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -251,7 +254,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -273,7 +276,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -295,7 +298,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
-        final var request = new SignDocumentRequest("invalidSignature");
+        final var request = new SignDocumentRequest("invalidSignature", null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -317,7 +320,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -342,7 +345,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -362,7 +365,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
 
-        final var request = new SignDocumentRequest(SIGNATURE);
+        final var request = new SignDocumentRequest(SIGNATURE, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -372,7 +375,27 @@ class DocumentControllerIntTest {
                 .andReturn();
 
         // then
-        validateSignature(documentContentId);
+        validateSignatureLevelB(documentContentId);
+    }
+
+    @Test
+    void testSignWhenSignatureLevelTIsRequestedThenSignatureIsValidWithTimestamp() throws Exception {
+        // given
+        final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
+        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
+
+        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T);
+
+        // when
+        mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        // then
+        validateSignatureLevelT(documentContentId);
     }
 
     @Test
@@ -679,6 +702,7 @@ class DocumentControllerIntTest {
         assertEquals(HASH, document.getHash());
         assertEquals(DocumentStatus.SIGNED, document.getStatus());
         assertEquals(SIGNATURE, document.getSignature());
+        assertEquals(DocumentSignatureLevel.PADES_B_B, document.getSignatureLevel());
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContent()).orElseThrow();
         final var fileContent = documentContent.getContent();
@@ -769,7 +793,29 @@ class DocumentControllerIntTest {
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
     }
 
-    private void validateSignature(final long documentContentId) {
+    private void validateSignatureLevelB(final long documentContentId) {
+        final var validator = getValidator(documentContentId);
+
+        final var signature = validateSignature(validator);
+        assertTrue(signature.isBLevelTechnicallyValid());
+
+        final var chain = validator.getSignatureById(signature.getId()).getCertificates();
+        validateCertificateChain(chain);
+    }
+
+    private void validateSignatureLevelT(final long documentContentId) {
+        final var validator = getValidator(documentContentId);
+
+        final var signature = validateSignature(validator);
+        assertTrue(signature.isTLevelTechnicallyValid());
+
+        validateTimestamp(signature);
+
+        final var chain = validator.getSignatureById(signature.getId()).getCertificates();
+        validateCertificateChain(chain);
+    }
+
+    private PDFDocumentValidator getValidator(final long documentContentId) {
         final var documentContent = documentContentRepository.findById(documentContentId).orElseThrow();
         final var signedDocumentBytes = documentContent.getContent();
 
@@ -778,6 +824,10 @@ class DocumentControllerIntTest {
         final var validator = new PDFDocumentValidator(signedDocument);
         validator.setCertificateVerifier(new CommonCertificateVerifier());
 
+        return validator;
+    }
+
+    private SignatureWrapper validateSignature(final PDFDocumentValidator validator) {
         final var simpleReport = validator.validateDocument().getSimpleReport();
         assertEquals(1, simpleReport.getSignaturesCount(), "There is not exactly one signature in document");
 
@@ -790,12 +840,23 @@ class DocumentControllerIntTest {
         );
 
         final var signature = validator.validateDocument().getDiagnosticData().getSignatureById(signatureId);
-        assertTrue(signature.isBLevelTechnicallyValid());
         assertTrue(signature.isSignatureIntact());
         assertTrue(signature.isSigningCertificateIdentified());
         assertTrue(signature.isStructuralValidationValid());
 
-        final var chain = validator.getSignatureById(signatureId).getCertificates();
+        return signature;
+    }
+
+    private void validateTimestamp(final SignatureWrapper signatureWrapper) {
+        final var timestamps = signatureWrapper.getTLevelTimestamps();
+        assertEquals(1, timestamps.size(), "There is not exactly one timestamp in document");
+
+        final var timestamp = timestamps.get(0);
+        assertTrue(timestamp.isSignatureValid());
+        assertEquals(new Date().getTime(), timestamp.getProductionTime().getTime(), MILLISECONDS_DELTA);
+    }
+
+    private void validateCertificateChain(final List<CertificateToken> chain) {
         final var certificateChainBase64 = chain.stream()
                 .map(certificateToken -> {
                     try {

@@ -368,6 +368,8 @@ An HTTP `200 OK` response should be returned:
 }
 ```
 
+If you want to add a timestamp from a TSA (Time Stamping Authority) server, please see [Document Signature Level](#document-signature-level).
+
 
 ### Download signed document
 
@@ -733,6 +735,8 @@ An HTTP `200 OK` response should be returned:
 }
 ```
 
+If you want to add a timestamp from a TSA (Time Stamping Authority) server, please see [Document Signature Level](#document-signature-level).
+
 
 ### Download signed document
 
@@ -885,3 +889,18 @@ curl -X POST "https://login.microsoftonline.com/09456bd9-6d0f-40e3-b972-fb499273
 ```
 
 Values for `<CLIENT_ID>` and `<CLIENT_SECRET>` are stored in password manager.
+
+
+### Document signature level
+
+By default, the **PAdES B-B (Baseline-Basic)** level is used for signatures. Another supported level is **PAdES B-T (Baseline-Timestamp)**. 
+To use it, make sure you set the TSA URL in the configuration property `signer-cloud.server.pades.tsa-url`. 
+Then, you can include the `signatureLevel` value in the request body when calling the document signing endpoint.
+
+Example of full request body:
+```json
+{
+  "signature": "MEUCIQCEqNu5SfHvjAhNOLsJwLGa1rukhrA9pxWJAlHBxYKcMwIgVlmo5LVod6vscliVnyaB/C3wTsh+4lghdJR4YsWVBdc=",
+  "signatureLevel" : "PADES_B_T"
+}
+```

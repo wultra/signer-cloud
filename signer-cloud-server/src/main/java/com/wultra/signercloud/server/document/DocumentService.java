@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.document;
 
+import com.wultra.signercloud.server.configuration.PAdESConfigurationProperties;
 import com.wultra.signercloud.server.signer.*;
 import com.wultra.signercloud.server.utils.CertificateUtils;
 import eu.europa.esig.dss.enumerations.SignatureLevel;
@@ -29,6 +30,7 @@ import eu.europa.esig.dss.pades.signature.PAdESService;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.ContentType;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -56,11 +58,12 @@ import java.util.function.Consumer;
 class DocumentService {
     private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/download";
 
-    private final DocumentConfigurationProperties configurationProperties;
+    private final DocumentConfigurationProperties documentConfigurationProperties;
     private final DocumentRepository documentRepository;
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
     private final PAdESService padesService;
+    private final PAdESConfigurationProperties pAdESConfigurationProperties;
 
     /**
      * Cleanup documents.
@@ -74,21 +77,21 @@ class DocumentService {
 
         processRetention(
                 DocumentStatus.REJECTED,
-                configurationProperties.getRejected().getRetentionPeriod(),
+                documentConfigurationProperties.getRejected().getRetentionPeriod(),
                 cleanupResultBuilder::rejectedDocuments,
                 now
         );
 
         processRetention(
                 DocumentStatus.SIGNED,
-                configurationProperties.getSigned().getRetentionPeriod(),
+                documentConfigurationProperties.getSigned().getRetentionPeriod(),
                 cleanupResultBuilder::signedDocuments,
                 now
         );
 
         processRetention(
                 DocumentStatus.WAITING,
-                configurationProperties.getWaiting().getRetentionPeriod(),
+                documentConfigurationProperties.getWaiting().getRetentionPeriod(),
                 cleanupResultBuilder::waitingDocuments,
                 now
         );
@@ -187,7 +190,12 @@ class DocumentService {
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned);
+        final var signatureParams = createSignatureParameters(
+                certificate,
+                certificateChain,
+                timestampSigned,
+                pAdESConfigurationProperties.getSignatureLevel()
+        );
 
         final var document = new InMemoryDocument(content);
         final var toSignBytes = padesService.getDataToSign(document, signatureParams);
@@ -225,11 +233,13 @@ class DocumentService {
         verifyDocumentCanBeSigned(signer, document);
 
         final var signature = requestBody.signature();
+        final var signatureLevel = resolveDocumentSignatureLevel(requestBody.signatureLevel());
         final var signedDocumentBytes = verifySignatureAndSignDocument(
                 signer,
                 signature,
                 documentContent.getContent(),
-                document.getTimestampCreated());
+                document.getTimestampCreated(),
+                signatureLevel);
 
         final var updatedDocumentContent = documentContent.toBuilder()
                 .content(signedDocumentBytes)
@@ -242,6 +252,7 @@ class DocumentService {
                 .fileSize(signedDocumentBytes.length)
                 .status(DocumentStatus.SIGNED)
                 .signature(signature)
+                .signatureLevel(signatureLevel)
                 .build();
 
         documentRepository.save(updatedDocument);
@@ -259,7 +270,7 @@ class DocumentService {
             throw new DocumentStateException("Document is not in state when it can be signed");
         }
 
-        final var waitingTimeout = configurationProperties.getWaiting().getTimeout();
+        final var waitingTimeout = documentConfigurationProperties.getWaiting().getTimeout();
         if (waitingTimeout != null) {
             final var documentSigningDeadline = document.getTimestampCreated().plus(waitingTimeout);
             if (Instant.now().isAfter(documentSigningDeadline)) {
@@ -268,16 +279,28 @@ class DocumentService {
         }
     }
 
+    private DocumentSignatureLevel resolveDocumentSignatureLevel(final DocumentSignatureLevel requestedSignatureLevel) {
+        final var signatureLevel = Optional.ofNullable(requestedSignatureLevel)
+                .orElse(pAdESConfigurationProperties.getSignatureLevel());
+
+        if (signatureLevel == DocumentSignatureLevel.PADES_B_T && StringUtils.isEmpty(pAdESConfigurationProperties.getTsaUrl())) {
+            throw new TimestampAuthorityException("TSA URL not set in configuration");
+        }
+
+        return signatureLevel;
+    }
+
     private byte[] verifySignatureAndSignDocument(
             final Signer signer,
             final String hashSignatureBase64,
             final byte[] documentBytes,
-            final Instant timestampSigned) {
+            final Instant timestampSigned,
+            final DocumentSignatureLevel signatureLevel) {
 
         final var certificate = convertCertificate(signer);
         final var certificateChain = convertCertificateChain(signer);
 
-        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned);
+        final var signatureParams = createSignatureParameters(certificate, certificateChain, timestampSigned, signatureLevel);
 
         final var unsignedDocument = new InMemoryDocument(documentBytes);
 
@@ -342,13 +365,20 @@ class DocumentService {
     private PAdESSignatureParameters createSignatureParameters(
             final CertificateToken certificateToken,
             final List<CertificateToken> certificateChain,
-            final Instant timestampSigned
+            final Instant timestampSigned,
+            final DocumentSignatureLevel documentSignatureLevel
     ) {
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(configurationProperties.getHashAlgorithm());
-        params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        params.setDigestAlgorithm(pAdESConfigurationProperties.getHashAlgorithm());
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
+
+        final var signatureLevel = switch (documentSignatureLevel) {
+            case PADES_B_B -> SignatureLevel.PAdES_BASELINE_B;
+            case PADES_B_T -> SignatureLevel.PAdES_BASELINE_T;
+        };
+
+        params.setSignatureLevel(signatureLevel);
 
         params.bLevel().setSigningDate(Date.from(timestampSigned));
         params.setSigningTimeZone(TimeZone.getTimeZone("UTC"));

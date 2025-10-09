@@ -127,7 +127,7 @@ public class DocumentController {
                     ),
                     @ApiResponse(
                             responseCode = "503",
-                            description = "PowerAuth service is not available",
+                            description = "PowerAuth service is not available or TSA url not set (if `PADES_B_T` signature level is requested)",
                             content = @Content(schema = @Schema(implementation = ErrorResponse.class))
                     )
             }
