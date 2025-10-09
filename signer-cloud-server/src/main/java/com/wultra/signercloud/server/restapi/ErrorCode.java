@@ -86,6 +86,11 @@ public enum ErrorCode {
     TIMESTAMP_AUTHORITY_ERROR,
 
     /**
+     * Visual signature is invalid for {@link com.wultra.signercloud.server.document.Document}.
+     */
+    DOCUMENT_VISUAL_SIGNATURE_ERROR,
+
+    /**
      * Any other error not covered by a specific error code.
      */
     ERROR_GENERIC,
