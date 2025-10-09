@@ -81,7 +81,8 @@ record DocumentVisualSignature(
             SignerTextPosition signerTextPosition,
             SignerTextHorizontalAlignment signerTextHorizontalAlignment,
             SignerTextVerticalAlignment signerTextVerticalAlignment,
-            String font
+            Standard14Font standard14Font,
+            String customFont
     ) {
         enum TextWrapping {
             FILL_BOX,
@@ -106,6 +107,23 @@ record DocumentVisualSignature(
             TOP,
             MIDDLE,
             BOTTOM
+        }
+
+        enum Standard14Font {
+            TIMES_ROMAN,
+            TIMES_BOLD,
+            TIMES_ITALIC,
+            TIMES_BOLD_ITALIC,
+            HELVETICA,
+            HELVETICA_BOLD,
+            HELVETICA_OBLIQUE,
+            HELVETICA_BOLD_OBLIQUE,
+            COURIER,
+            COURIER_BOLD,
+            COURIER_OBLIQUE,
+            COURIER_BOLD_OBLIQUE,
+            SYMBOL,
+            ZAPF_DINGBATS
         }
     }
 }

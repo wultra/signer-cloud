@@ -27,6 +27,8 @@ import eu.europa.esig.dss.pades.SignatureImageTextParameters;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDocumentReader;
 import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxNativeFont;
 import org.apache.pdfbox.pdmodel.font.PDType0Font;
+import org.apache.pdfbox.pdmodel.font.PDType1Font;
+import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.stereotype.Service;
 
 import java.awt.*;
@@ -205,9 +207,15 @@ class DocumentVisualSignatureService {
                 .map(DocumentVisualSignatureService::convertSignerTextVerticalAlignment)
                 .ifPresent(params::setSignerTextVerticalAlignment);
 
-        Optional.ofNullable(textParameters.font())
-                .map(fontBase64 -> createTtfFont(fontBase64, dssDocument))
+        Optional.ofNullable(textParameters.standard14Font())
+                .map(DocumentVisualSignatureService::convertStandard14Font)
                 .ifPresent(params::setFont);
+
+        if (params.getFont() == null) {
+            Optional.ofNullable(textParameters.customFont())
+                    .map(customFont -> createCustomFont(customFont, dssDocument))
+                    .ifPresent(params::setFont);
+        }
 
         return params;
     }
@@ -249,16 +257,37 @@ class DocumentVisualSignatureService {
         };
     }
 
-    private static DSSFont createTtfFont(final String fontBase64, final DSSDocument dssDocument) {
+    private static DSSFont convertStandard14Font(final DocumentVisualSignature.TextParameters.Standard14Font standard14Font) {
+        return new PdfBoxNativeFont(new PDType1Font(
+                switch (standard14Font) {
+                    case TIMES_ROMAN -> Standard14Fonts.FontName.TIMES_ROMAN;
+                    case TIMES_BOLD -> Standard14Fonts.FontName.TIMES_BOLD;
+                    case TIMES_ITALIC -> Standard14Fonts.FontName.TIMES_ITALIC;
+                    case TIMES_BOLD_ITALIC -> Standard14Fonts.FontName.TIMES_BOLD_ITALIC;
+                    case HELVETICA -> Standard14Fonts.FontName.HELVETICA;
+                    case HELVETICA_BOLD -> Standard14Fonts.FontName.HELVETICA_BOLD;
+                    case HELVETICA_OBLIQUE -> Standard14Fonts.FontName.HELVETICA_OBLIQUE;
+                    case HELVETICA_BOLD_OBLIQUE -> Standard14Fonts.FontName.HELVETICA_BOLD_OBLIQUE;
+                    case COURIER -> Standard14Fonts.FontName.COURIER;
+                    case COURIER_BOLD -> Standard14Fonts.FontName.COURIER_BOLD;
+                    case COURIER_OBLIQUE -> Standard14Fonts.FontName.COURIER_OBLIQUE;
+                    case COURIER_BOLD_OBLIQUE -> Standard14Fonts.FontName.COURIER_BOLD_OBLIQUE;
+                    case SYMBOL -> Standard14Fonts.FontName.SYMBOL;
+                    case ZAPF_DINGBATS -> Standard14Fonts.FontName.ZAPF_DINGBATS;
+                }
+        ));
+    }
+
+    private static DSSFont createCustomFont(final String fontBase64, final DSSDocument dssDocument) {
         try (final var pdfReader = new PdfBoxDocumentReader(dssDocument)) {
             final var font = Base64.getDecoder().decode(fontBase64);
-            final var ttfFont = PDType0Font.load(
+            final var pdType0Font = PDType0Font.load(
                     pdfReader.getPDDocument(),
                     new ByteArrayInputStream(font)
             );
-            return new PdfBoxNativeFont(ttfFont);
+            return new PdfBoxNativeFont(pdType0Font);
         } catch (final IOException e) {
-            throw new DocumentVisualSignatureException("Problem with creating TTF font", e);
+            throw new DocumentVisualSignatureException("Problem with creating custom font", e);
         }
     }
 }
