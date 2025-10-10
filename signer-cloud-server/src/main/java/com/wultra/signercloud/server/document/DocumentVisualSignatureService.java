@@ -137,9 +137,7 @@ class DocumentVisualSignatureService {
         };
     }
 
-    private static SignatureFieldParameters createSignatureFieldParameters(
-            final DocumentVisualSignature.FieldParameters fieldParameters
-    ) {
+    private static SignatureFieldParameters createSignatureFieldParameters(final DocumentVisualSignature.FieldParameters fieldParameters) {
         final var params = new SignatureFieldParameters();
 
         Optional.ofNullable(fieldParameters.fieldId())

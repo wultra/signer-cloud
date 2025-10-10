@@ -30,7 +30,11 @@ import org.springframework.data.convert.WritingConverter;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public class DocumentVisualSignatureConverter {
+public final class DocumentVisualSignatureConverter {
+
+    private DocumentVisualSignatureConverter() {
+        throw new IllegalStateException("Utility class");
+    }
 
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -59,7 +63,7 @@ public class DocumentVisualSignatureConverter {
         @Override
         public DocumentVisualSignature convert(final @NonNull String source) {
             try {
-                if (StringUtils.isEmpty(source)) {
+                if (StringUtils.isBlank(source)) {
                     return null;
                 }
 

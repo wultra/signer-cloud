@@ -29,7 +29,6 @@ import java.util.List;
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-
 @Configuration
 public class JdbcConfig extends AbstractJdbcConfiguration {
 
