@@ -236,7 +236,7 @@ class DocumentVisualSignatureService {
         };
     }
 
-    private static SignerTextPosition convertSignerTextPosition(final  DocumentVisualSignature.TextParameters.SignerTextPosition signerTextPosition) {
+    private static SignerTextPosition convertSignerTextPosition(final DocumentVisualSignature.TextParameters.SignerTextPosition signerTextPosition) {
         return switch (signerTextPosition) {
             case TOP -> SignerTextPosition.TOP;
             case BOTTOM -> SignerTextPosition.BOTTOM;

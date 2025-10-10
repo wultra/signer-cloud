@@ -66,7 +66,7 @@ class DocumentVisualSignatureServiceTest {
         // when
         final var signatureImageParameters = documentVisualSignatureService.createVisualSignature(documentVisualSignature, dssDocument);
 
-        // when
+        // then
         assertSignatureImageParameters(signatureImageParameters);
     }
 

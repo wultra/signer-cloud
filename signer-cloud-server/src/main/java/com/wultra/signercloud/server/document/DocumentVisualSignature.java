@@ -171,7 +171,7 @@ public record DocumentVisualSignature(
     record TextParameters(
             @Schema(
                     description = "Text value",
-                    example = "Joh Doe"
+                    example = "John Doe"
             )
             String text,
 
