@@ -75,6 +75,12 @@ public class Document {
 
     private String visualSignatureJson;
 
+    /**
+     * Returns {@link #getVisualSignatureJson()} as {@link DocumentVisualSignature}.
+     *
+     * @return document visual signature
+     * @throws DocumentVisualSignatureException if serialization from String to object fails
+     */
     public DocumentVisualSignature getVisualSignature() {
         try {
             if (visualSignatureJson == null) {
@@ -89,6 +95,12 @@ public class Document {
 
     public static class DocumentBuilder {
 
+        /**
+         * Set {@link #visualSignatureJson} from {@link DocumentVisualSignature} object.
+         *
+         * @param visualSignature the visual signature of the document to be serialized as JSON
+         * @return builder instance
+         */
         public DocumentBuilder visualSignature(final DocumentVisualSignature visualSignature) {
             try {
                 if (visualSignature == null) {

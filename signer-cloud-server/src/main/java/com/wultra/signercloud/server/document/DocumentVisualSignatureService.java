@@ -38,13 +38,21 @@ import java.util.Base64;
 import java.util.Optional;
 
 /**
- * TODO description
+ * Service for visual signature.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Service
 class DocumentVisualSignatureService {
 
+    /**
+     * Creates DSS PAdES parameters from {@link DocumentVisualSignature}.
+     *
+     * @param visualSignature visual signature definition
+     * @param dssDocument the document in which the signature will be placed
+     * @return DSS PAdES parameters
+     * @throws DocumentVisualSignatureException when visual signature is invalid
+     */
     SignatureImageParameters createVisualSignature(
             final DocumentVisualSignature visualSignature,
             final DSSDocument dssDocument

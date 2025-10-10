@@ -91,6 +91,11 @@ public class DocumentController {
             )
             @RequestParam("file") final MultipartFile file,
 
+            @Schema(
+                    description = "Definition of visual signature in document",
+                    type = "string",
+                    format = "json"
+            )
             @RequestPart(value = "visualSignature", required = false) final DocumentVisualSignature visualSignature
     ) {
         logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, externalDocumentId: {}", externalSignerId, externalDocumentId);

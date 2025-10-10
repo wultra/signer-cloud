@@ -22,7 +22,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * TODO description
+ * Validator for the placement of a visual signature in {@link com.wultra.signercloud.server.document.Document}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */

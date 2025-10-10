@@ -18,7 +18,7 @@
 package com.wultra.signercloud.server.document;
 
 /**
- * TODO description
+ * Exception thrown when visual signature definition is invalid.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
