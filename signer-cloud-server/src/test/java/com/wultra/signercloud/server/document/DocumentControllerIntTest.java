@@ -31,7 +31,7 @@ import eu.europa.esig.dss.pades.validation.PDFDocumentValidator;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
 import org.apache.commons.text.StringSubstitutor;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -133,12 +133,12 @@ class DocumentControllerIntTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private byte[] uploadedDocumentContent;
-    private byte[] signedDocumentContent;
-    private String signatureImageBase64;
+    private static byte[] uploadedDocumentContent;
+    private static byte[] signedDocumentContent;
+    private static String signatureImageBase64;
 
-    @BeforeEach
-    void setUp() throws IOException {
+    @BeforeAll
+    static void setUp() throws IOException {
         uploadedDocumentContent = new ClassPathResource("input.pdf").getContentAsByteArray();
         signedDocumentContent = new ClassPathResource("input_signed.pdf").getContentAsByteArray();
         signatureImageBase64 = Base64.getEncoder().encodeToString(

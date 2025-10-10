@@ -35,7 +35,7 @@ import eu.europa.esig.dss.pdf.AnnotationBox;
 import eu.europa.esig.dss.pdf.PdfDocumentReader;
 import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
 import org.apache.hc.core5.http.ContentType;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.*;
@@ -124,11 +124,11 @@ class DocumentServiceTest {
     @Captor
     private ArgumentCaptor<Document> documentArgumentCaptor;
 
-    private byte[] uploadedDocumentContent;
-    private byte[] signedDocumentContent;
+    private static byte[] uploadedDocumentContent;
+    private static byte[] signedDocumentContent;
 
-    @BeforeEach
-    void setUp() throws IOException {
+    @BeforeAll
+    static void setUp() throws IOException {
         uploadedDocumentContent = new ClassPathResource("input.pdf").getContentAsByteArray();
         signedDocumentContent = new ClassPathResource("input_signed.pdf").getContentAsByteArray();
     }

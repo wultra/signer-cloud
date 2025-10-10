@@ -23,7 +23,7 @@ import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.pades.SignatureImageParameters;
 import eu.europa.esig.dss.pdf.pdfbox.visible.PdfBoxNativeFont;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -50,10 +50,10 @@ class DocumentVisualSignatureServiceTest {
     @InjectMocks
     private DocumentVisualSignatureService documentVisualSignatureService;
 
-    private DSSDocument dssDocument;
+    private static DSSDocument dssDocument;
 
-    @BeforeEach
-    void setUp() throws IOException {
+    @BeforeAll
+    static void setUp() throws IOException {
         final var documentContent = new ClassPathResource("input.pdf").getContentAsByteArray();
         dssDocument = new InMemoryDocument(documentContent);
     }
