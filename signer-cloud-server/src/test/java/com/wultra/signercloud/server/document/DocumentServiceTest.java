@@ -363,7 +363,8 @@ class DocumentServiceTest {
 
         final var savedDocument =  documentArgumentCaptor.getValue();
         final var expectedVisualSignatureJson = new ObjectMapper().writeValueAsString(prepareDocumentVisualSignature());
-        assertEquals(expectedVisualSignatureJson, savedDocument.getVisualSignatureJson());
+        final var actualVisualSignatureJson = new ObjectMapper().writeValueAsString(savedDocument.getVisualSignature());
+        assertEquals(expectedVisualSignatureJson, actualVisualSignatureJson);
     }
 
     @Test

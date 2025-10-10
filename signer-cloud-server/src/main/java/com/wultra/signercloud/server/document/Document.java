@@ -17,8 +17,6 @@
  */
 package com.wultra.signercloud.server.document;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wultra.signercloud.server.signer.Signer;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,7 +26,6 @@ import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Sequence;
 import org.springframework.data.relational.core.mapping.Table;
 
-import java.io.IOException;
 import java.time.Instant;
 
 /**
@@ -73,46 +70,6 @@ public class Document {
 
     private DocumentSignatureLevel signatureLevel;
 
-    private String visualSignatureJson;
-
-    /**
-     * Returns {@link #getVisualSignatureJson()} as {@link DocumentVisualSignature}.
-     *
-     * @return document visual signature
-     * @throws DocumentVisualSignatureException if serialization from String to object fails
-     */
-    public DocumentVisualSignature getVisualSignature() {
-        try {
-            if (visualSignatureJson == null) {
-                return null;
-            }
-
-            return new ObjectMapper().readValue(visualSignatureJson, DocumentVisualSignature.class);
-        } catch (final IOException e) {
-            throw new DocumentVisualSignatureException("Problem with deserialization", e);
-        }
-    }
-
-    public static class DocumentBuilder {
-
-        /**
-         * Set {@link #visualSignatureJson} from {@link DocumentVisualSignature} object.
-         *
-         * @param visualSignature the visual signature of the document to be serialized as JSON
-         * @return builder instance
-         */
-        public DocumentBuilder visualSignature(final DocumentVisualSignature visualSignature) {
-            try {
-                if (visualSignature == null) {
-                    return this;
-                }
-
-                this.visualSignatureJson = new ObjectMapper().writeValueAsString(visualSignature);
-                return this;
-            } catch (final JsonProcessingException e) {
-                throw new DocumentVisualSignatureException("Problem with serialization", e);
-            }
-        }
-
-    }
+    @Column("visual_signature_json")
+    private DocumentVisualSignature visualSignature;
 }
