@@ -18,20 +18,21 @@ Signer Cloud Server provides a RESTful API that allows to control specific parts
 
 Signer Cloud Server uses following format for error response body, accompanied by an appropriate HTTP status code. Besides the HTTP error codes that application server may return regardless of server application (such as 404 when resource is not found or 503 when server is down), following ERROR codes may be returned:
 
-| Error Code                       | HTTP Code | Description                                                                                                                                                       |
-|:---------------------------------|:----------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| ERROR_UNAUTHORIZED               | 401       | Unauthorized request                                                                                                                                              |
-| REQUEST_VALIDATION_ERROR         | 400       | REST API endpoint called with invalid body or parameters                                                                                                          |
-| ERROR_RESOURCE_NOT_FOUND         | 400       | Resource is not found                                                                                                                                             |
-| CERTIFICATE_PROCESSING_ERROR     | 500       | Issue with processing the certificate                                                                                                                             |
-| CSR_INVALID_SIGNATURE_ERROR      | 400       | Error when signature of CSR (Certificate Signing Request) is invalid                                                                                              |
-| CSR_SIGNATURE_VERIFICATION_ERROR | 503       | Error when signature of CSR (Certificate Signing Request) could not be verified. Can indicates problem with Power Auth server                                     |
-| CERTIFICATE_AUTHORITY_ERROR      | 400,503   | Error returned from Certificate Authority. 4xx errors are mapped to 400, and 5xx errors are mapped to 503. Can indicate problem with Certificate Authority server |
-| DOCUMENT_UPLOAD_ERROR            | 400       | Error when `Document` content could not be uploaded                                                                                                               |
-| DOCUMENT_INVALID_SIGNATURE_ERROR | 400       | Error when signature of `Document` is invalid                                                                                                                     |
-| DOCUMENT_SIGNING_ERROR           | 500       | Error when the content of a signed `Document` could not be assembled                                                                                              |
-| ILLEGAL_OPERATION_ERROR          | 400       | The state of the resource does not allow the requested operation                                                                                                  |
-| ERROR_GENERIC                    | 400       | Any other error not covered by a specific error code                                                                                                              |
+| Error Code                        | HTTP Code | Description                                                                                                                                                       |
+|:----------------------------------|:----------|:------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| ERROR_UNAUTHORIZED                | 401       | Unauthorized request                                                                                                                                              |
+| REQUEST_VALIDATION_ERROR          | 400       | REST API endpoint called with invalid body or parameters                                                                                                          |
+| ERROR_RESOURCE_NOT_FOUND          | 400       | Resource is not found                                                                                                                                             |
+| CERTIFICATE_PROCESSING_ERROR      | 500       | Issue with processing the certificate                                                                                                                             |
+| CSR_INVALID_SIGNATURE_ERROR       | 400       | Error when signature of CSR (Certificate Signing Request) is invalid                                                                                              |
+| CSR_SIGNATURE_VERIFICATION_ERROR  | 503       | Error when signature of CSR (Certificate Signing Request) could not be verified. Can indicates problem with Power Auth server                                     |
+| CERTIFICATE_AUTHORITY_ERROR       | 400,503   | Error returned from Certificate Authority. 4xx errors are mapped to 400, and 5xx errors are mapped to 503. Can indicate problem with Certificate Authority server |
+| DOCUMENT_UPLOAD_ERROR             | 400       | Error when `Document` content could not be uploaded                                                                                                               |
+| DOCUMENT_INVALID_SIGNATURE_ERROR  | 400       | Error when signature of `Document` is invalid                                                                                                                     |
+| DOCUMENT_SIGNING_ERROR            | 500       | Error when the content of a signed `Document` could not be assembled                                                                                              |
+| ILLEGAL_OPERATION_ERROR           | 400       | The state of the resource does not allow the requested operation                                                                                                  |
+| DOCUMENT_VISUAL_SIGNATURE_ERROR   | 400       | Visual signature is invalid for `Document`                                                                                                                        |
+| ERROR_GENERIC                     | 400       | Any other error not covered by a specific error code                                                                                                              |
 
 
 All error responses that are produced by the Signer Cloud Server have the following body:
@@ -231,18 +232,25 @@ Content-Type: application/pdf
 
 {fileContent}
 --abcde12345--
+
+Content-Type: application/json
+Content-Disposition: form-data; name="visualSignature"; filename="{visualSignatureFileName}"
+
+{visualSignature}
+--abcde12345--
 ```
 
 ##### Request Params
 
-| Attribute     | Type      | Description                                                |
-|:--------------|:----------|:-----------------------------------------------------------|
-| `size`        | `Number`  | Document size in bytes.                                    |
-| `signerId`    | `String`  | Activation ID (Registration ID) from PowerAuth.            |
-| `externalId`  | `String`  | Custom unique ID identifying document in client’s systems. |
-| `name`        | `String`  | Document name.                                             |
-| `fileName`    | `String`  | File name (including suffix), e.g. “attachment.pdf”.       |
-| `fileContent` | `String`  | File content (binary data).                                |
+| Attribute         | Type     | Description                                                                                                                                                                                                    |
+|:------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `size`            | `Number` | Document size in bytes.                                                                                                                                                                                        |
+| `signerId`        | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                |
+| `externalId`      | `String` | Custom unique ID identifying document in client’s systems.                                                                                                                                                     |
+| `name`            | `String` | Document name.                                                                                                                                                                                                 |
+| `fileName`        | `String` | File name (including suffix), e.g. “attachment.pdf”.                                                                                                                                                           |
+| `fileContent`     | `String` | File content (binary data).                                                                                                                                                                                    |
+| `visualSignature` | `String` | Optional parameter for visual signature definition as JSON. See [PAdES Visible Signature](https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#PAdESVisibleSignatureAnnex). |
 
 
 #### Response 200

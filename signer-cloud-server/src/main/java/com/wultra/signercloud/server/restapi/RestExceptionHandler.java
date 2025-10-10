@@ -258,6 +258,18 @@ public class RestExceptionHandler {
     }
 
     /**
+     * Handler for {@link DocumentVisualSignatureException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleDocumentVisualSignatureException(final DocumentVisualSignatureException ex) {
+        logger.warn("Visual signature exception", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.DOCUMENT_VISUAL_SIGNATURE_ERROR, ex.getMessage());
+    }
+
+    /**
      * Handler for generic {@link RuntimeException} producing {@link HttpStatus#BAD_REQUEST} response.
      * This is a fallback handler for all unhandled runtime exceptions.
      *

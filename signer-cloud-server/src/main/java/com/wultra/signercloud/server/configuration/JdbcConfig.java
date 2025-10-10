@@ -17,27 +17,26 @@
  */
 package com.wultra.signercloud.server.configuration;
 
-import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
+import com.wultra.signercloud.server.document.DocumentVisualSignatureConverter;
+import lombok.NonNull;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration;
+
+import java.util.List;
 
 /**
- * Configuration for {@link PAdESService}.
+ * Customization of JDBC.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Configuration
-public class PAdESServiceConfig {
+public class JdbcConfig extends AbstractJdbcConfiguration {
 
-    @Bean
-    public PAdESService padesService(@Autowired(required = false) final OnlineTSPSource tspSource) {
-        final var padesService = new PAdESService(new CommonCertificateVerifier());
-        padesService.setTspSource(tspSource);
-
-        return padesService;
+    @Override
+    public @NonNull List<?> userConverters() {
+        return List.of(
+                new DocumentVisualSignatureConverter.VisualSignatureToJsonConverter(),
+                new DocumentVisualSignatureConverter.JsonToVisualSignatureConverter()
+        );
     }
-
 }

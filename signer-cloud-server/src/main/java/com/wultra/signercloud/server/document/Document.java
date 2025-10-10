@@ -69,4 +69,7 @@ public class Document {
     private String signature;
 
     private DocumentSignatureLevel signatureLevel;
+
+    @Column("visual_signature_json")
+    private DocumentVisualSignature visualSignature;
 }

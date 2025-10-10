@@ -15,29 +15,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.configuration;
-
-import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.service.tsp.OnlineTSPSource;
-import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+package com.wultra.signercloud.server.document;
 
 /**
- * Configuration for {@link PAdESService}.
+ * Exception thrown when visual signature definition is invalid.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Configuration
-public class PAdESServiceConfig {
-
-    @Bean
-    public PAdESService padesService(@Autowired(required = false) final OnlineTSPSource tspSource) {
-        final var padesService = new PAdESService(new CommonCertificateVerifier());
-        padesService.setTspSource(tspSource);
-
-        return padesService;
+public class DocumentVisualSignatureException extends RuntimeException {
+    public DocumentVisualSignatureException(final String message, final Throwable cause) {
+        super(message, cause);
     }
-
 }

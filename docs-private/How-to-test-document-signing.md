@@ -289,7 +289,8 @@ An HTTP `200 OK` response should be returned
 
 ### Upload document for signing
 
-Upload the document you want to sign. The values for `externalId` and `name` can be arbitrary.
+Upload the document you want to sign. The values for `externalId` and `name` can be arbitrary. 
+Visual signature can be added as optional parameter. See [Document Visual Signature](#document-visual-signature).
 
 ```shell
 curl --location 'http://127.0.0.1:8090/documents' \
@@ -658,6 +659,7 @@ An HTTP `200 OK` response should be returned
 ### Upload document for signing
 
 Upload the document you want to sign. The values for `externalId` and `name` can be arbitrary.
+Visual signature can be added as optional parameter. See [Document Visual Signature](#document-visual-signature).
 
 ```shell
 curl --location 'https://smoke-signer-dev.wultra.app/documents' \
@@ -902,5 +904,43 @@ Example of full request body:
 {
   "signature": "MEUCIQCEqNu5SfHvjAhNOLsJwLGa1rukhrA9pxWJAlHBxYKcMwIgVlmo5LVod6vscliVnyaB/C3wTsh+4lghdJR4YsWVBdc=",
   "signatureLevel" : "PADES_B_T"
+}
+```
+
+### Document visual signature
+
+When a document is uploaded, there is an optional `visualSignature` parameter for defining the visual signature in the signed document.
+**Cloud Signer** simply mimics DSS PAdES parameters. More information about the available values can be found [here](https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#PAdESVisibleSignatureAnnex).
+
+Example of JSON visual signature definition:
+```json
+{
+    "image": "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAAWgmWQ0AAAAASUVORK5CYII=",
+    "alignmentHorizontal": "CENTER",
+    "alignmentVertical": "MIDDLE",
+    "zoom": 100,
+    "backgroundColor": "#4f4e4d",
+    "imageScaling": "CENTER",
+    "fieldParameters": {
+        "fieldId": null,
+        "page": 1,
+        "originX": 150,
+        "originY": 400,
+        "width": 250,
+        "height": 100,
+        "rotation": "AUTOMATIC"
+    },
+    "textParameters": {
+        "text": "John Doe",
+        "textColor": "#ffffff",
+        "backgroundColor": "#090cbd",
+        "padding": 10,
+        "textWrapping": "FILL_BOX_AND_LINEBREAK",
+        "signerTextPosition": "RIGHT",
+        "signerTextHorizontalAlignment": "CENTER",
+        "signerTextVerticalAlignment": "MIDDLE",
+        "standard14Font": "COURIER_OBLIQUE",
+        "customFont": null
+    }
 }
 ```

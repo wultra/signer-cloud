@@ -299,6 +299,18 @@ class RestExceptionHandlerTest {
     }
 
     @Test
+    void testHandleDocumentVisualSignatureExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // given
+        final var message = "Document visual signature error";
+
+        // when
+        final var response = restExceptionHandler.handleDocumentVisualSignatureException(new DocumentVisualSignatureException(message, new RuntimeException()));
+
+        // then
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.DOCUMENT_VISUAL_SIGNATURE_ERROR);
+    }
+
+    @Test
     void testHandleRuntimeExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
         // Given
         final var message = "Generic runtime exception";
