@@ -25,6 +25,7 @@ import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
 import eu.europa.esig.dss.diagnostic.SignatureWrapper;
+import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.validation.PDFDocumentValidator;
@@ -872,6 +873,7 @@ class DocumentControllerIntTest {
         assertTrue(signature.isSignatureIntact());
         assertTrue(signature.isSigningCertificateIdentified());
         assertTrue(signature.isStructuralValidationValid());
+        assertEquals(SignatureAlgorithm.ECDSA_SHA256, signature.getSignatureAlgorithm());
 
         return signature;
     }
