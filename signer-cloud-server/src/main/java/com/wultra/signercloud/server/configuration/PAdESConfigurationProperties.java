@@ -51,7 +51,7 @@ public class PAdESConfigurationProperties {
     private DigestAlgorithm hashAlgorithm;
 
     /**
-     * Algorithm use for signing the document. The {@link DigestAlgorithm} must match {@link #hashAlgorithm}.
+     * Algorithm used for signing the document. The {@link DigestAlgorithm} must match {@link #hashAlgorithm}.
      */
     private SignatureAlgorithm signatureAlgorithm;
 }

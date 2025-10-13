@@ -22,7 +22,6 @@ import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
 import eu.europa.esig.dss.diagnostic.SignatureWrapper;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.model.InMemoryDocument;
 import eu.europa.esig.dss.model.x509.CertificateToken;
@@ -52,11 +51,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Integration tests for {@link DocumentController} when {@link eu.europa.esig.dss.enumerations.DigestAlgorithm#SHA384} is set.
+ * Integration tests for {@link DocumentController} when both {@link eu.europa.esig.dss.enumerations.DigestAlgorithm#SHA384}
+ * and {@link eu.europa.esig.dss.enumerations.SignatureAlgorithm#ECDSA_SHA384} are set.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
