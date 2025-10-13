@@ -21,6 +21,7 @@ You can set the following configurations to the PowerAuth Cloud components:
 | SIGNER_CLOUD_PADES_TSA_URL                                       |                                                           |                        | 
 | SIGNER_CLOUD_PADES_SIGNATURE_LEVEL                               | `PADES_B_B`                                               |                        |
 | SIGNER_CLOUD_PADES_HASH_ALGORITHM                                | `SHA256`                                                  |                        |
+| SIGNER_CLOUD_PADES_SIGNATURE_ALGORITHM                           | `ECDSA_SHA256`                                            |                        |
 | SIGNER_CLOUD_OAUTH2_ISSUER_URI                                   |                                                           |                        |
 | SIGNER_CLOUD_OAUTH2_AUDIENCES                                    |                                                           |                        |
 | SIGNER_CLOUD_DOCUMENT_CLEANUP_CRON                               | `2 1 0 * * *`                                             |                        |
