@@ -92,7 +92,7 @@ For local setup see the [PowerAuth documentation](https://github.com/wultra/powe
 
 ## EJBCA
 
-The EJBCA instance is Certificate Authority used for certificate management — creating new certificates and keeping existing ones linked to a specific `user` and `externalSignerId`.
+The EJBCA instance is a Certificate Authority used for certificate management — creating new certificates and keeping existing ones linked to a specific `user` and `externalSignerId`.
 
 There is a docker image available ([here](https://hub.docker.com/r/keyfactor/ejbca-ce)), however for local development we use an instance created in our cloud infrastructure.
 It is available at `https://smoke-ejbca-dev.wultra.app/ejbca/`.
