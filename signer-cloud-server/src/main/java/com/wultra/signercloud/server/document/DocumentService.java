@@ -347,7 +347,7 @@ class DocumentService {
         final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
 
         final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
-        final var signatureValue = new SignatureValue(signatureParams.getSignatureAlgorithm(), signatureBytes);
+        final var signatureValue = new SignatureValue(pAdESConfigurationProperties.getSignatureAlgorithm(), signatureBytes);
 
         final var isSignatureValid = padesService.isValidSignatureValue(documentHash, signatureValue, certificate);
         if (!isSignatureValid) {
