@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd">
+
+    <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20251013-enlarge-hash.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="sc_document" columnName="hash"/>
+        </preConditions>
+        <comment>Enlarge column hash</comment>
+        <modifyDataType tableName="sc_document" columnName="hash" newDataType="varchar(500)"/>
+    </changeSet>
+</databaseChangeLog>
