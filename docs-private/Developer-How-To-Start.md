@@ -9,10 +9,10 @@ The Signer Cloud application is built using Maven and includes a single module `
 
 Tools required for building and running the application:
 
-| Tool   | Version   |
-|--------|-----------|
-| Java   | > 21.0.8  |
-| Maven  | > 3.9     |
+| Tool   | Version  |
+|--------|----------|
+| Java   | > 17     |
+| Maven  | > 3.6.3  |
 
 
 ### Standalone Run
