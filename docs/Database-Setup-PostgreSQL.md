@@ -42,28 +42,6 @@ GRANT ALL PRIVILEGES ON DATABASE signercloud TO signercloud;
 
 You can assign more granular privileges instead of using `ALL PRIVILEGES`, if required for security reasons.
 
-## Configure Lock Timeouts
-
-<!-- begin box warning -->
-Postgres does not respect a JPA hint for statement-level lock timeouts.
-<!-- end -->
-
-Wultra components use pessimistic write locks with a reasonable timeout.
-But Hibernate does not reflect `spring.jpa.properties.jakarta.persistence.lock.timeout` property for Postgres statements.
-It is needed to set up `lock_timeout` globally, either in `postgresql.conf` or using `ALTER DATABASE`.
-
-```sql
-ALTER DATABASE signercloud SET lock_timeout=10000;
-```
-
-## Install Helper Extensions
-
-There are several PostgreSQL database extensions that may come in handy later. Installation of those is optional.
-
-```sql
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp"; -- includes uuid_generate_v4()
-```
-
 ## Read Next
 
 This is everything you need at this moment. Once the database is up and running with the right user and database, you can launch the Docker container. The Docker container uses [Liquibase](https://www.liquibase.org/) to create the schema automatically.
