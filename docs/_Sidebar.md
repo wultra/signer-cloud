@@ -11,3 +11,4 @@
 
 **REST APIs**
 - [Signer Cloud API](./Signer-Cloud-API.md)
+- [How to test document signing](./How-to-test-document-signing.md)
