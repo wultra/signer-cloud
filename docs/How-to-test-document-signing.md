@@ -401,12 +401,13 @@ This section describes how to sign a document in Wultra `smoke` environment. Bel
 
 ### Create a new application
 
-Create a new application with name `sc-demo-app` in **PowerAuth Cloud**:
+Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. Use Basic Authorization. Credentials are stored in our password manager.
 
 ```shell
 curl -X 'POST' \
   'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/applications' \
   -H 'accept: */*' \
+  -H 'Authorization: Basic <secret> \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "sc-demo-app"
@@ -449,6 +450,7 @@ Create a new `sc-demo-user` user in **PowerAuth Cloud**:
 curl -X 'POST' \
   'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/users' \
   -H 'accept: */*' \
+  -H 'Authorization: Basic <secret> \
   -H 'Content-Type: application/json' \
   -d '{
   "username": "sc-demo-user"
@@ -473,14 +475,13 @@ An HTTP `200 OK` response should be returned:
 
 ### Bind user with application
 
-Assign the user to the application. For this and next REST API calls to the **PowerAuth cloud**, the newly created user 
-must be authenticated. Use Basic authorization and the credentials from the response in the previous step.
+Assign the user to the application:
 
 ```shell
 curl -X 'POST' \
   'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/users/sc-demo-user/applications/sc-demo-app' \
   -H 'accept: */*' \
-  -H 'Authorization: Basic c3lzdGVtLWFkbWluOmFqT04lSipMdjJEWk0lbEw=' \
+  -H 'Authorization: Basic <secret> \
   -d ''
 ```
 
@@ -504,6 +505,9 @@ An HTTP `200 OK` response should be returned:
 ### Create registration
 
 Create a new device registration request for the application `sc-demo-app` in **PowerAuth Cloud**.
+
+For this and next REST API calls to the **PowerAuth cloud**, the newly created user
+must be authenticated. Use Basic authorization and the credentials from the [Create a new user](#create-a-new-user) step.
 
 This step and the next two steps (committing the operation as the last one) must be completed quickly,
 because by default there is only a short time window of a few minutes to finish the registration.
