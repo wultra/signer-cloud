@@ -401,13 +401,14 @@ This section describes how to sign a document in Wultra `smoke` environment. Bel
 
 ### Create a new application
 
-Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. Use Basic Authorization. Credentials are stored in our password manager.
+Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. For next REST API calls use Basic Authorization. 
+Credentials are stored in our password manager.
 
 ```shell
 curl -X 'POST' \
   'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/applications' \
   -H 'accept: */*' \
-  -H 'Authorization: Basic <secret> \
+  -H 'Authorization: Basic <secret>'  \
   -H 'Content-Type: application/json' \
   -d '{
   "id": "sc-demo-app"
@@ -450,7 +451,7 @@ Create a new `sc-demo-user` user in **PowerAuth Cloud**:
 curl -X 'POST' \
   'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/users' \
   -H 'accept: */*' \
-  -H 'Authorization: Basic <secret> \
+  -H 'Authorization: Basic <secret>' \
   -H 'Content-Type: application/json' \
   -d '{
   "username": "sc-demo-user"
@@ -481,7 +482,7 @@ Assign the user to the application:
 curl -X 'POST' \
   'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/users/sc-demo-user/applications/sc-demo-app' \
   -H 'accept: */*' \
-  -H 'Authorization: Basic <secret> \
+  -H 'Authorization: Basic <secret>' \
   -d ''
 ```
 
