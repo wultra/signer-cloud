@@ -85,7 +85,7 @@ Validity (days)=10y
 ```
 6. Create Super Administrator account with default settings, fill your custom Password and click "Next"
 7. Review settings at Summary page and click "Install"
-8. Click to "Enroll" to create SuperAdmin end entity and download user certificate (SuperAdmin.p12 file)
+8. Click "Enroll" to create SuperAdmin end entity and download user certificate (SuperAdmin.p12 file)
 *WARNING: If you click on “Download CA Certificate“ link first, page will disappear and SuperAdmin account will not be created. If it happens, you can create SuperAdmin account manually under “RA Web > Enroll > Make New Request”*
 9. Click to "Download CA Certificate".
 *WARNING: If you don’t download CA cert now, you can do it later under CA Functions > CA Structure & CRLs*
