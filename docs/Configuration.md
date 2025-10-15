@@ -86,9 +86,13 @@ Validity (days)=10y
 6. Create Super Administrator account with default settings, fill your custom Password and click "Next"
 7. Review settings at Summary page and click "Install"
 8. Click "Enroll" to create SuperAdmin end entity and download user certificate (SuperAdmin.p12 file)
-*WARNING: If you click on “Download CA Certificate“ link first, page will disappear and SuperAdmin account will not be created. If it happens, you can create SuperAdmin account manually under “RA Web > Enroll > Make New Request”*
+<!-- begin box warning -->
+If you click on “Download CA Certificate“ link first, page will disappear and SuperAdmin account will not be created. If it happens, you can create SuperAdmin account manually under “RA Web > Enroll > Make New Request”
+<!-- end -->
 9. Click to "Download CA Certificate".
-*WARNING: If you don’t download CA cert now, you can do it later under CA Functions > CA Structure & CRLs*
+<!-- begin box warning -->
+If you don’t download CA cert now, you can do it later under CA Functions > CA Structure & CRLs
+<!-- end -->
 
 #### Enable access to the Admin GUI
 
@@ -103,21 +107,21 @@ Validity (days)=10y
 
 The EJBCA Community Edition only supports authentication via an administrator user certificate. You can use the SuperAdmin account, which is used to access the GUI, or create a new user with the same roles. If you have a certificate keystore, you need to  [Configure the Docker Image](./Installation.md) properties.
 
-More info about [Authentication](https://docs.keyfactor.com/ejbca/latest/ejbca-rest-interface#id-(9.3.3)EJBCARESTInterface-AuthenticationAuthentication).
+More info about [Authentication](https://docs.keyfactor.com/ejbca/9.1.1/ejbca-rest-interface#id-(9.1.1)EJBCARESTInterface-Authenticationauthentication).
 
 **Access to the specific endpoints**
 
 The REST interface collects multiple API endpoints. Some are enabled by default; others are disabled. Check the settings under "System Configuration > Protocol Configuration," especially "REST Certificate Management," which must be "enabled."
 
-More info about [Security for REST endpoint](https://docs.keyfactor.com/ejbca/latest/ejbca-rest-interface#id-(9.3.3)EJBCARESTInterface-SecurityforRESTendpoint).
+More info about [Security for REST endpoint](https://docs.keyfactor.com/ejbca/9.1.1/ejbca-rest-interface#id-(9.1.1)EJBCARESTInterface-SecurityforRESTendpoint).
 
 ### Create PKI Hierarchy
 
-Before creating a PKI hierarchy, we recommend reading [Tutorial - Create a PKI Hierarchy in EJBCA](https://docs.keyfactor.com/ejbca/latest/tutorial-create-a-pki-hierarchy-in-ejbca).
+Before creating a PKI hierarchy, we recommend reading [Tutorial - Create a PKI Hierarchy in EJBCA](https://docs.keyfactor.com/ejbca/9.1.1/tutorial-create-a-pki-hierarchy-in-ejbca).
 
 #### Create Certificate Profiles
 
-Read more about [Certificate Profiles Overview](https://docs.keyfactor.com/ejbca/latest/certificate-profiles-overview).
+Read more about [Certificate Profiles Overview](https://docs.keyfactor.com/ejbca/9.1.1/certificate-profiles-overview).
 
 1. Clone ROOTCA profile with custom name (eg. "RootCACertificateProfile")
 2. Clone SUBCA profile with custom name (eg. "IssuingCACertificateProfile")
@@ -125,7 +129,7 @@ Read more about [Certificate Profiles Overview](https://docs.keyfactor.com/ejbca
 
 #### Create Crypto Tokens
 
-Read more about [Crypto Tokens Overview](https://doc.primekey.com/ejbca/ejbca-operations/ejbca-ca-concept-guide/crypto-tokens-overview).
+Read more about [Crypto Tokens Overview](https://docs.keyfactor.com/ejbca/9.1.1/crypto-tokens-overview).
 
 1. Create two independent Crypto Tokens (eg. "RootCACryptoToken" and "IssuingCACryptoToken")
 2. CA Functions > Crypto Tokens > Create new...
@@ -134,7 +138,7 @@ Read more about [Crypto Tokens Overview](https://doc.primekey.com/ejbca/ejbca-op
 
 #### Create CAs
 
-Read more about [Certificate Authority Overview](https://docs.keyfactor.com/ejbca/latest/certificate-authority-overview).
+Read more about [Certificate Authority Overview](https://docs.keyfactor.com/ejbca/9.1.1/certificate-authority-overview).
 
 1. Create two independent CAs (e.g. "RootCA" and "IssuingCA")
 2. Select Crypto Token from previous step and Signing Algorithm `SHA384withECDSA`  (use `SHA256withRSA` for ManagementCA).
