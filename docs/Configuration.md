@@ -129,7 +129,7 @@ Read more about [Crypto Tokens Overview](https://doc.primekey.com/ejbca/ejbca-op
 
 1. Create two independent Crypto Tokens (eg. "RootCACryptoToken" and "IssuingCACryptoToken")
 2. CA Functions > Crypto Tokens > Create new...
-3. Fill Name, select Type to "SOFT", check "Auto-activation" and fill you custom Authentication code (prefarably generated and stored in secure password manager)
+3. Fill Name, select Type to "SOFT", check "Auto-activation" and fill your custom authentication code (preferably generated and stored in a secure password manager)
 4. Generate two key-pairs signKey and encryptKey, both with `ECDSA P-384 / secp384r1` key algorithm (use `RSA 4096` for ManagementCA).
 
 #### Create CAs
