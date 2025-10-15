@@ -60,4 +60,83 @@ For time-defining values, the following syntax is supported: 1s 1h 1d 1y.
 
 ## Certification Authority
 
-TODO
+### Create Management CA
+
+EJBCA requires a Management CA, an internal root certification authority, to issue an mTLS user certificate for the super admin account (or other administrative accounts). This certificate is used to access the Admin GUI and REST API.
+
+Since our deployment uses an EJBCA installation without a ManagementCA, one must be created manually via the wizard in the admin interface right after installation.
+
+**Required steps**
+
+1. [Create Crypto Tokens](#create-crypto-tokens) (eg `ManagementCACryptoToken`)
+2. Open [Installation Wizard](https://localhost:8443/ejbca/adminweb/initpki.xhtml)
+3. Select "Create a New CA" and click "Next"
+4. Select "Use Existing Crypto Token" and select Crypto Token created in the first step
+5. Use Following settings and click "Next":
+``` bash
+Signing Algorithm=SHA256withRSA
+defaultKey=encryptKey
+certSignKey=signKey
+keyEncryptKey=- Default key
+testKey=- Default key
+CA Name=ManagementCA
+Subject DN=CN=ManagementCA,O=Your Company Name,C=CZ
+Validity (days)=10y
+```
+6. Create Super Administrator account with default settings, fill your custom Password and click "Next"
+7. Review settings at Summary page and click "Install"
+8. Click to "Enroll" to create SuperAdmin end entity and download user certificate (SuperAdmin.p12 file)
+*WARNING: If you click on “Download CA Certificate“ link first, page will disappear and SuperAdmin account will not be created. If it happens, you can create SuperAdmin account manually under “RA Web > Enroll > Make New Request”*
+9. Click to "Download CA Certificate".
+*WARNING: If you don’t download CA cert now, you can do it later under CA Functions > CA Structure & CRLs*
+
+#### Enable access to the Admin GUI
+
+**Required steps**
+
+1. Add ManagementCA as trusted in your OS
+2. Install SuperAdmin certificate, created in the previous step, into your OS
+
+#### Enable access to the REST API
+
+**Authentication**
+
+The EJBCA Community Edition only supports authentication via an administrator user certificate. You can use the SuperAdmin account, which is used to access the GUI, or create a new user with the same roles. If you have a certificate keystore, you need to  [Configure the Docker Image](./Installation.md) properties.
+
+More info about [Authentication](https://docs.keyfactor.com/ejbca/latest/ejbca-rest-interface#id-(9.3.3)EJBCARESTInterface-AuthenticationAuthentication).
+
+**Access to the specific endpoints**
+
+The REST interface collects multiple API endpoints. Some are enabled by default; others are disabled. Check the settings under "System Configuration > Protocol Configuration," especially "REST Certificate Management," which must be "enabled."
+
+More info about [Security for REST endpoint](https://docs.keyfactor.com/ejbca/latest/ejbca-rest-interface#id-(9.3.3)EJBCARESTInterface-SecurityforRESTendpoint).
+
+### Create PKI Hierarchy
+
+Before creating a PKI hierarchy, we recommend reading [Tutorial - Create a PKI Hierarchy in EJBCA](https://docs.keyfactor.com/ejbca/latest/tutorial-create-a-pki-hierarchy-in-ejbca).
+
+#### Create Certificate Profiles
+
+Read more about [Certificate Profiles Overview](https://docs.keyfactor.com/ejbca/latest/certificate-profiles-overview).
+
+1. Clone ROOTCA profile with custom name (eg. "RootCACertificateProfile")
+2. Clone SUBCA profile with custom name (eg. "IssuingCACertificateProfile")
+3. You can leave the settings as they are for now (the profile allows you to override them later)
+
+#### Create Crypto Tokens
+
+Read more about [Crypto Tokens Overview](https://doc.primekey.com/ejbca/ejbca-operations/ejbca-ca-concept-guide/crypto-tokens-overview).
+
+1. Create two independent Crypto Tokens (eg. "RootCACryptoToken" and "IssuingCACryptoToken")
+2. CA Functions > Crypto Tokens > Create new...
+3. Fill Name, select Type to "SOFT", check "Auto-activation" and fill you custom Authentication code (prefarably generated and stored in secure password manager)
+4. Generate two key-pairs signKey and encryptKey, both with `ECDSA P-384 / secp384r1` key algorithm (use `RSA 4096` for ManagementCA).
+
+#### Create CAs
+
+Read more about [Certificate Authority Overview](https://docs.keyfactor.com/ejbca/latest/certificate-authority-overview).
+
+1. Create two independent CAs (e.g. "RootCA" and "IssuingCA")
+2. Select Crypto Token from previous step and Signing Algorithm `SHA384withECDSA`  (use `SHA256WithRSA` for ManagementCA).
+3. Select keys from previous step
+4. Include Subject DN (eg. "CN = RootCA, O = Your Company Name, C = CZ")
