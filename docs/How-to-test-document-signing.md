@@ -393,7 +393,7 @@ This section describes how to sign a document in cloud environment with **PowerA
 |-----------------------------|------------------------------------------------|
 | PowerAuth Cloud             | https://powerauth.wultra.app/                  |
 | PowerAuth Enrollment Server | https://powerauth.wultra.app/enrollment-server |
-| Signer Cloud                | https://cloud-signer.wultra.app/               |
+| Signer Cloud                | https://signer-cloud.wultra.app/               |
 | EJBCA                       | https://ejbca.wultra.app/                      |
 
 <!-- begin box info -->
