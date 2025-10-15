@@ -886,7 +886,7 @@ In log look for message `Using generated security password: 485f43aa-658e-44a5-9
 
 #### OAuth2
 
-In case of `OAUTH2`, which should be always used, you must get a token. For Wultra `smoke` environment use: 
+In case of `OAUTH2`, which should be always used, you must get a token. Example of such call: 
 
 ```shell
 curl -X POST "https://wultra.app/oauth2/v2.0/token" \
