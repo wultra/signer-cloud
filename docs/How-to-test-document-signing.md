@@ -403,8 +403,7 @@ The URLs in the table above are not real. They are used only for the purpose of 
 
 ### Create a new application
 
-Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. For next REST API calls use Basic Authorization. 
-Credentials are stored in our password manager.
+Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. For next REST API calls use Basic Authorization of you admin user.
 
 ```shell
 curl -X 'POST' \
@@ -890,15 +889,13 @@ In log look for message `Using generated security password: 485f43aa-658e-44a5-9
 In case of `OAUTH2`, which should be always used, you must get a token. For Wultra `smoke` environment use: 
 
 ```shell
-curl -X POST "https://login.microsoftonline.com/09456bd9-6d0f-40e3-b972-fb4992739bff/oauth2/v2.0/token" \
+curl -X POST "https://wultra.app/oauth2/v2.0/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "client_id=<CLIENT_ID>" \
   --data-urlencode "client_secret=<CLIENT_SECRET>" \
-  --data-urlencode "scope=api://592935ee-3226-4adc-9eb1-ee350bdba2cb/.default" \
+  --data-urlencode "scope=<SCOPE>" \
   --data-urlencode "grant_type=client_credentials"
 ```
-
-Values for `<CLIENT_ID>` and `<CLIENT_SECRET>` are stored in password manager.
 
 
 ### Document signature level
