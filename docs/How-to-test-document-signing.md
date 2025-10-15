@@ -403,7 +403,7 @@ The URLs in the table above are not real. They are used only for the purpose of 
 
 ### Create a new application
 
-Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. For next REST API calls use Basic Authorization of you admin user.
+Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. For next REST API calls use Basic Authorization of your admin user.
 
 ```shell
 curl -X 'POST' \
