@@ -30,15 +30,12 @@ This section describes how to sign a document locally. Below is a sequence diagr
 
 ![sign_document_workflow_pas.png](img/sign_document_workflow_pas.png)
 
-| Component         | URL                                                     |
-|-------------------|---------------------------------------------------------|
-| PowerAuth Server  | https://localhost:8080                                  |
-| Enrollment Server | https://localhost:8081                                  |
-| Signer Cloud      | https://localhost:8090                                  |
-| EJBCA             | https://smoke-ejbca-dev.wultra.app/ejbca/ejbca-rest-api |
-
-All components run locally except for **EJBCA**, where an instance from the `smoke` environment is used. This is because 
-its configuration is complex and time-consuming. However, it is possible to run a Docker image locally if fully local instances are required.
+| Component         | URL                    |
+|-------------------|------------------------|
+| PowerAuth Server  | https://localhost:8080 |
+| Enrollment Server | https://localhost:8081 |
+| Signer Cloud      | https://localhost:8090 |
+| EJBCA             | https://localhost:8091 |
 
 
 ### Create a new application
@@ -386,27 +383,31 @@ You can open the downloaded document in **Adobe Acrobat Reader** and see detail 
 ![signed_document_example.png](img/signed_document_example.png)
 
 
-## Smoke environment
+## Cloud environment
 
-This section describes how to sign a document in Wultra `smoke` environment. Below is a sequence diagram of all the required steps.
+This section describes how to sign a document in cloud environment with **PowerAuth Cloud**. Below is a sequence diagram of all the required steps.
 
 ![sign_document_workflow_pac.png](img/sign_document_workflow_pac.png)
 
-| Component       | URL                                                     |
-|-----------------|---------------------------------------------------------|
-| PowerAuth Cloud | https://smoke-mtoken-dev.wultra.app/powerauth-cloud/    |
-| Signer Cloud    | https://smoke-signer-dev.wultra.app/                    |
-| EJBCA           | https://smoke-ejbca-dev.wultra.app/ejbca/ejbca-rest-api |
+| Component                   | URL                                            |
+|-----------------------------|------------------------------------------------|
+| PowerAuth Cloud             | https://powerauth.wultra.app/                  |
+| PowerAuth Enrollment Server | https://powerauth.wultra.app/enrollment-server |
+| Signer Cloud                | https://signer-cloud.wultra.app/               |
+| EJBCA                       | https://ejbca.wultra.app/                      |
+
+<!-- begin box info -->
+The URLs in the table above are not real. They are used only for the purpose of this documentation.
+<!-- end -->
 
 
 ### Create a new application
 
-Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. For next REST API calls use Basic Authorization. 
-Credentials are stored in our password manager.
+Create a new application with name `sc-demo-app` in **PowerAuth Cloud**. For next REST API calls use Basic Authorization of your admin user.
 
 ```shell
 curl -X 'POST' \
-  'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/applications' \
+  'https://powerauth.wultra.app/admin/applications' \
   -H 'accept: */*' \
   -H 'Authorization: Basic <secret>'  \
   -H 'Content-Type: application/json' \
@@ -421,7 +422,7 @@ An HTTP `200 OK` response should be returned:
 ```json
 {
   "id": "sc-demo-app",
-  "serviceBaseUrl": "https://smoke-mtoken-dev.wultra.app/enrollment-server",
+  "serviceBaseUrl": "https://powerauth.wultra.app/enrollment-server",
   "masterServerPublicKey": "BPn6ssyT5X+ia5u2DdUK0C/xZm87EXvJBqcQU/lOGh/r3KwhykGbxBePacS+iNgNxH1aiilRcGYueUsZFQ0OxLQ=",
   "appKey": "OI8IuYgjHNIzL45biwivDw==",
   "appSecret": "FKU2L3iyUu0h6G3MwAMqWQ==",
@@ -449,7 +450,7 @@ Create a new `sc-demo-user` user in **PowerAuth Cloud**:
 
 ```shell
 curl -X 'POST' \
-  'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/users' \
+  'https://powerauth.wultra.app/admin/users' \
   -H 'accept: */*' \
   -H 'Authorization: Basic <secret>' \
   -H 'Content-Type: application/json' \
@@ -480,7 +481,7 @@ Assign the user to the application:
 
 ```shell
 curl -X 'POST' \
-  'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/admin/users/sc-demo-user/applications/sc-demo-app' \
+  'https://powerauth.wultra.app/admin/users/sc-demo-user/applications/sc-demo-app' \
   -H 'accept: */*' \
   -H 'Authorization: Basic <secret>' \
   -d ''
@@ -515,7 +516,7 @@ because by default there is only a short time window of a few minutes to finish 
 
 ```shell
 curl -X 'POST' \
-  'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/v2/registrations' \
+  'https://powerauth.wultra.app/v2/registrations' \
   -H 'accept: */*' \
   -H 'Authorization: Basic c2MtZGVtby11c2VyOm5NVlBBUUZaNHhxUjlsUDFtNTZyZXFhVw==' \
   -H 'Content-Type: application/json' \
@@ -544,7 +545,7 @@ Register your "device" via **PowerAuth cmd tool**. The `--url` is `serviceBaseUr
 
 ```shell
 java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
-    --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
+    --url "https://powerauth.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
     --method "create" \
@@ -582,7 +583,7 @@ Be careful—this is a different value from the `activationCode`.
 
 ```shell
 curl -X 'POST' \
-  'https://smoke-mtoken-dev.wultra.app/powerauth-cloud/v2/registrations/0a23495a-b159-4d06-ad4c-5a832c305605/commit' \
+  'https://powerauth.wultra.app/v2/registrations/0a23495a-b159-4d06-ad4c-5a832c305605/commit' \
   -H 'accept: */*' \
   -H 'Authorization: Basic c2MtZGVtby11c2VyOm5NVlBBUUZaNHhxUjlsUDFtNTZyZXFhVw==' \
   -H 'Content-Type: application/json' \
@@ -613,7 +614,7 @@ Sign the CRI via **PowerAuth cmd tool**:
 
 ```shell
 java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
-    --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
+    --url "https://powerauth.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
     --method "sign-asymmetric" \
@@ -648,7 +649,7 @@ The `signerId` is `activationId`, `userId` can be any random value and the `csr`
 Any call to the **Signer Cloud** must contain proper authorization. See [Signer Cloud Authorization](#signer-cloud-authorization).
 
 ```shell
-curl --location 'https://smoke-signer-dev.wultra.app/signers' \
+curl --location 'https://signer-cloud.wultra.app/signers' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer <TOKEN>' \
 --data '{
@@ -667,7 +668,7 @@ Upload the document you want to sign. The values for `externalId` and `name` can
 Visual signature can be added as optional parameter. See [Document Visual Signature](#document-visual-signature).
 
 ```shell
-curl --location 'https://smoke-signer-dev.wultra.app/documents' \
+curl --location 'https://signer-cloud.wultra.app/documents' \
 --header 'Authorization: Bearer <TOKEN>' \
 --form 'signerId="0a23495a-b159-4d06-ad4c-5a832c305605"' \
 --form 'externalId="external-id-example"' \
@@ -702,7 +703,7 @@ Now sign the hash via **PowerAuth cmd tool**:
 
 ```shell
 java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
-    --url "https://smoke-mtoken-dev.wultra.app/enrollment-server" \
+    --url "https://powerauth.wultra.app/enrollment-server" \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
     --method "sign-asymmetric" \
@@ -724,7 +725,7 @@ You can find the signature in `signature` field in output:
 Use the `signature` value from previous step and `documentId` in path from document upload response:
 
 ```shell
-curl --location 'https://smoke-signer-dev.wultra.app/documents/d8a06ea4-e9c8-4f0c-ac22-c009a1f351b5/signature' \
+curl --location 'https://signer-cloud.wultra.app/documents/d8a06ea4-e9c8-4f0c-ac22-c009a1f351b5/signature' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer <TOKEN>' \
 --data '{
@@ -738,7 +739,7 @@ An HTTP `200 OK` response should be returned:
 ```json
 {
     "documentId": "d8a06ea4-e9c8-4f0c-ac22-c009a1f351b5",
-    "uri": "https://smoke-signer-dev.wultra.app/documents/d8a06ea4-e9c8-4f0c-ac22-c009a1f351b5/download"
+    "uri": "https://signer-cloud.wultra.app/documents/d8a06ea4-e9c8-4f0c-ac22-c009a1f351b5/download"
 }
 ```
 
@@ -860,7 +861,8 @@ public class CsrGenerator {
                 + Base64.getMimeEncoder(64, "\n".getBytes()).encodeToString(csrDer)
                 + "\n-----END CERTIFICATE REQUEST-----\n";
 
-        System.out.println("CSR PEM Base64:" + pem.replace("\n", "\\n"));
+        System.out.println("CSR PEM Base64:");
+        System.out.println(pem);
     }
 }
 ```
@@ -884,18 +886,16 @@ In log look for message `Using generated security password: 485f43aa-658e-44a5-9
 
 #### OAuth2
 
-In case of `OAUTH2`, which should be always used, you must get a token. For Wultra `smoke` environment use: 
+In case of `OAUTH2`, which should be always used, you must get a token. Example of such call: 
 
 ```shell
-curl -X POST "https://login.microsoftonline.com/09456bd9-6d0f-40e3-b972-fb4992739bff/oauth2/v2.0/token" \
+curl -X POST "https://wultra.app/oauth2/v2.0/token" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   --data-urlencode "client_id=<CLIENT_ID>" \
   --data-urlencode "client_secret=<CLIENT_SECRET>" \
-  --data-urlencode "scope=api://592935ee-3226-4adc-9eb1-ee350bdba2cb/.default" \
+  --data-urlencode "scope=<SCOPE>" \
   --data-urlencode "grant_type=client_credentials"
 ```
-
-Values for `<CLIENT_ID>` and `<CLIENT_SECRET>` are stored in password manager.
 
 
 ### Document signature level
