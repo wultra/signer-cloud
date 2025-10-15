@@ -137,6 +137,6 @@ Read more about [Crypto Tokens Overview](https://doc.primekey.com/ejbca/ejbca-op
 Read more about [Certificate Authority Overview](https://docs.keyfactor.com/ejbca/latest/certificate-authority-overview).
 
 1. Create two independent CAs (e.g. "RootCA" and "IssuingCA")
-2. Select Crypto Token from previous step and Signing Algorithm `SHA384withECDSA`  (use `SHA256WithRSA` for ManagementCA).
+2. Select Crypto Token from previous step and Signing Algorithm `SHA384withECDSA`  (use `SHA256withRSA` for ManagementCA).
 3. Select keys from previous step
 4. Include Subject DN (eg. "CN = RootCA, O = Your Company Name, C = CZ")
