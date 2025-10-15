@@ -7,6 +7,7 @@
 
 **Technical Details**
 - [Integration](./Integration.md)
+- [Installation](./Installation.md)
 - [Configuration](./Configuration.md)
 
 **REST APIs**
