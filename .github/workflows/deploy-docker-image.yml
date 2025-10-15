@@ -1,0 +1,33 @@
+name: Deploy Docker Image to Azure Web App
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        type: environment
+        default: azure-smoke
+        description: the deployment environment
+      image_name:
+        type: string
+        required: true
+        description: the image name to deploy (without registry prefix)
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+      image_name:
+        type: string
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Deploy to Azure Web App
+        id: deploy-to-webapp
+        uses: azure/webapps-deploy@v3
+        with:
+          publish-profile: ${{ secrets.SC_SMOKE_PUBLISH_PROFILE }}
+          images: ${{ inputs.image_name }}

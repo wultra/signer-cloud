@@ -1,0 +1,95 @@
+@startuml
+hide circle
+
+class sc_signer <<table>>{
+    ID bigint PK
+    --
+    timestamp_created timestamp(6) NN
+    timestamp_last_updated timestamp(6)
+    external_signer_id varchar(255) U NN
+    user_id varchar(255) NN
+    csr CLOB NN
+    certificate CLOB
+    timestamp_certificate_expiration timestamp(6) I
+    status varchar(50) NN I (ACTIVE/BLOCKED/REMOVED/REVOKED/EXPIRED)
+    certificate_chain
+}
+
+class sc_document <<table>> {
+    ID bigint PK
+    --
+    timestamp_created timestamp(6) NN I
+    timestamp_last_updated timestamp(6)
+    document_id varchar(255) U NN
+    signer_id bigint FK I
+    external_id varchar(255)
+    document_name varchar(255) NN
+    file_name varchar(255) NN
+    file_size integer NN
+    document_content_id bigint FK I
+    hash varchar(500) NN
+    status varchar(50) NN I (WAITING/REJECTED/SIGNED)
+    signature varchar(255)
+    signature_level varchar(50)
+    visual_signature_json clob
+}
+
+class sc_document_content <<table>>{
+    ID bigint PK
+    --
+    content BLOB NN
+}
+
+class sc_callback_event <<table>> {
+    ID bigint PK
+    --
+    callback_type varchar(32) NN I (EXPIRED/RENEWED)
+    callback_data text NN
+    status varchar(32) NN I (PROCESSING/PENDING/FAILED/COMPLETED)
+    timestamp_created timestamp(6) NN
+    timestamp_last_updated timestamp(6)
+    timestamp_last_call timestamp(6)
+    timestamp_next_call timestamp(6)
+    timestamp_delete_after timestamp(6) I
+    timestamp_rerun_after timestamp(6)
+    attempts integer NN
+    idempotency_key varchar(36) NN
+}
+
+class sc_issued_certificate_metadata <<table>> {
+    ID bigint PK
+    --
+    timestamp_created timestamp(6) NN
+    signer_id bigint FK I
+    serial_number varchar(64) NN
+    issuer_dn varchar(512) NN
+    timestamp_certificate_expiration timestamp(6) I
+    status varchar(50) NN I (ISSUED/REVOKED)
+}
+
+class sc_signer_seq <<sequence>>
+class sc_document_seq <<sequence>>
+class sc_document_content_seq <<sequence>>
+class sc_callback_event_seq <<sequence>>
+class sc_issued_certificate_metadata_seq <<sequence>>
+
+sc_signer_seq --> sc_signer
+sc_document_seq --> sc_document
+sc_document_content_seq --> sc_document_content
+sc_callback_event_seq --> sc_callback_event
+sc_issued_certificate_metadata_seq --> sc_issued_certificate_metadata
+
+sc_document "sc_document_signer_id_fk" --> sc_signer
+sc_document "sc_document_document_content_id_fk" --> sc_document_content
+sc_issued_certificate_metadata "sc_issued_certificate_metadata_signer_id_fk" --> sc_signer
+
+note as note1
+Legend:
+PK = Primary Key
+FK = Foreign Key
+NN = Not Null
+U = Unique
+I = Index
+end note
+
+@enduml

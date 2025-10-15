@@ -1,0 +1,19 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                                       https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd">
+
+    <include file="20250807-init-db.xml" relativeToChangelogFile="true" />
+    <include file="20250814-indexes-foreign-keys.xml" relativeToChangelogFile="true" />
+    <include file="20250814-shedlock.xml" relativeToChangelogFile="true" />
+    <include file="20250815-document-indexes.xml" relativeToChangelogFile="true" />
+    <include file="20250820-signer-index.xml" relativeToChangelogFile="true" />
+    <include file="20250821-callback-event-table.xml" relativeToChangelogFile="true" />
+    <include file="20250912-issued-certificate.xml" relativeToChangelogFile="true" />
+    <include file="20250919-certificate-chain.xml" relativeToChangelogFile="true" />
+    <include file="20251008-signature-level.xml" relativeToChangelogFile="true" />
+    <include file="20251009-visual-signature-params.xml" relativeToChangelogFile="true" />
+    <include file="20251013-enlarge-hash.xml" relativeToChangelogFile="true" />
+
+</databaseChangeLog>
