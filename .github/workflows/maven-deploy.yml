@@ -2,10 +2,6 @@ name: Deploy with Maven
 
 on:
   workflow_dispatch:
-    branches:
-      - 'develop'
-      - 'main'
-      - 'releases/*'
     inputs:
       release_type:
         type: choice
@@ -20,7 +16,7 @@ on:
         description: internal or external repository
   push:
     branches:
-     - 'develop'
+      - 'develop'
 
 jobs:
   maven-deploy-push:
