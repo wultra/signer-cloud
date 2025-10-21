@@ -21,6 +21,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
 import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
+import com.wultra.signercloud.server.IntTestUtils;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.ErrorCode;
@@ -40,8 +41,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -71,28 +71,26 @@ class SignerControllerIntTest {
 
     private static final String EXTERNAL_SIGNER_ID = "2f36dcf7-3d21-4c46-93f4-f487b41e7ab7";
     private static final String USER_ID = "testUser1";
-    private static final String CSR_PEM = "-----BEGIN CERTIFICATE REQUEST-----\nMIHxMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATr1DIu9x22bSEkt1lJP4hf6AgxHz2TyuiATaBW19huKMRB1XQKzdDd/ZKKL7fGaNmZCUEM2kmuCIv4W7eWnrZJoAAwCgYIKoZIzj0EAwIDSAAwRQIgbfepkGuhZMjVQ4alNWkD8xbDP6aufd9dWPfPTvKpaRcCIQDZu9uyj+tYEyPja0/D8Xk8HvDtkkVxpfoxbA2IMINiQA==\n-----END CERTIFICATE REQUEST-----\n";
-    private static final String CSR_BASE64 = "MIHxMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATr1DIu9x22bSEkt1lJP4hf6AgxHz2TyuiATaBW19huKMRB1XQKzdDd/ZKKL7fGaNmZCUEM2kmuCIv4W7eWnrZJoAAwCgYIKoZIzj0EAwIDSAAwRQIgbfepkGuhZMjVQ4alNWkD8xbDP6aufd9dWPfPTvKpaRcCIQDZu9uyj+tYEyPja0/D8Xk8HvDtkkVxpfoxbA2IMINiQA==";
     private static final Instant TIMESTAMP_CREATED = Instant.now().minusSeconds(120);
 
-    private static final String CSR_SIGNED_DATA_BASE64 = "MIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATr1DIu9x22bSEkt1lJP4hf6AgxHz2TyuiATaBW19huKMRB1XQKzdDd/ZKKL7fGaNmZCUEM2kmuCIv4W7eWnrZJoAA=";
-    private static final String CSR_SIGNATURE_BASE64 = "MEUCIG33qZBroWTI1UOGpTVpA/MWwz+mrn3fXVj3z07yqWkXAiEA2bvbso/rWBMj42tPw/F5PB7w7ZJFcaX6MWwNiDCDYkA=";
-
-    private static final String CERTIFICATE_DER_BASE64 = "MIIB+DCCAX6gAwIBAgIUQxSMGsgB+szrQpOV2AdlwcaPajwwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MDkxMTA4NDIxOFoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABOvUMi73HbZtISS3WUk/iF/oCDEfPZPK6IBNoFbX2G4oxEHVdArN0N39koovt8Zo2ZkJQQzaSa4Ii/hbt5aetkmjgYswgYgwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAoBgNVHSUEITAfBggrBgEFBQcDAgYIKwYBBQUHAwQGCSqGSIb3LwEBBTAdBgNVHQ4EFgQU2PPiHgo5PGWHUhQNiylNjvsHIOIwDgYDVR0PAQH/BAQDAgXgMAoGCCqGSM49BAMDA2gAMGUCMQDKry6RV3+/65yDZA8o2Zib1iSYP3npwhUW+yJkNprn+vYoLpicCmNnxcRt3IEzx68CMCLZMBKfpPDQdo4jiO9OCNZstX2yUtFcHWN7Akvg+CyvFwFClfCWxr73icr2MYrxDw==";
-    private static final Instant CERTIFICATE_EXPIRATION_TIMESTAMP = Instant.ofEpochMilli(1817975686000L);
-    private static final List<String> CERTIFICATE_CHAIN_BASE64 = List.of(
-            "MIIBxzCCAU2gAwIBAgIUE0be+N9+2stvvu7y3BKDiHPWBVkwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTQ0N1oXDTI3MDgxMTA5MTQ0NlowFDESMBAGA1UEAwwJSXNzdWluZ0NBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvq7LXohpIAISl1vcnH+8zMGFAyfEnyTOqTZAP40b9PzYmMLBbHGoDxvuJwdmF/mrXxfaQ9+Ki1/QRpkoLc6Ugsywu9agdA3Zu+54GPyxmTo8MvU/txcuRt1+7UMPxTAUo2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDaAAwZQIwMlzNpdVjPFt5/sac/ZVu/56n+vNiNFOywD8Ho8SjdDNnXeBBf3zoQ2aTwPdHtgCXAjEAkNCSl2buX5U3dsxavP2gcgjrxszNQGiQJ1AcRPL1ATHnaFrHwVGNqiFX5r9QQ7ud",
-            "MIIBwzCCAUqgAwIBAgIUBiKRFuSkQ2w0B+eLnFGNCVBLTfwwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTMxMFoXDTM1MDgwOTA5MTMwOVowETEPMA0GA1UEAwwGUm9vdENBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGTbosZgh/n+FWrbU7u05huRtjxUT8PE+fuFFHBtbcKNXYSl5Jf51gMBDn2dJKbM5oRsDLpl/nwscEvRKtibnw8AsIxXZYmyzBVA9meE5FGXswp6kAb/Sc4zQYo/O8RT5o2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBQ0YPm2cX21iY8xSP6EVfPBM2RNwTAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDZwAwZAIxAKsQhZDkBpxdGzn/gxDtqbtl5VtJFl3IJzXb36hWRf26P5Vha2vLAcFipD7koHF6bwIvYJHWRuq+SAzVYue9oId39+8AGKFXvzY+xDiSb/q7+ll/CwwQwcnoRundq8TSVYE="
-    );
-    private static final String CERTIFICATE_ISSUER_DN = "CN=IssuingCA";
-    private static final String ISSUED_CERTIFICATE_1_SERIAL_NUMBER = "382960601382395725256979170171623638043940842044";
-    private static final String ISSUED_CERTIFICATE_1_SERIAL_NUMBER_HEX = "43148c1ac801facceb429395d80765c1c68f6a3c";
     private static final String ISSUED_CERTIFICATE_2_SERIAL_NUMBER = "67973907291189734353515319050300227960917689363";
 
     private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/signers";
     private static final String SIGNER_ENDPOINT_WITH_ID = "/signers/{externalSignerId}";
 
     private X509Certificate x509Certificate;
+    private String userCsrDerBase64;
+    private String userCsrPem;
+    private String userCsrSignatureBase64;
+    private String userCriDerBase64;
+
+    private Instant userCertificateTimestampExpiration;
+    private String userCertificateDerBase64;
+    private String userCertificateSerialNumber;
+    private String userCertificateSerialNumberHex;
+    private String userCertificateIssuerDn;
+    private List<String> userCertificateChainBase64;
+
     private VerifyECDSASignatureRequest powerAuthRequest;
 
     @Autowired
@@ -114,10 +112,29 @@ class SignerControllerIntTest {
     private EjbcaService ejbcaService;
 
     @BeforeEach
-    void setUp() throws CertificateException {
-        final var certificateBytes = Base64.getDecoder().decode(CERTIFICATE_DER_BASE64);
-        x509Certificate = (X509Certificate) CertificateFactory.getInstance("X.509")
-                .generateCertificate(new java.io.ByteArrayInputStream(certificateBytes));
+    void setUp() throws Exception {
+        final var testResources = IntTestUtils.prepare();
+
+        final var signerResources = testResources.signerResources();
+        x509Certificate = signerResources.userCertificate();
+        userCsrDerBase64 = Base64.getEncoder().encodeToString(signerResources.userCsrDer());
+        userCsrPem = signerResources.userCsrPem();
+        userCsrSignatureBase64 = Base64.getEncoder().encodeToString(signerResources.userCsrSignature());
+        userCriDerBase64 = Base64.getEncoder().encodeToString(signerResources.userCriDer());
+        userCertificateTimestampExpiration = x509Certificate.getNotAfter().toInstant();
+        userCertificateDerBase64 = Base64.getEncoder().encodeToString(x509Certificate.getEncoded());
+        userCertificateSerialNumber = x509Certificate.getSerialNumber().toString();
+        userCertificateSerialNumberHex = x509Certificate.getSerialNumber().toString(16);
+        userCertificateIssuerDn = x509Certificate.getIssuerX500Principal().getName();
+        userCertificateChainBase64 = signerResources.userCertificateChain().stream()
+                .map(c -> {
+                    try {
+                        return Base64.getEncoder().encodeToString(c.getEncoded());
+                    } catch (final CertificateEncodingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
 
         powerAuthRequest = buildPowerAuthRequest();
     }
@@ -131,7 +148,7 @@ class SignerControllerIntTest {
     @Test
     void testCreateUpdateWhenSignatureVerificationFailsThenErrorResponseIsReturned() throws Exception {
         // given
-        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
 
         when(powerAuthService.isSignatureValid(powerAuthRequest))
                 .thenThrow(new PowerAuthClientException("PowerAuth test exception"));
@@ -152,12 +169,12 @@ class SignerControllerIntTest {
     void testCreateUpdateWhenCertificateEnrollmentFailsThenErrorResponseIsReturned() throws Exception {
         // given
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(CSR_BASE64)
+                .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
                 .build();
 
-        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
         final var ejbcaException = new RestClientException("Test", HttpStatus.BAD_REQUEST, "Test response", null);
 
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
@@ -179,12 +196,12 @@ class SignerControllerIntTest {
     void testCreateUpdateWhenOperationFailsThenNothingIsStoredIntoDatabase() throws Exception {
         // given
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(CSR_BASE64)
+                .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
                 .build();
 
-        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
 
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
         when(ejbcaService.enrollCertificate(certificateRequest)).thenThrow(new RestClientException("EJBCA test exception"));
@@ -203,20 +220,20 @@ class SignerControllerIntTest {
     void testCreateUpdateWhenSignerIsCreatedThenOkResponseIsReturned() throws Exception {
         // given
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(CSR_BASE64)
+                .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
                 .build();
 
         final var certificateResponse = EjbcaService.CertificateResponse.builder()
                 .certificate(x509Certificate)
-                .chain(CERTIFICATE_CHAIN_BASE64)
+                .chain(userCertificateChainBase64)
                 .build();
 
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
         when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificateResponse);
 
-        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
 
         // when, then
         mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
@@ -230,20 +247,20 @@ class SignerControllerIntTest {
     void testCreateUpdateWhenSignerIsCreatedThenItIsStoredIntoDatabase() throws Exception {
         // given
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(CSR_BASE64)
+                .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
                 .build();
 
         final var certificateResponse = EjbcaService.CertificateResponse.builder()
                 .certificate(x509Certificate)
-                .chain(CERTIFICATE_CHAIN_BASE64)
+                .chain(userCertificateChainBase64)
                 .build();
 
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
         when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificateResponse);
 
-        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
 
         // when
         mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
@@ -263,20 +280,20 @@ class SignerControllerIntTest {
         createSigner(SignerStatus.ACTIVE);
 
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(CSR_BASE64)
+                .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
                 .build();
 
         final var certificateResponse = EjbcaService.CertificateResponse.builder()
                 .certificate(x509Certificate)
-                .chain(CERTIFICATE_CHAIN_BASE64)
+                .chain(userCertificateChainBase64)
                 .build();
 
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
         when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificateResponse);
 
-        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
 
         // when, then
         mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
@@ -292,20 +309,20 @@ class SignerControllerIntTest {
         createSigner(SignerStatus.ACTIVE);
 
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
-                .csr(CSR_BASE64)
+                .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
                 .build();
 
         final var certificateResponse = EjbcaService.CertificateResponse.builder()
                 .certificate(x509Certificate)
-                .chain(CERTIFICATE_CHAIN_BASE64)
+                .chain(userCertificateChainBase64)
                 .build();
 
         when(powerAuthService.isSignatureValid(powerAuthRequest)).thenReturn(true);
         when(ejbcaService.enrollCertificate(certificateRequest)).thenReturn(certificateResponse);
 
-        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, CSR_PEM);
+        final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
 
         // when
         mockMvc.perform(post(CREATE_UPDATE_SIGNER_ENDPOINT)
@@ -407,7 +424,7 @@ class SignerControllerIntTest {
     void testUpdateStatusWhenCertificatesAreRevokedAndLastOneFailsThenOnlyRevokedOnesAreUpdatedInDatabase() throws Exception {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
-        createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_1_SERIAL_NUMBER, Instant.now().plusSeconds(120));
+        createIssuedCertificateMetadata(signer.getId(), userCertificateSerialNumber, Instant.now().plusSeconds(120));
         createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_2_SERIAL_NUMBER, Instant.now().plusSeconds(120));
 
         final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED, null);
@@ -447,7 +464,7 @@ class SignerControllerIntTest {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         final var certificateExpirationTimestamp = Instant.now().plusSeconds(120);
-        createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_1_SERIAL_NUMBER, certificateExpirationTimestamp);
+        createIssuedCertificateMetadata(signer.getId(), userCertificateSerialNumber, certificateExpirationTimestamp);
 
         final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED, null);
 
@@ -471,7 +488,7 @@ class SignerControllerIntTest {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         final var certificateExpirationTimestamp = Instant.now().plusSeconds(120);
-        createIssuedCertificateMetadata(signer.getId(), ISSUED_CERTIFICATE_1_SERIAL_NUMBER, certificateExpirationTimestamp);
+        createIssuedCertificateMetadata(signer.getId(), userCertificateSerialNumber, certificateExpirationTimestamp);
 
         final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED, RevocationReason.CA_COMPROMISE);
 
@@ -483,13 +500,13 @@ class SignerControllerIntTest {
                       "error_code" : 409,
                       "error_message" : "Certificate with issuer: %s and serial number: %s has previously been revoked. Revocation reason could not be changed or was not allowed."
                     }
-                    """.formatted(CERTIFICATE_ISSUER_DN, ISSUED_CERTIFICATE_1_SERIAL_NUMBER),
+                    """.formatted(userCertificateIssuerDn, userCertificateSerialNumber),
                 null,
                 null);
 
         final var revokeCertificateRequest = EjbcaService.RevokeCertificateRequest.builder()
-                .serialNumberHex(ISSUED_CERTIFICATE_1_SERIAL_NUMBER_HEX)
-                .issuerDN(CERTIFICATE_ISSUER_DN)
+                .serialNumberHex(userCertificateSerialNumberHex)
+                .issuerDN(userCertificateIssuerDn)
                 .revocationReason(RevocationReason.CA_COMPROMISE)
                 .build();
 
@@ -546,10 +563,10 @@ class SignerControllerIntTest {
         assertEquals(expectedTimestampCreated.toEpochMilli(), signer.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(EXTERNAL_SIGNER_ID, signer.getExternalSignerId());
         assertEquals(USER_ID, signer.getUserId());
-        assertEquals(CSR_BASE64, signer.getCsr());
-        assertEquals(CERTIFICATE_DER_BASE64, signer.getCertificate());
-        assertEquals(CERTIFICATE_EXPIRATION_TIMESTAMP.toEpochMilli(), signer.getTimestampCertificateExpiration().toEpochMilli(), MILLISECONDS_DELTA);
-        assertEquals(CERTIFICATE_CHAIN_BASE64, signer.getCertificateChain());
+        assertEquals(userCsrDerBase64, signer.getCsr());
+        assertEquals(userCertificateDerBase64, signer.getCertificate());
+        assertEquals(userCertificateTimestampExpiration.toEpochMilli(), signer.getTimestampCertificateExpiration().toEpochMilli(), MILLISECONDS_DELTA);
+        assertEquals(userCertificateChainBase64, signer.getCertificateChain());
         assertEquals(expectedStatus, signer.getStatus());
     }
 
@@ -558,11 +575,11 @@ class SignerControllerIntTest {
                 .timestampCreated(TIMESTAMP_CREATED)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId(USER_ID)
-                .csr(CSR_BASE64)
-                .certificate(CERTIFICATE_DER_BASE64)
-                .timestampCertificateExpiration(CERTIFICATE_EXPIRATION_TIMESTAMP)
+                .csr(userCsrDerBase64)
+                .certificate(userCertificateDerBase64)
+                .timestampCertificateExpiration(userCertificateTimestampExpiration)
                 .status(status)
-                .certificateChainFromList(CERTIFICATE_CHAIN_BASE64)
+                .certificateChainFromList(userCertificateChainBase64)
                 .build();
         return signerRepository.save(signer);
     }
@@ -576,8 +593,8 @@ class SignerControllerIntTest {
     private VerifyECDSASignatureRequest buildPowerAuthRequest() {
         final var request = new VerifyECDSASignatureRequest();
         request.setActivationId(EXTERNAL_SIGNER_ID);
-        request.setData(CSR_SIGNED_DATA_BASE64);
-        request.setSignature(CSR_SIGNATURE_BASE64);
+        request.setData(userCriDerBase64);
+        request.setSignature(userCsrSignatureBase64);
         return request;
     }
 
@@ -586,7 +603,7 @@ class SignerControllerIntTest {
                 .signer(AggregateReference.to(singerId))
                 .timestampCreated(TIMESTAMP_CREATED)
                 .serialNumber(serialNumber)
-                .issuerDn(CERTIFICATE_ISSUER_DN)
+                .issuerDn(userCertificateIssuerDn)
                 .timestampCertificateExpiration(expirationTimestamp)
                 .status(IssuedCertificateStatus.ISSUED)
                 .build();
@@ -599,8 +616,8 @@ class SignerControllerIntTest {
         assertEquals(signerId, issuedCertificateMetadata.getSigner().getId());
         assertEquals(TIMESTAMP_CREATED.toEpochMilli(), issuedCertificateMetadata.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(Instant.now().toEpochMilli(), issuedCertificateMetadata.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
-        assertEquals(ISSUED_CERTIFICATE_1_SERIAL_NUMBER, issuedCertificateMetadata.getSerialNumber());
-        assertEquals(CERTIFICATE_ISSUER_DN, issuedCertificateMetadata.getIssuerDn());
+        assertEquals(userCertificateSerialNumber, issuedCertificateMetadata.getSerialNumber());
+        assertEquals(userCertificateIssuerDn, issuedCertificateMetadata.getIssuerDn());
         assertEquals(expirationTimestamp.toEpochMilli(), issuedCertificateMetadata.getTimestampCertificateExpiration().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(IssuedCertificateStatus.REVOKED, issuedCertificateMetadata.getStatus());
     }
