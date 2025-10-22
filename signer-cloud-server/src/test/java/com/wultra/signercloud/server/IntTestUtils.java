@@ -80,7 +80,7 @@ public final class IntTestUtils {
         final var userPrivateKey = (PrivateKey) keyStore.getKey("user", "user".toCharArray());
         final var documentResources = generateDocumentResources(userPrivateKey, signerResources.userCertificate(), signerResources.userCertificateChain());
 
-        final var directory = Paths.get("target", "int-test-resources");
+        final var directory = Paths.get("target", "test-resources");
         Files.createDirectories(directory);
 
         try (final var fileOutputStream = Files.newOutputStream(directory.resolve("keystore.p12"))) {
