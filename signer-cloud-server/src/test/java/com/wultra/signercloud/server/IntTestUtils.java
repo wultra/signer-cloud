@@ -118,7 +118,7 @@ public final class IntTestUtils {
         final var userCertificate = (X509Certificate) keyStore.getCertificate("user");
         final var userCertificateChain = Arrays.stream(keyStore.getCertificateChain("user"))
                 .filter(c -> !c.equals(userCertificate))
-                .map(c -> (X509Certificate) c )
+                .map(c -> (X509Certificate) c)
                 .toList();
 
 
