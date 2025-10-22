@@ -62,6 +62,12 @@ public final class IntTestUtils {
 
     private static IntTestResources testResources;
 
+    /**
+     * Generates and stores resources (keystore, CSR, signed documents) needed for integration tests.
+     *
+     * @return generated resources
+     * @throws Exception when generation or storing of resources fails
+     */
     public static IntTestResources prepare() throws Exception {
         if (testResources == null) {
             createResources();

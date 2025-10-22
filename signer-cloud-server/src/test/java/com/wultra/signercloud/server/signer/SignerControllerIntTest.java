@@ -27,7 +27,7 @@ import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.restapi.ErrorCode;
 import com.wultra.signercloud.server.restapi.ErrorResponse;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -78,20 +78,20 @@ class SignerControllerIntTest {
     private static final String CREATE_UPDATE_SIGNER_ENDPOINT = "/signers";
     private static final String SIGNER_ENDPOINT_WITH_ID = "/signers/{externalSignerId}";
 
-    private X509Certificate x509Certificate;
-    private String userCsrDerBase64;
-    private String userCsrPem;
-    private String userCsrSignatureBase64;
-    private String userCriDerBase64;
+    private static X509Certificate x509Certificate;
+    private static String userCsrDerBase64;
+    private static String userCsrPem;
+    private static String userCsrSignatureBase64;
+    private static String userCriDerBase64;
 
-    private Instant userCertificateTimestampExpiration;
-    private String userCertificateDerBase64;
-    private String userCertificateSerialNumber;
-    private String userCertificateSerialNumberHex;
-    private String userCertificateIssuerDn;
-    private List<String> userCertificateChainBase64;
+    private static Instant userCertificateTimestampExpiration;
+    private static String userCertificateDerBase64;
+    private static String userCertificateSerialNumber;
+    private static String userCertificateSerialNumberHex;
+    private static String userCertificateIssuerDn;
+    private static List<String> userCertificateChainBase64;
 
-    private VerifyECDSASignatureRequest powerAuthRequest;
+    private static VerifyECDSASignatureRequest powerAuthRequest;
 
     @Autowired
     private MockMvc mockMvc;
@@ -111,8 +111,8 @@ class SignerControllerIntTest {
     @MockitoBean
     private EjbcaService ejbcaService;
 
-    @BeforeEach
-    void setUp() throws Exception {
+    @BeforeAll
+    static void setUp() throws Exception {
         final var testResources = IntTestUtils.prepare();
 
         final var signerResources = testResources.signerResources();
@@ -590,7 +590,7 @@ class SignerControllerIntTest {
         assertEquals(SignerStatus.ACTIVE, response.signerStatus());
     }
 
-    private VerifyECDSASignatureRequest buildPowerAuthRequest() {
+    private static VerifyECDSASignatureRequest buildPowerAuthRequest() {
         final var request = new VerifyECDSASignatureRequest();
         request.setActivationId(EXTERNAL_SIGNER_ID);
         request.setData(userCriDerBase64);
