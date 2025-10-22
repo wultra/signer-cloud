@@ -25,10 +25,10 @@ import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import eu.europa.esig.dss.spi.validation.CommonCertificateVerifier;
+import lombok.Builder;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
@@ -77,8 +77,6 @@ public final class IntTestUtils {
     }
 
     private static void createResources() throws Exception {
-        Security.addProvider(new BouncyCastleProvider());
-
         final var keyStore = generateKeystore();
 
         final var signerResources = generateSignerResources(keyStore);
@@ -293,6 +291,7 @@ public final class IntTestUtils {
             DocumentResources documentResources
     ) {}
 
+    @Builder
     public record SignerResources(
             byte[] userCsrDer,
             String userCsrPem,
@@ -302,6 +301,7 @@ public final class IntTestUtils {
             List<X509Certificate> userCertificateChain
     ) {}
 
+    @Builder
     public record DocumentResources(
             byte[] unsignedContent,
             Instant timestampCreated,
