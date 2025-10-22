@@ -150,9 +150,9 @@ class DocumentControllerIntTest {
         final var documentResources = testResources.documentResources();
         uploadedDocumentContent = documentResources.unsignedContent();
         documentTimestampCreated = documentResources.timestampCreated();
-        documentHashBase64 = Base64.getEncoder().encodeToString(documentResources.hash());
-        documentSignatureBase64 = Base64.getEncoder().encodeToString(documentResources.signature());
-        signedDocumentContent = documentResources.signedContent();
+        documentHashBase64 = Base64.getEncoder().encodeToString(documentResources.hashSha256());
+        documentSignatureBase64 = Base64.getEncoder().encodeToString(documentResources.signatureSha256());
+        signedDocumentContent = documentResources.signedContentSha256();
 
         signatureImageBase64 = Base64.getEncoder().encodeToString(
                 new ClassPathResource("signature-pen.png").getContentAsByteArray()

@@ -88,7 +88,8 @@ public final class IntTestUtils {
         }
 
         Files.writeString(directory.resolve("user_csr.pem"), signerResources.userCsrPem());
-        Files.write(directory.resolve("signed_document.pdf"), documentResources.signedContent());
+        Files.write(directory.resolve("signed-document-sha256.pem"), documentResources.signedContentSha256());
+        Files.write(directory.resolve("signed-document-sha384.pem"), documentResources.signedContentSha384());
 
         testResources = new IntTestResources(signerResources, documentResources);
     }
@@ -96,7 +97,7 @@ public final class IntTestUtils {
     private static SignerResources generateSignerResources(final KeyStore keyStore) throws Exception {
         final var userPublicKey = keyStore.getCertificate("user").getPublicKey();
         final var userPrivateKey = (PrivateKey) keyStore.getKey("user", "user".toCharArray());
-        final var userCsr = generateCSR(new KeyPair(userPublicKey, userPrivateKey));
+        final var userCsr = generateCSR(new KeyPair(userPublicKey, userPrivateKey), "SHA256withECDSA");
 
         final var stringWriter = new StringWriter();
         try (final var pemWriter = new JcaPEMWriter(stringWriter)) {
@@ -128,39 +129,42 @@ public final class IntTestUtils {
     private static DocumentResources generateDocumentResources(final PrivateKey userPrivateKey, final X509Certificate userCertificate, final List<X509Certificate> userCertificateChain) throws Exception {
         final var unsignedDocumentBytes = new ClassPathResource("input.pdf").getContentAsByteArray();
         final var documentTimestampCreated = Instant.now();
-        final var signatureAlgorithm = SignatureAlgorithm.ECDSA_SHA256;
-
-        final var certificateChain = userCertificateChain.stream()
-                .map(CertificateToken::new)
-                .toList();
-
-        final var signatureParams = new PAdESSignatureParameters();
-        signatureParams.setDigestAlgorithm(signatureAlgorithm.getDigestAlgorithm());
-        signatureParams.setSigningCertificate(new CertificateToken(userCertificate));
-        signatureParams.setCertificateChain(certificateChain);
-        signatureParams.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
-        signatureParams.setSigningTimeZone(TimeZone.getTimeZone("UTC"));
-        signatureParams.bLevel().setSigningDate(Date.from(documentTimestampCreated));
-
         final var dssDocument = new InMemoryDocument(unsignedDocumentBytes);
         final var padesService = new PAdESService(new CommonCertificateVerifier());
-        final var toBeSigned = padesService.getDataToSign(dssDocument, signatureParams);
-        final var documentHash = toBeSigned.getBytes();
 
-        final var documentSignature = sign(userPrivateKey, documentHash);
+        // SHA256
+        final var signatureParamsSha256 = buildPadESSignatureParameters(userCertificate, userCertificateChain, SignatureAlgorithm.ECDSA_SHA256, documentTimestampCreated);
+        final var toBeSignedSha256 = padesService.getDataToSign(dssDocument, signatureParamsSha256);
+        final var documentHashSha256 = toBeSignedSha256.getBytes();
+        final var documentSignatureSha256 = sign(userPrivateKey, documentHashSha256, "SHA256withECDSA");
 
-        final var signedDocument = padesService.signDocument(dssDocument, signatureParams, new SignatureValue(signatureAlgorithm, documentSignature));
-        final byte[] signedDocumentBytes;
-        try (final var stream = signedDocument.openStream()) {
-            signedDocumentBytes = stream.readAllBytes();
+        final var signedDocumentSha256 = padesService.signDocument(dssDocument, signatureParamsSha256, new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, documentSignatureSha256));
+        final byte[] signedDocumentBytesSha256;
+        try (final var stream = signedDocumentSha256.openStream()) {
+            signedDocumentBytesSha256 = stream.readAllBytes();
+        }
+
+        // SHA384
+        final var signatureParamsSha384 = buildPadESSignatureParameters(userCertificate, userCertificateChain, SignatureAlgorithm.ECDSA_SHA384, documentTimestampCreated);
+        final var toBeSignedSha384 = padesService.getDataToSign(dssDocument, signatureParamsSha384);
+        final var documentHashSha384 = toBeSignedSha384.getBytes();
+        final var documentSignatureSha384 = sign(userPrivateKey, documentHashSha384, "SHA384withECDSA");
+
+        final var signedDocumentSha384 = padesService.signDocument(dssDocument, signatureParamsSha384, new SignatureValue(SignatureAlgorithm.ECDSA_SHA384, documentSignatureSha384));
+        final byte[] signedDocumentBytesSha384;
+        try (final var stream = signedDocumentSha384.openStream()) {
+            signedDocumentBytesSha384 = stream.readAllBytes();
         }
 
         return new DocumentResources(
                 unsignedDocumentBytes,
                 documentTimestampCreated,
-                documentHash,
-                documentSignature,
-                signedDocumentBytes
+                documentHashSha256,
+                documentSignatureSha256,
+                signedDocumentBytesSha256,
+                documentHashSha384,
+                documentSignatureSha384,
+                signedDocumentBytesSha384
         );
     }
 
@@ -176,24 +180,21 @@ public final class IntTestUtils {
                 ROOT_SUBJECT,
                 ROOT_SUBJECT,
                 rootKeyPair,
-                rootKeyPair.getPrivate(),
-                "SHA384withECDSA"
+                rootKeyPair.getPrivate()
         );
 
         final var intermediateCertificate = generateCertificate(
                 INTERMEDIATE_SUBJECT,
                 ROOT_SUBJECT,
                 intermediateKeyPair,
-                rootKeyPair.getPrivate(),
-                "SHA384withECDSA"
+                rootKeyPair.getPrivate()
         );
 
         final var userCertificate = generateCertificate(
                 USER_SUBJECT,
                 INTERMEDIATE_SUBJECT,
                 userKeyPair,
-                intermediateKeyPair.getPrivate(),
-                "SHA256withECDSA"
+                intermediateKeyPair.getPrivate()
         );
 
         final var keyStore = KeyStore.getInstance("PKCS12");
@@ -227,8 +228,7 @@ public final class IntTestUtils {
             final X500Name subject,
             final X500Name issuer,
             final KeyPair keyPair,
-            final PrivateKey issuerPrivateKey,
-            final String sigAlg
+            final PrivateKey issuerPrivateKey
     ) throws Exception {
         final var now = Instant.now();
         final var notBefore = Date.from(now);
@@ -238,7 +238,7 @@ public final class IntTestUtils {
         final var certificateBuilder = new JcaX509v3CertificateBuilder(
                 issuer, serialNumber, notBefore, notAfter, subject, keyPair.getPublic());
 
-        final var signer = new JcaContentSignerBuilder(sigAlg)
+        final var signer = new JcaContentSignerBuilder("SHA384withECDSA")
                 .setProvider("BC")
                 .build(issuerPrivateKey);
 
@@ -248,15 +248,35 @@ public final class IntTestUtils {
                 .getCertificate(certificateHolder);
     }
 
-    private static PKCS10CertificationRequest generateCSR(final KeyPair keyPair) throws Exception {
-        final var signer = new JcaContentSignerBuilder("SHA256withECDSA")
+    private static PKCS10CertificationRequest generateCSR(final KeyPair keyPair, String signatureAlgorithm) throws Exception {
+        final var signer = new JcaContentSignerBuilder(signatureAlgorithm)
                 .setProvider("BC")
                 .build(keyPair.getPrivate());
         return new JcaPKCS10CertificationRequestBuilder(IntTestUtils.USER_SUBJECT, keyPair.getPublic()).build(signer);
     }
 
-    private static byte[] sign(final PrivateKey privateKey, final byte[] toBeSigned) throws Exception {
-        final var signature = Signature.getInstance("SHA256withECDSA", "BC");
+    private static PAdESSignatureParameters buildPadESSignatureParameters(
+            final X509Certificate userCertificate,
+            final List<X509Certificate> userCertificateChain,
+            final SignatureAlgorithm signatureAlgorithm,
+            final Instant documentTimestampCreated
+    ) {
+        final var certificateChain = userCertificateChain.stream()
+                .map(CertificateToken::new)
+                .toList();
+
+        final var signatureParams = new PAdESSignatureParameters();
+        signatureParams.setDigestAlgorithm(signatureAlgorithm.getDigestAlgorithm());
+        signatureParams.setSigningCertificate(new CertificateToken(userCertificate));
+        signatureParams.setCertificateChain(certificateChain);
+        signatureParams.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        signatureParams.setSigningTimeZone(TimeZone.getTimeZone("UTC"));
+        signatureParams.bLevel().setSigningDate(Date.from(documentTimestampCreated));
+        return signatureParams;
+    }
+
+    private static byte[] sign(final PrivateKey privateKey, final byte[] toBeSigned, String signatureAlgorithm) throws Exception {
+        final var signature = Signature.getInstance(signatureAlgorithm, "BC");
         signature.initSign(privateKey);
         signature.update(toBeSigned);
         return signature.sign();
@@ -279,8 +299,11 @@ public final class IntTestUtils {
     public record DocumentResources(
             byte[] unsignedContent,
             Instant timestampCreated,
-            byte[] hash,
-            byte[] signature,
-            byte[] signedContent
+            byte[] hashSha256,
+            byte[] signatureSha256,
+            byte[] signedContentSha256,
+            byte[] hashSha384,
+            byte[] signatureSha384,
+            byte[] signedContentSha384
     ) {}
 }
