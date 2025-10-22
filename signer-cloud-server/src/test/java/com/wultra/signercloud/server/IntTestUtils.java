@@ -124,15 +124,14 @@ public final class IntTestUtils {
                 .map(c -> (X509Certificate) c)
                 .toList();
 
-
-        return new SignerResources(
-                userCsr.getEncoded(),
-                userCsrPem,
-                userCriDer,
-                userCsr.getSignature(),
-                userCertificate,
-                userCertificateChain
-        );
+        return SignerResources.builder()
+                .userCsrDer(userCsr.getEncoded())
+                .userCsrPem(userCsrPem)
+                .userCriDer(userCriDer)
+                .userCsrSignature(userCsr.getSignature())
+                .userCertificate(userCertificate)
+                .userCertificateChain(userCertificateChain)
+                .build();
     }
 
     private static DocumentResources generateDocumentResources(final PrivateKey userPrivateKey, final X509Certificate userCertificate, final List<X509Certificate> userCertificateChain) throws Exception {
@@ -165,16 +164,16 @@ public final class IntTestUtils {
             signedDocumentBytesSha384 = stream.readAllBytes();
         }
 
-        return new DocumentResources(
-                unsignedDocumentBytes,
-                documentTimestampCreated,
-                documentHashSha256,
-                documentSignatureSha256,
-                signedDocumentBytesSha256,
-                documentHashSha384,
-                documentSignatureSha384,
-                signedDocumentBytesSha384
-        );
+        return DocumentResources.builder()
+                .unsignedContent(unsignedDocumentBytes)
+                .timestampCreated(documentTimestampCreated)
+                .hashSha256(documentHashSha256)
+                .signatureSha256(documentSignatureSha256)
+                .signedContentSha256(signedDocumentBytesSha256)
+                .hashSha384(documentHashSha384)
+                .signatureSha384(documentSignatureSha384)
+                .signedContentSha384(signedDocumentBytesSha384)
+                .build();
     }
 
     private static KeyStore generateKeystore() throws Exception {
