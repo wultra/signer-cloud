@@ -33,8 +33,11 @@ import java.security.Security;
 @ConfigurationPropertiesScan
 public class SignerCloudServerApplication {
 
-    public static void main(String[] args) {
+    static {
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    public static void main(final String[] args) {
         SpringApplication.run(SignerCloudServerApplication.class, args);
     }
 }

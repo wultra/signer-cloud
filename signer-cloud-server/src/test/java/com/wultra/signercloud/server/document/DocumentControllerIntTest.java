@@ -19,6 +19,7 @@ package com.wultra.signercloud.server.document;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wultra.signercloud.server.IntTestUtils;
 import com.wultra.signercloud.server.restapi.ErrorCode;
 import com.wultra.signercloud.server.restapi.ErrorResponse;
 import com.wultra.signercloud.server.signer.Signer;
@@ -48,7 +49,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.cert.CertificateEncodingException;
 import java.time.Instant;
@@ -93,31 +93,23 @@ class DocumentControllerIntTest {
     // Signer
     private static final String EXTERNAL_SIGNER_ID_PARAM = "signerId";
 
-    // keytool -certreq -alias myAlias -keystore keystore-ecdsa.p12 -storetype PKCS12 -file myrequest.csr -dname "CN=John Doe, O=ExampleCorp, C=US"
-    // private key: "AJX0rDTQYUR2oXjJPkMAfECh8P2mb2S2PweW3Lo/UhIw"
-    private static final String CSR_BASE64 = "MIHxMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxlQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAT4JkHkZHQAol19w1VqkbUuBnCJhbn4LWGzCKOGa9wESUMYtjaZyRNVaB1s0smIEsWL0Gbt8HfBuaKEvJCrZBThoAAwCgYIKoZIzj0EAwIDSAAwRQIhAK8WBa/IjzKTAw+QlUqpGpN9XJ5fh2JaVhVH2Z2wsY/SAiBVXvxbo/hdOm11apJHbZv4KLSwM0/MUVg3IIPzTvXmlg==";
-    private static final String CERTIFICATE_BASE64 = "MIIB+TCCAX6gAwIBAgIUdgfxsvHbkb+D10cB0tlVop1pxBwwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MTAwMTE3NDMyNVoXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABPgmQeRkdACiXX3DVWqRtS4GcImFufgtYbMIo4Zr3ARJQxi2NpnJE1VoHWzSyYgSxYvQZu3wd8G5ooS8kKtkFOGjgYswgYgwDAYDVR0TAQH/BAIwADAfBgNVHSMEGDAWgBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAoBgNVHSUEITAfBggrBgEFBQcDAgYIKwYBBQUHAwQGCSqGSIb3LwEBBTAdBgNVHQ4EFgQUinG5zjCVx7zoDsQq1wQMDAp2ee0wDgYDVR0PAQH/BAQDAgXgMAoGCCqGSM49BAMDA2kAMGYCMQCIvu/aKPHIu5eaKa7/zLFZMcyBy5g+2l16ZMiNYdAlZcRXc9w1MPdRziUmG72ATPYCMQCF2ljZll2bB+MeHuifHxP6fAqXAZCTgDvjovRxWjgUWCdVYa69DKfML2Yv3QZ518g=";
-
     // Document
-    private static final Instant DOCUMENT_TIMESTAMP_CREATED = Instant.ofEpochMilli(1759409592827L);
     private static final String DOCUMENT_UUID = "75142815-7adc-4962-afd2-1e498d38b90d";
     private static final String EXTERNAL_SIGNER_ID = "6fdbc9a0-7dd8-4891-adcf-ebceac188e13";
     private static final String EXTERNAL_DOCUMENT_ID = "external-document-id";
     private static final String DOCUMENT_NAME = "Document Test";
-    private static final String HASH = "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEIDjaW5HYNxwEDsi5/frhcx8k/DBC4o0ngYaLqKI6MS//MGkGCyqGSIb3DQEJEAIvMVowWDBWMFQEIBco05OSwhsoq1BOh2Yxsrw5OarRAQOexhk3jLCQiRvBMDAwGKQWMBQxEjAQBgNVBAMMCUlzc3VpbmdDQQIUdgfxsvHbkb+D10cB0tlVop1pxBw=";
 
-    // echo "value_of_hash" | base64 --decode > hash.bin
-    // openssl pkcs12 -in keystore-ecdsa.p12 -nocerts -nodes -out mykey.pem
-    // openssl dgst -sha384 -sign mykey.pem -out signature.bin hash.bin
-    // base64 < signature.bin
-    private static final String SIGNATURE = "MEUCIQC4K+g3kluK8KEMAXitVLGatjRVXZMF5OjxLoU0MzBspwIge1SOPpGXaiGU0933uO+NAnu5+2uIsI9Dxco5LZine00=";
     private static final String FILENAME = "input.pdf";
     private static final int UPLOADED_FILE_SIZE = 7757;
     private static final int SIGNED_FILE_SIZE = 27780;
-    private static final List<String> CERTIFICATE_CHAIN_BASE64 = List.of(
-            "MIIBxzCCAU2gAwIBAgIUE0be+N9+2stvvu7y3BKDiHPWBVkwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTQ0N1oXDTI3MDgxMTA5MTQ0NlowFDESMBAGA1UEAwwJSXNzdWluZ0NBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvq7LXohpIAISl1vcnH+8zMGFAyfEnyTOqTZAP40b9PzYmMLBbHGoDxvuJwdmF/mrXxfaQ9+Ki1/QRpkoLc6Ugsywu9agdA3Zu+54GPyxmTo8MvU/txcuRt1+7UMPxTAUo2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDaAAwZQIwMlzNpdVjPFt5/sac/ZVu/56n+vNiNFOywD8Ho8SjdDNnXeBBf3zoQ2aTwPdHtgCXAjEAkNCSl2buX5U3dsxavP2gcgjrxszNQGiQJ1AcRPL1ATHnaFrHwVGNqiFX5r9QQ7ud",
-            "MIIBwzCCAUqgAwIBAgIUBiKRFuSkQ2w0B+eLnFGNCVBLTfwwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTMxMFoXDTM1MDgwOTA5MTMwOVowETEPMA0GA1UEAwwGUm9vdENBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGTbosZgh/n+FWrbU7u05huRtjxUT8PE+fuFFHBtbcKNXYSl5Jf51gMBDn2dJKbM5oRsDLpl/nwscEvRKtibnw8AsIxXZYmyzBVA9meE5FGXswp6kAb/Sc4zQYo/O8RT5o2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBQ0YPm2cX21iY8xSP6EVfPBM2RNwTAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDZwAwZAIxAKsQhZDkBpxdGzn/gxDtqbtl5VtJFl3IJzXb36hWRf26P5Vha2vLAcFipD7koHF6bwIvYJHWRuq+SAzVYue9oId39+8AGKFXvzY+xDiSb/q7+ll/CwwQwcnoRundq8TSVYE="
-    );
+
+    private static String userCsrDerBase64;
+    private static String userCertificateDerBase64;
+    private static List<String> userCertificateChainBase64;
+
+    private static Instant documentTimestampCreated;
+    private static String documentHashBase64;
+    private static String documentSignatureBase64;
 
     @Autowired
     private SignerRepository signerRepository;
@@ -139,9 +131,29 @@ class DocumentControllerIntTest {
     private static String signatureImageBase64;
 
     @BeforeAll
-    static void setUp() throws IOException {
-        uploadedDocumentContent = new ClassPathResource("input.pdf").getContentAsByteArray();
-        signedDocumentContent = new ClassPathResource("input_signed.pdf").getContentAsByteArray();
+    static void setUp() throws Exception {
+        final var testResources = IntTestUtils.prepare();
+
+        final var signerResources = testResources.signerResources();
+        userCsrDerBase64 = Base64.getEncoder().encodeToString(signerResources.userCsrDer());
+        userCertificateDerBase64 = Base64.getEncoder().encodeToString(signerResources.userCertificate().getEncoded());
+        userCertificateChainBase64 = signerResources.userCertificateChain().stream()
+                .map(c -> {
+                    try {
+                        return Base64.getEncoder().encodeToString(c.getEncoded());
+                    } catch (final CertificateEncodingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
+
+        final var documentResources = testResources.documentResources();
+        uploadedDocumentContent = documentResources.unsignedContent();
+        documentTimestampCreated = documentResources.timestampCreated();
+        documentHashBase64 = Base64.getEncoder().encodeToString(documentResources.hashSha256());
+        documentSignatureBase64 = Base64.getEncoder().encodeToString(documentResources.signatureSha256());
+        signedDocumentContent = documentResources.signedContentSha256();
+
         signatureImageBase64 = Base64.getEncoder().encodeToString(
                 new ClassPathResource("signature-pen.png").getContentAsByteArray()
         );
@@ -262,7 +274,7 @@ class DocumentControllerIntTest {
     @Test
     void testSignWhenDocumentIsNotFoundThen400WithCorrectResponseIsReturned() throws Exception {
         // given
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(documentSignatureBase64, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -284,7 +296,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, Instant.now());
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(documentSignatureBase64, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -306,7 +318,7 @@ class DocumentControllerIntTest {
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
         createDocumentInDatabase(signerId, documentContentId, DocumentStatus.SIGNED, Instant.now());
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(documentSignatureBase64, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -348,9 +360,9 @@ class DocumentControllerIntTest {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, documentTimestampCreated);
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(documentSignatureBase64, null);
 
         // when
         final var result = mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -373,9 +385,9 @@ class DocumentControllerIntTest {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
+        final var documentId = createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, documentTimestampCreated);
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(documentSignatureBase64, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -393,9 +405,9 @@ class DocumentControllerIntTest {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, documentTimestampCreated);
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(documentSignatureBase64, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -413,9 +425,9 @@ class DocumentControllerIntTest {
         // given
         final var signerId = createSignerInDatabase(SignerStatus.ACTIVE);
         final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
-        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, DOCUMENT_TIMESTAMP_CREATED);
+        createDocumentInDatabase(signerId, documentContentId, DocumentStatus.WAITING, documentTimestampCreated);
 
-        final var request = new SignDocumentRequest(SIGNATURE, DocumentSignatureLevel.PADES_B_T);
+        final var request = new SignDocumentRequest(documentSignatureBase64, DocumentSignatureLevel.PADES_B_T);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post(SIGN_DOCUMENT_ENDPOINT, DOCUMENT_UUID)
@@ -646,11 +658,11 @@ class DocumentControllerIntTest {
                 .timestampCreated(Instant.now())
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId("dummyUserId")
-                .csr(CSR_BASE64)
-                .certificate(CERTIFICATE_BASE64)
+                .csr(userCsrDerBase64)
+                .certificate(userCertificateDerBase64)
                 .timestampCertificateExpiration(Instant.now())
                 .status(status)
-                .certificateChainFromList(CERTIFICATE_CHAIN_BASE64)
+                .certificateChainFromList(userCertificateChainBase64)
                 .build();
 
         final var savedSigner = signerRepository.save(signer);
@@ -675,7 +687,7 @@ class DocumentControllerIntTest {
                 .documentName(DOCUMENT_NAME)
                 .fileName(FILENAME)
                 .fileSize(UPLOADED_FILE_SIZE)
-                .hash(HASH)
+                .hash(documentHashBase64)
                 .status(status)
                 .documentContent(AggregateReference.to(documentContentId))
                 .build();
@@ -720,7 +732,7 @@ class DocumentControllerIntTest {
 
     private void assertSignedDocument(final long documentId, final long signerId, final long documentContentId) {
         final var document = documentRepository.findById(documentId).orElseThrow();
-        assertEquals(DOCUMENT_TIMESTAMP_CREATED.toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
+        assertEquals(documentTimestampCreated.toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(DOCUMENT_UUID, document.getDocumentId());
         assertEquals(signerId, document.getSigner().getId());
@@ -729,9 +741,9 @@ class DocumentControllerIntTest {
         assertEquals(FILENAME, document.getFileName());
         assertEquals(SIGNED_FILE_SIZE, document.getFileSize());
         assertEquals(documentContentId, document.getDocumentContent().getId());
-        assertEquals(HASH, document.getHash());
+        assertEquals(documentHashBase64, document.getHash());
         assertEquals(DocumentStatus.SIGNED, document.getStatus());
-        assertEquals(SIGNATURE, document.getSignature());
+        assertEquals(documentSignatureBase64, document.getSignature());
         assertEquals(DocumentSignatureLevel.PADES_B_B, document.getSignatureLevel());
 
         final var documentContent = documentContentRepository.findById(document.getDocumentContent()).orElseThrow();
@@ -813,7 +825,7 @@ class DocumentControllerIntTest {
         assertEquals(DOCUMENT_NAME, response.name());
         assertEquals(FILENAME, response.filename());
         assertEquals(UPLOADED_FILE_SIZE, response.size());
-        assertEquals(HASH, response.hash());
+        assertEquals(documentHashBase64, response.hash());
     }
 
     private void assertRejectedDocument(final long documentId) {
@@ -865,7 +877,7 @@ class DocumentControllerIntTest {
 
         assertEquals(
                 simpleReport.getSigningTime(signatureId).getTime(),
-                Date.from(DOCUMENT_TIMESTAMP_CREATED).getTime(),
+                Date.from(documentTimestampCreated).getTime(),
                 MILLISECONDS_DELTA
         );
 
@@ -899,7 +911,7 @@ class DocumentControllerIntTest {
                 .map(certificateBytes -> Base64.getEncoder().encodeToString(certificateBytes))
                 .collect(Collectors.toSet());
 
-        final var expectedChain = Stream.concat(CERTIFICATE_CHAIN_BASE64.stream(), Stream.of(CERTIFICATE_BASE64))
+        final var expectedChain = Stream.concat(userCertificateChainBase64.stream(), Stream.of(userCertificateDerBase64))
                 .collect(Collectors.toSet());
         assertEquals(expectedChain, certificateChainBase64, "Incorrect certificate chain in document");
     }
