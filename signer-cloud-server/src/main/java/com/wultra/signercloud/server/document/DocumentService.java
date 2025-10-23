@@ -126,7 +126,7 @@ class DocumentService {
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = documentSigningService.computeHash(fileContent, signer, timestampCreated, visualSignature);
+        final var hash = documentSigningService.computeToBeSigned(fileContent, signer, timestampCreated, visualSignature);
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)

@@ -201,7 +201,7 @@ class DocumentServiceTest {
         // given
         final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(documentSigningService.computeHash(eq(uploadedDocumentContent), eq(signer), any(Instant.class), isNull()))
+        when(documentSigningService.computeToBeSigned(eq(uploadedDocumentContent), eq(signer), any(Instant.class), isNull()))
                 .thenReturn(DOCUMENT_HASH);
 
         final var documentContent = DocumentContent.builder()
@@ -231,7 +231,7 @@ class DocumentServiceTest {
         final var signer = createSigner(SignerStatus.ACTIVE);
         final var visualSignature = prepareDocumentVisualSignature();
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(documentSigningService.computeHash(eq(uploadedDocumentContent), eq(signer), any(Instant.class), eq(visualSignature)))
+        when(documentSigningService.computeToBeSigned(eq(uploadedDocumentContent), eq(signer), any(Instant.class), eq(visualSignature)))
                 .thenReturn(DOCUMENT_HASH);
 
         final var documentContent = DocumentContent.builder()
@@ -258,7 +258,7 @@ class DocumentServiceTest {
         final var visualSignature = prepareDocumentVisualSignature();
         final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(documentSigningService.computeHash(eq(uploadedDocumentContent), eq(signer), any(Instant.class), eq(visualSignature)))
+        when(documentSigningService.computeToBeSigned(eq(uploadedDocumentContent), eq(signer), any(Instant.class), eq(visualSignature)))
                 .thenReturn(DOCUMENT_HASH);
 
         final var documentContent = DocumentContent.builder()
@@ -289,7 +289,7 @@ class DocumentServiceTest {
         final var visualSignature = prepareDocumentVisualSignature();
         final var signer = createSigner(SignerStatus.ACTIVE);
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(documentSigningService.computeHash(eq(uploadedDocumentContent), eq(signer), any(Instant.class), eq(visualSignature)))
+        when(documentSigningService.computeToBeSigned(eq(uploadedDocumentContent), eq(signer), any(Instant.class), eq(visualSignature)))
                 .thenReturn(DOCUMENT_HASH);
 
         final var documentContent = DocumentContent.builder()

@@ -55,7 +55,16 @@ class DocumentSigningService {
     private final DocumentVisualSignatureService documentVisualSignatureService;
     private final PdfSignatureFieldPositionChecker visualSignatureChecker;
 
-    String computeHash(
+    /**
+     * Computes {@link eu.europa.esig.dss.model.ToBeSigned} for given document and signature parameters.
+     *
+     * @param content document content to be signed
+     * @param signer the signer
+     * @param timestampSigned signature timestamp
+     * @param visualSignature optional visual signature parameters
+     * @return {@link eu.europa.esig.dss.model.ToBeSigned} as base64 string
+     */
+    String computeToBeSigned(
             final byte[] content,
             final Signer signer,
             final Instant timestampSigned,
@@ -75,8 +84,14 @@ class DocumentSigningService {
                 dssDocument
         );
 
-        Optional.ofNullable(signatureParams.getImageParameters())
-                .ifPresent(imageParams -> verifyVisualSignature(dssDocument, imageParams));
+        // A newly created PAdESSignatureParameters instance has its imageParameters field set to null.
+        // However, if the getImageParameters() method is called, a new instance of SignatureImageParameters
+        // with default values is created and assigned to the imageParameters field (it is no longer null after the call).
+        // Therefore, we check whether (visualSignature != null) instead. A check like
+        // (signatureParams.getImageParameters() != null) would always evaluate to true.
+        if (visualSignature != null) {
+            verifyVisualSignature(dssDocument, signatureParams.getImageParameters());
+        }
 
         final var toSignBytes = padesService.getDataToSign(dssDocument, signatureParams);
 
@@ -119,6 +134,20 @@ class DocumentSigningService {
         }
     }
 
+    /**
+     * Sign document with given signature.
+     *
+     * For successful signing, exactly same parameters must be used as for computing the hash via {@link #computeToBeSigned(byte[], Signer, Instant, DocumentVisualSignature)}.
+     * Any difference will cause different hash computation and the passed signature will be invalid.
+     *
+     * @param signer the signer
+     * @param hashSignatureBase64 signature of {@link eu.europa.esig.dss.model.ToBeSigned}
+     * @param documentBytes document content to be signed
+     * @param timestampSigned signature timestamp
+     * @param requestedSignatureLevel requested signature level, or null to use default from configuration
+     * @param visualSignature optional visual signature parameters
+     * @return signed document
+     */
     SignedDocument sign(
             final Signer signer,
             final String hashSignatureBase64,
@@ -198,7 +227,7 @@ class DocumentSigningService {
             final DSSDocument dssDocument
     ) {
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(pAdESConfigurationProperties.getHashAlgorithm());
+        params.setDigestAlgorithm(pAdESConfigurationProperties.getSignatureAlgorithm().getDigestAlgorithm());
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChain);
 
