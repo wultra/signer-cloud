@@ -141,7 +141,7 @@ class DocumentSigningService {
      * Any difference will cause different hash computation and the passed signature will be invalid.
      *
      * @param signer the signer
-     * @param hashSignatureBase64 signature of {@link eu.europa.esig.dss.model.ToBeSigned}
+     * @param signatureBase64 signature of {@link eu.europa.esig.dss.model.ToBeSigned}
      * @param documentBytes document content to be signed
      * @param timestampSigned signature timestamp
      * @param requestedSignatureLevel requested signature level, or null to use default from configuration
@@ -150,7 +150,7 @@ class DocumentSigningService {
      */
     SignedDocument sign(
             final Signer signer,
-            final String hashSignatureBase64,
+            final String signatureBase64,
             final byte[] documentBytes,
             final Instant timestampSigned,
             final DocumentSignatureLevel requestedSignatureLevel,
@@ -174,7 +174,7 @@ class DocumentSigningService {
 
         final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
 
-        final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
+        final var signatureBytes = Base64.getDecoder().decode(signatureBase64);
         final var signatureValue = new SignatureValue(pAdESConfigurationProperties.getSignatureAlgorithm(), signatureBytes);
 
         final var isSignatureValid = padesService.isValidSignatureValue(documentHash, signatureValue, certificate);

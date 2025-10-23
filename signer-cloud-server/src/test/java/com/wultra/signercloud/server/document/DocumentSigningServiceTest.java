@@ -24,6 +24,7 @@ import com.wultra.signercloud.server.utils.CertificateUtils;
 import eu.europa.esig.dss.enumerations.*;
 import eu.europa.esig.dss.model.DSSDocument;
 import eu.europa.esig.dss.model.InMemoryDocument;
+import eu.europa.esig.dss.model.SignatureValue;
 import eu.europa.esig.dss.model.ToBeSigned;
 import eu.europa.esig.dss.model.x509.CertificateToken;
 import eu.europa.esig.dss.pades.PAdESSignatureParameters;
@@ -34,15 +35,18 @@ import eu.europa.esig.dss.pdf.AnnotationBox;
 import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
 import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDocumentReader;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 
 import java.awt.*;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.cert.CertificateException;
 import java.time.Instant;
 import java.util.Base64;
@@ -71,8 +75,15 @@ class DocumentSigningServiceTest {
 
     private static final Instant SIGNATURE_TIMESTAMP = Instant.now();
     private static final String TO_BE_SIGNED_BASE64 = "MYG2MBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwLwYJKoZIhvcNAQkEMSIEIMRmhpdGxzcg8/XQRblxNWVcfdnQBtDCHnos0HViP7riMGkGCyqGSIb3DQEJEAIvMVowWDBWMFQEIG+7rSeCMyjv8JmeFm6xWvPKLuzQQHL43Vq670xP4ZtvMDAwGKQWMBQxEjAQBgNVBAMMCUlzc3VpbmdDQQIUfGkRn3KxxavJ3eeTrnhM4i+co7o=";
+    private static final String SIGNATURE_BASE64 = "MEQCIEjyKsiu8eqfbe/eJpMX16NFuHTgB0TP0unZpyryG14eAiBVqGyFDtvM+dmUbYKhIkvcmzJh2dgQ4P2a2ZNOQyhY+A==";
+    private static final byte[] SIGNATURE_BYTES = Base64.getDecoder().decode(SIGNATURE_BASE64);
 
-    private static byte[] unsignedDocument;
+    private static byte[] unsignedContent;
+    private static byte[] signedContent;
+
+    private DSSDocument unsignedDssDocument;
+    private DSSDocument signedDssDocument;
+    private ToBeSigned toBeSigned;
 
     @Mock
     private PAdESConfigurationProperties pAdESConfigurationProperties;
@@ -91,7 +102,15 @@ class DocumentSigningServiceTest {
 
     @BeforeAll
     static void setup() throws IOException {
-        unsignedDocument = new ClassPathResource("input.pdf").getContentAsByteArray();
+        unsignedContent = new ClassPathResource("input.pdf").getContentAsByteArray();
+        signedContent = new ClassPathResource("input_signed.pdf").getContentAsByteArray();
+    }
+
+    @BeforeEach
+    void setupTest() {
+        unsignedDssDocument = new InMemoryDocument(unsignedContent);
+        signedDssDocument = new InMemoryDocument(signedContent);
+        toBeSigned = new ToBeSigned(Base64.getDecoder().decode(TO_BE_SIGNED_BASE64));
     }
 
     @Test
@@ -102,7 +121,7 @@ class DocumentSigningServiceTest {
         // when
         final var exception = assertThrows(
                 CertificateProcessingException.class,
-                () -> documentSigningService.computeToBeSigned(unsignedDocument, signer, SIGNATURE_TIMESTAMP, null)
+                () -> documentSigningService.computeToBeSigned(unsignedContent, signer, SIGNATURE_TIMESTAMP, null)
         );
 
         // then
@@ -118,7 +137,7 @@ class DocumentSigningServiceTest {
         // when
         final var exception = assertThrows(
                 CertificateProcessingException.class,
-                () -> documentSigningService.computeToBeSigned(unsignedDocument, signer, SIGNATURE_TIMESTAMP, null)
+                () -> documentSigningService.computeToBeSigned(unsignedContent, signer, SIGNATURE_TIMESTAMP, null)
         );
 
         // then
@@ -145,7 +164,7 @@ class DocumentSigningServiceTest {
         // when
         final var exception = assertThrows(
                 DocumentVisualSignatureException.class,
-                () -> documentSigningService.computeToBeSigned(unsignedDocument, signer, SIGNATURE_TIMESTAMP, visualSignature)
+                () -> documentSigningService.computeToBeSigned(unsignedContent, signer, SIGNATURE_TIMESTAMP, visualSignature)
         );
 
         // then
@@ -157,16 +176,14 @@ class DocumentSigningServiceTest {
     void testComputeToBeSignedWhenValidParamsWithoutVisualSignatureAreProvidedThenToBeSignedIsReturned() throws CertificateException {
         // given
         final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
-        final var dssDocument = new InMemoryDocument(unsignedDocument);
-        final var signatureParameters = buildPAdESSignatureParameters(null);
-        final var toBeSigned = new ToBeSigned(Base64.getDecoder().decode(TO_BE_SIGNED_BASE64));
+        final var signatureParameters = buildPAdESSignatureParameters(null, SignatureLevel.PAdES_BASELINE_B, DigestAlgorithm.SHA256);
 
         when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
         when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA256);
-        when(padesService.getDataToSign(dssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
 
         // when
-        final var toBeSignedBase64 = documentSigningService.computeToBeSigned(unsignedDocument, signer, SIGNATURE_TIMESTAMP, null);
+        final var toBeSignedBase64 = documentSigningService.computeToBeSigned(unsignedContent, signer, SIGNATURE_TIMESTAMP, null);
 
         // then
         assertEquals(TO_BE_SIGNED_BASE64, toBeSignedBase64);
@@ -176,12 +193,10 @@ class DocumentSigningServiceTest {
     void testComputeToBeSignedWhenValidParamsWithVisualSignatureAreProvidedThenToBeSignedIsReturned() throws CertificateException {
         // given
         final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
-        final var dssDocument = new InMemoryDocument(unsignedDocument);
         final var visualSignature = buildDocumentVisualSignature();
         final var signatureImageParameters = buildSignatureImageParameters();
         final var annotationBox = buildAnnotationBox();
-        final var signatureParameters = buildPAdESSignatureParameters(signatureImageParameters);
-        final var toBeSigned = new ToBeSigned(Base64.getDecoder().decode(TO_BE_SIGNED_BASE64));
+        final var signatureParameters = buildPAdESSignatureParameters(signatureImageParameters, SignatureLevel.PAdES_BASELINE_B, DigestAlgorithm.SHA256);
 
         when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
         when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA256);
@@ -190,27 +205,197 @@ class DocumentSigningServiceTest {
         doNothing()
                 .when(visualSignatureChecker)
                 .assertSignatureFieldPositionValid(any(PdfBoxDocumentReader.class), eq(annotationBox), eq(1));
-        when(padesService.getDataToSign(dssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
 
         // when
-        final var toBeSignedBase64 = documentSigningService.computeToBeSigned(unsignedDocument, signer, SIGNATURE_TIMESTAMP, visualSignature);
+        final var toBeSignedBase64 = documentSigningService.computeToBeSigned(unsignedContent, signer, SIGNATURE_TIMESTAMP, visualSignature);
 
         // then
         assertEquals(TO_BE_SIGNED_BASE64, toBeSignedBase64);
     }
 
+    @Test
+    void testSignWhenSignatureIsInvalidThenExceptionIsThrown() throws CertificateException {
+        // given
+        final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
+        final var signatureParameters = buildPAdESSignatureParameters(null, SignatureLevel.PAdES_BASELINE_B, DigestAlgorithm.SHA256);
+        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, SIGNATURE_BYTES);
+        final var certificateToken = new CertificateToken(CertificateUtils.base64ToX509Certificate(CERTIFICATE_BASE64));
 
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA256);
+        when(padesService.isValidSignatureValue(toBeSigned, signatureValue, certificateToken)).thenReturn(false);
 
-    // SIGN
-    // invalid signature
-    // error reading assembled document
-    // OK - response, doc + level
-    // OK - call to hash
-    // OK - call to validate signature
-    // OK - call to sign
-    // requested level B, default T
-    // requested level T, missing TSA
-    // requested level T, OK
+        // when
+        final var exception = assertThrows(
+                DocumentInvalidSignatureException.class,
+                () -> documentSigningService.sign(signer, SIGNATURE_BASE64, unsignedContent, SIGNATURE_TIMESTAMP, null, null)
+        );
+
+        // then
+        assertEquals("Invalid signature", exception.getMessage());
+    }
+
+    @Test
+    void testSignWhenSignedDocumentCanNotBeReadThenExceptionIsThrown() throws CertificateException, IOException {
+        // given
+        final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
+        final var signatureParameters = buildPAdESSignatureParameters(null, SignatureLevel.PAdES_BASELINE_B, DigestAlgorithm.SHA256);
+        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, SIGNATURE_BYTES);
+        final var certificateToken = new CertificateToken(CertificateUtils.base64ToX509Certificate(CERTIFICATE_BASE64));
+        final var signedDocument = Mockito.mock(DSSDocument.class);
+        final var signedDocumentStream = Mockito.mock(InputStream.class);
+
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA256);
+        when(padesService.isValidSignatureValue(toBeSigned, signatureValue, certificateToken)).thenReturn(true);
+        when(padesService.signDocument(unsignedDssDocument, signatureParameters, signatureValue)).thenReturn(signedDocument);
+        when(signedDocument.openStream()).thenReturn(signedDocumentStream);
+        when(signedDocumentStream.readAllBytes()).thenThrow(new IOException("test"));
+
+        // when
+        final var exception = assertThrows(
+                DocumentSigningException.class,
+                () -> documentSigningService.sign(signer, SIGNATURE_BASE64, unsignedContent, SIGNATURE_TIMESTAMP, null, null)
+        );
+
+        // then
+        assertEquals("Exception when reading bytes of signed document: test", exception.getMessage());
+        assertNotNull(exception.getCause());
+    }
+
+    @Test
+    void testSignWhenValidParamsWithoutVisualSignatureAreProvidedThenSignedDocumentIsReturned() throws CertificateException {
+        // given
+        final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
+        final var signatureParameters = buildPAdESSignatureParameters(null, SignatureLevel.PAdES_BASELINE_B, DigestAlgorithm.SHA256);
+        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, SIGNATURE_BYTES);
+        final var certificateToken = new CertificateToken(CertificateUtils.base64ToX509Certificate(CERTIFICATE_BASE64));
+
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA256);
+        when(padesService.isValidSignatureValue(toBeSigned, signatureValue, certificateToken)).thenReturn(true);
+        when(padesService.signDocument(unsignedDssDocument, signatureParameters, signatureValue)).thenReturn(signedDssDocument);
+
+        // when
+        final var signedDocument = documentSigningService.sign(signer, SIGNATURE_BASE64, unsignedContent, SIGNATURE_TIMESTAMP, null, null);
+
+        // then
+        assertArrayEquals(signedContent, signedDocument.content());
+        assertEquals(DocumentSignatureLevel.PADES_B_B, signedDocument.signatureLevel());
+    }
+
+    @Test
+    void testSignWhenValidParamsWithVisualSignatureAreProvidedThenSignedDocumentIsReturned() throws CertificateException {
+        // given
+        final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
+        final var visualSignature = buildDocumentVisualSignature();
+        final var imageParameters = buildSignatureImageParameters();
+        final var signatureParameters = buildPAdESSignatureParameters(imageParameters, SignatureLevel.PAdES_BASELINE_B, DigestAlgorithm.SHA256);
+        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, SIGNATURE_BYTES);
+        final var certificateToken = new CertificateToken(CertificateUtils.base64ToX509Certificate(CERTIFICATE_BASE64));
+
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA256);
+        when(documentVisualSignatureService.createVisualSignature(visualSignature, unsignedDssDocument)).thenReturn(imageParameters);
+        when(padesService.isValidSignatureValue(toBeSigned, signatureValue, certificateToken)).thenReturn(true);
+        when(padesService.signDocument(unsignedDssDocument, signatureParameters, signatureValue)).thenReturn(signedDssDocument);
+
+        // when
+        final var signedDocument = documentSigningService.sign(signer, SIGNATURE_BASE64, unsignedContent, SIGNATURE_TIMESTAMP, null, visualSignature);
+
+        // then
+        assertArrayEquals(signedContent, signedDocument.content());
+        assertEquals(DocumentSignatureLevel.PADES_B_B, signedDocument.signatureLevel());
+    }
+
+    @Test
+    void testSignWhenRequestedSignatureLevelDiffersFromDefaultOneThenRequestedLevelIsUsed() throws CertificateException {
+        // given
+        final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
+        final var signatureParameters = buildPAdESSignatureParameters(null, SignatureLevel.PAdES_BASELINE_B, DigestAlgorithm.SHA256);
+        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, SIGNATURE_BYTES);
+        final var certificateToken = new CertificateToken(CertificateUtils.base64ToX509Certificate(CERTIFICATE_BASE64));
+
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_T);
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA256);
+        when(padesService.isValidSignatureValue(toBeSigned, signatureValue, certificateToken)).thenReturn(true);
+        when(padesService.signDocument(unsignedDssDocument, signatureParameters, signatureValue)).thenReturn(signedDssDocument);
+
+        // when
+        final var signedDocument = documentSigningService.sign(signer, SIGNATURE_BASE64, unsignedContent, SIGNATURE_TIMESTAMP, DocumentSignatureLevel.PADES_B_B, null);
+
+        // then
+        assertArrayEquals(signedContent, signedDocument.content());
+        assertEquals(DocumentSignatureLevel.PADES_B_B, signedDocument.signatureLevel());
+    }
+
+    @Test
+    void testSignWhenSignatureLevelTWithoutTsaUrlIsConfiguredThenExceptionIsThrown() {
+        // given
+        final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
+
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_T);
+
+        // when
+        final var exception = assertThrows(
+                TimestampAuthorityException.class,
+                () -> documentSigningService.sign(signer, SIGNATURE_BASE64, unsignedContent, SIGNATURE_TIMESTAMP, null, null)
+        );
+
+        // then
+        assertEquals("TSA URL not set in configuration", exception.getMessage());
+    }
+
+    @Test
+    void testSignWhenWhenSignatureLevelTWithTsaUrlIsConfigured() throws CertificateException {
+        // given
+        final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
+        final var signatureParameters = buildPAdESSignatureParameters(null, SignatureLevel.PAdES_BASELINE_T, DigestAlgorithm.SHA256);
+        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA256, SIGNATURE_BYTES);
+        final var certificateToken = new CertificateToken(CertificateUtils.base64ToX509Certificate(CERTIFICATE_BASE64));
+
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_T);
+        when(pAdESConfigurationProperties.getTsaUrl()).thenReturn("https://tsa.localhost");
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA256);
+        when(padesService.isValidSignatureValue(toBeSigned, signatureValue, certificateToken)).thenReturn(true);
+        when(padesService.signDocument(unsignedDssDocument, signatureParameters, signatureValue)).thenReturn(signedDssDocument);
+
+        // when
+        final var signedDocument = documentSigningService.sign(signer, SIGNATURE_BASE64, unsignedContent, SIGNATURE_TIMESTAMP, null, null);
+
+        // then
+        assertArrayEquals(signedContent, signedDocument.content());
+        assertEquals(DocumentSignatureLevel.PADES_B_T, signedDocument.signatureLevel());
+    }
+
+    @Test
+    void testSignWhenSignatureAlgorithmEcdsaSha384IsConfiguredThenCorrectAlgorithmIsUsed() throws CertificateException {
+        // given
+        final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
+        final var signatureParameters = buildPAdESSignatureParameters(null, SignatureLevel.PAdES_BASELINE_B, DigestAlgorithm.SHA384);
+        final var signatureValue = new SignatureValue(SignatureAlgorithm.ECDSA_SHA384, SIGNATURE_BYTES);
+        final var certificateToken = new CertificateToken(CertificateUtils.base64ToX509Certificate(CERTIFICATE_BASE64));
+
+        when(pAdESConfigurationProperties.getSignatureLevel()).thenReturn(DocumentSignatureLevel.PADES_B_B);
+        when(padesService.getDataToSign(unsignedDssDocument, signatureParameters)).thenReturn(toBeSigned);
+        when(pAdESConfigurationProperties.getSignatureAlgorithm()).thenReturn(SignatureAlgorithm.ECDSA_SHA384);
+        when(padesService.isValidSignatureValue(toBeSigned, signatureValue, certificateToken)).thenReturn(true);
+        when(padesService.signDocument(unsignedDssDocument, signatureParameters, signatureValue)).thenReturn(signedDssDocument);
+
+        // when
+        final var signedDocument = documentSigningService.sign(signer, SIGNATURE_BASE64, unsignedContent, SIGNATURE_TIMESTAMP, null, null);
+
+        // then
+        assertArrayEquals(signedContent, signedDocument.content());
+        assertEquals(DocumentSignatureLevel.PADES_B_B, signedDocument.signatureLevel());
+    }
 
     private Signer buildSigner(final String certificateBase64, final List<String> certificateChain) {
         return Signer.builder()
@@ -275,23 +460,27 @@ class DocumentSigningServiceTest {
         return params;
     }
 
-    private PAdESSignatureParameters buildPAdESSignatureParameters(final SignatureImageParameters imageParameters) throws CertificateException {
+    private PAdESSignatureParameters buildPAdESSignatureParameters(
+            final SignatureImageParameters imageParameters,
+            final SignatureLevel signatureLevel,
+            final DigestAlgorithm digestAlgorithm
+    ) throws CertificateException {
         final var certificateToken = new CertificateToken(CertificateUtils.base64ToX509Certificate(CERTIFICATE_BASE64));
         final var certificateChainToken = CERTIFICATE_CHAIN_BASE64.stream()
                 .map(cert -> {
                     try {
                         return new CertificateToken(CertificateUtils.base64ToX509Certificate(cert));
-                    } catch (CertificateException e) {
+                    } catch (final CertificateException e) {
                         throw new RuntimeException(e);
                     }
                 })
                 .toList();
 
         final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(DigestAlgorithm.SHA256);
+        params.setDigestAlgorithm(digestAlgorithm);
         params.setSigningCertificate(certificateToken);
         params.setCertificateChain(certificateChainToken);
-        params.setSignatureLevel(SignatureLevel.PAdES_BASELINE_B);
+        params.setSignatureLevel(signatureLevel);
         params.bLevel().setSigningDate(Date.from(SIGNATURE_TIMESTAMP));
         params.setSigningTimeZone(TimeZone.getTimeZone("UTC"));
         params.setImageParameters(imageParameters);
