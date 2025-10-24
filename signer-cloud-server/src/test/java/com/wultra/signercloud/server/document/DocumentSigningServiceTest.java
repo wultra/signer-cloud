@@ -353,7 +353,7 @@ class DocumentSigningServiceTest {
     }
 
     @Test
-    void testSignWhenWhenSignatureLevelTWithTsaUrlIsConfigured() throws CertificateException {
+    void testSignWhenSignatureLevelTWithTsaUrlIsConfigured() throws CertificateException {
         // given
         final var signer = buildSigner(CERTIFICATE_BASE64, CERTIFICATE_CHAIN_BASE64);
         final var signatureParameters = buildPAdESSignatureParameters(null, SignatureLevel.PAdES_BASELINE_T, DigestAlgorithm.SHA256);
