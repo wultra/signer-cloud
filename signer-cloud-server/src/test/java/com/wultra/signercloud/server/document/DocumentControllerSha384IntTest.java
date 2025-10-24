@@ -63,7 +63,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "ejbca.rest-client.key-alias=testAlias",
         "ejbca.rest-client.key-password=testKeyPassword",
         "signer-cloud.server.document.waiting.timeout=",
-        "signer-cloud.server.pades.hash-algorithm=SHA384",
         "signer-cloud.server.pades.signature-algorithm=ECDSA_SHA384"
 })
 @AutoConfigureMockMvc
