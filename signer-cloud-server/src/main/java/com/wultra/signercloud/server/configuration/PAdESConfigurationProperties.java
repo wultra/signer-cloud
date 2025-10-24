@@ -18,7 +18,6 @@
 package com.wultra.signercloud.server.configuration;
 
 import com.wultra.signercloud.server.document.DocumentSignatureLevel;
-import eu.europa.esig.dss.enumerations.DigestAlgorithm;
 import eu.europa.esig.dss.enumerations.SignatureAlgorithm;
 import eu.europa.esig.dss.pades.signature.PAdESService;
 import lombok.Getter;
@@ -46,12 +45,7 @@ public class PAdESConfigurationProperties {
     private DocumentSignatureLevel signatureLevel;
 
     /**
-     * Algorithm used to compute the hash of the document for signing.
-     */
-    private DigestAlgorithm hashAlgorithm;
-
-    /**
-     * Algorithm used for signing the document. The {@link DigestAlgorithm} must match {@link #hashAlgorithm}.
+     * Algorithm used for digest calculation and its signature.
      */
     private SignatureAlgorithm signatureAlgorithm;
 }
