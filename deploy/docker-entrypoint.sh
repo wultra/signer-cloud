@@ -7,4 +7,4 @@ liquibase --headless=true --log-level=INFO --changeLogFile="$LB_HOME/db/changelo
   --url="${SIGNER_CLOUD_DATASOURCE_URL}" \
   update
 
-java ${JAVA_OPTS:-} -jar signer-cloud-server.war
+exec java ${JAVA_OPTS:-} -cp "${APP_PATH}:${EXTLIB_PATH}/*" org.springframework.boot.loader.launch.WarLauncher
