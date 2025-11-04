@@ -9,7 +9,10 @@ ENV JAVA_HOME=/opt/java/openjdk \
     LB_ARCHIVE_SHA256=184ffd609518091da42d6cd75e883b4f6ff1763cce8883e95fc99f7f05ca262d \
     PKG_RELEASE=1~jammy \
     LOGBACK_CONF=/opt/logback/conf \
-    TZ=UTC
+    TZ=UTC \
+    APP_PATH="/app/signer-cloud-server.war" \
+    EXTLIB_PATH="/app/extlib" \
+    OJDBC_VERSION="23.8.0.25.04"
 
 ENV PATH=$PATH:$LB_HOME
 
@@ -19,6 +22,8 @@ RUN apt-get -y update  \
     && apt-get -y install bash wget \
 # Install Liquibase, inspired by https://github.com/mobtitude/liquibase/blob/master/Dockerfile
     && set -x \
+    && mkdir -p ${EXTLIB_PATH} \
+    && wget --no-verbose https://repo1.maven.org/maven2/com/oracle/database/jdbc/ojdbc11/${OJDBC_VERSION}/ojdbc11-${OJDBC_VERSION}.jar -O ${EXTLIB_PATH}/ojdbc11.jar \
     && wget -q -O /tmp/liquibase.tar.gz "https://github.com/liquibase/liquibase/releases/download/v$LB_VERSION/liquibase-$LB_VERSION.tar.gz" \
     && [ "$LB_ARCHIVE_SHA256  /tmp/liquibase.tar.gz" = "$(sha256sum /tmp/liquibase.tar.gz)" ] \
     && mkdir -p "$LB_HOME" \
@@ -37,7 +42,7 @@ RUN apt-get -y update  \
 COPY docs/db/changelog $LB_HOME/db/changelog
 
 # Deploy and run applications
-COPY signer-cloud-server/target/signer-cloud-server.war signer-cloud-server.war
+COPY signer-cloud-server/target/signer-cloud-server.war "${APP_PATH}"
 
 # Docker configuration
 EXPOSE 8080
