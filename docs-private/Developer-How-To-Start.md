@@ -102,7 +102,7 @@ There is a docker image available ([here](https://hub.docker.com/r/keyfactor/ejb
 The EJBCA provides a REST API. For creating a new certificate call:
 
 ```shell
-curl --location '{$SIGNER_CLOUD_EJBCA_URL}/v1/certificate/pkcs10enroll' \
+curl --location "${SIGNER_CLOUD_EJBCA_URL}/v1/certificate/pkcs10enroll" \
      --cert client.crt \
      --key client.key \
      --json '{
@@ -149,7 +149,7 @@ The reason value is also required; in the example call, the value `UNSPECIFIED` 
 
 ```shell
 curl -X PUT \
-    --location '{$SIGNER_CLOUD_EJBCA_URL}/v1/certificate/CN%3DIssuingCA/76D893C8C9BA218D3AEA5CC24411128D63D86F7C/revoke?reason=UNSPECIFIED' \
+    --location "${SIGNER_CLOUD_EJBCA_URL}/v1/certificate/CN%3DIssuingCA/76D893C8C9BA218D3AEA5CC24411128D63D86F7C/revoke?reason=UNSPECIFIED" \
      --cert admin-cert.pem \
      --key admin-key.pem
 ```
