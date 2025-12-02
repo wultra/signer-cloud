@@ -43,7 +43,7 @@ interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-            SELECT c FROM sc_callback_event c
+            SELECT * FROM sc_callback_event c
             WHERE c.status = 'PENDING'
             AND c.timestamp_next_call < :timestamp
             ORDER BY c.timestamp_next_call
