@@ -42,6 +42,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -521,7 +522,7 @@ class SignerServiceTest {
     @Test
     void testCleanupSigners_noSignerForExpiration_correctCountIsReturned() {
         // given
-        // -
+        when(signerRepository.findForExpiration(10)).thenReturn(Collections.emptyList());
 
         // when
         final var count = signerService.cleanupSigners(10);
@@ -533,7 +534,7 @@ class SignerServiceTest {
     @Test
     void testCleanupSigners_noSignerForExpiration_repositoryForUpdateIsNotCalled() {
         // given
-        // -
+        when(signerRepository.findForExpiration(10)).thenReturn(Collections.emptyList());
 
         // when
         signerService.cleanupSigners(10);
@@ -571,7 +572,6 @@ class SignerServiceTest {
         // then
         verify(signerRepository).markAsExpired(List.of(SIGNER_ID));
     }
-
 
     private Signer buildSigner(final SignerStatus status) throws CertificateEncodingException {
         return Signer.builder()
