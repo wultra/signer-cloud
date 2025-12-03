@@ -17,6 +17,7 @@
  */
 package com.wultra.signercloud.server.signer;
 
+import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.data.jdbc.repository.query.Modifying;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
@@ -73,4 +74,12 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
     @Modifying
     @Query("UPDATE sc_signer SET timestamp_last_updated = NOW(), status = 'EXPIRED' WHERE id IN (:ids)")
     void markAsExpired(List<Long> ids);
+
+    /**
+     * Find signer by aggregate reference.
+     *
+     * @param reference Aggregate reference.
+     * @return Optional signer.
+     */
+    Optional<Signer> findById(AggregateReference<Signer, Long> reference);
 }

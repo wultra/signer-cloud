@@ -20,6 +20,8 @@ package com.wultra.signercloud.server.signer;
 import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
 import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
+import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.utils.CertificateUtils;
@@ -85,7 +87,6 @@ class SignerServiceTest {
 
     private static final int MILLISECONDS_DELTA = 1_000;
 
-
     private X509Certificate x509Certificate1;
     private X509Certificate x509Certificate2;
     private VerifyECDSASignatureRequest powerAuthRequest;
@@ -108,6 +109,9 @@ class SignerServiceTest {
 
     @Mock
     private CertificateRevocationService certificateRevocationService;
+
+    @Mock
+    private CallbackNotificationService callbackNotificationService;
 
     @InjectMocks
     private SignerService signerService;
@@ -515,7 +519,7 @@ class SignerServiceTest {
     }
 
     @Test
-    void testCleanupSigners_noSignerForExpiration_zeroIsReturned() {
+    void testCleanupSigners_noSignerForExpiration_correctCountIsReturned() {
         // given
         // -
 
@@ -525,6 +529,49 @@ class SignerServiceTest {
         // then
         assertEquals(0, count);
     }
+
+    @Test
+    void testCleanupSigners_noSignerForExpiration_repositoryForUpdateIsNotCalled() {
+        // given
+        // -
+
+        // when
+        signerService.cleanupSigners(10);
+
+        // then
+        verify(signerRepository, never()).markAsExpired(any());
+    }
+
+    @Test
+    void testCleanupSigners_signerForExpirationFound_correctCountIsReturned() throws CertificateEncodingException {
+        // given
+        final var signer = buildSigner(SignerStatus.ACTIVE);
+
+        when(signerRepository.findForExpiration(10)).thenReturn(List.of(signer));
+        when(callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)).thenReturn(false);
+
+        // when
+        final var count = signerService.cleanupSigners(10);
+
+        // then
+        assertEquals(1, count);
+    }
+
+    @Test
+    void testCleanupSigners_signerForExpirationFound_repositoryForUpdateIsCalled() throws CertificateEncodingException {
+        // given
+        final var signer = buildSigner(SignerStatus.ACTIVE);
+
+        when(signerRepository.findForExpiration(10)).thenReturn(List.of(signer));
+        when(callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)).thenReturn(false);
+
+        // when
+        signerService.cleanupSigners(10);
+
+        // then
+        verify(signerRepository).markAsExpired(List.of(SIGNER_ID));
+    }
+
 
     private Signer buildSigner(final SignerStatus status) throws CertificateEncodingException {
         return Signer.builder()
