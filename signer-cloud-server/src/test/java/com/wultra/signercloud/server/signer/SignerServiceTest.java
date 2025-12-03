@@ -48,7 +48,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for {@link SignerService}.
+ * Unit tests for {@link SignerService}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
@@ -512,6 +512,18 @@ class SignerServiceTest {
 
         // then
         assertSignerDetailResponse(response);
+    }
+
+    @Test
+    void testCleanupSigners_noSignerForExpiration_zeroIsReturned() {
+        // given
+        // -
+
+        // when
+        final var count = signerService.cleanupSigners(10);
+
+        // then
+        assertEquals(0, count);
     }
 
     private Signer buildSigner(final SignerStatus status) throws CertificateEncodingException {
