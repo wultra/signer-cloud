@@ -43,40 +43,40 @@ interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-            SELECT * FROM sc_callback_event c
-            WHERE c.status = 'PENDING'
-            AND c.timestamp_next_call < :timestamp
-            ORDER BY c.timestamp_next_call
+            SELECT * FROM "sc_callback_event" c
+            WHERE c."status" = 'PENDING'
+            AND c."timestamp_next_call" < :timestamp
+            ORDER BY c."timestamp_next_call"
             FETCH FIRST :limit ROWS ONLY
             """)
     List<CallbackEvent> findPending(LocalDateTime timestamp, int limit);
 
     @Modifying
     @Query("""
-            DELETE FROM sc_callback_event c
-            WHERE c.status = 'COMPLETED'
-            AND c.timestamp_delete_after < :timestamp
+            DELETE FROM "sc_callback_event" c
+            WHERE c."status" = 'COMPLETED'
+            AND c."timestamp_delete_after" < :timestamp
             """)
     int deleteCompletedAfterRetentionPeriod(LocalDateTime timestamp);
 
     @Modifying
     @Query("""
-            UPDATE sc_callback_event c
-            SET status = 'PENDING',
-                timestamp_next_call = c.timestamp_last_call,
-                timestamp_rerun_after = null
-            WHERE c.status = 'PROCESSING'
-            AND c.timestamp_rerun_after < :timestamp
+            UPDATE "sc_callback_event" c
+            SET "status" = 'PENDING',
+                "timestamp_next_call" = c."timestamp_last_call",
+                "timestamp_rerun_after" = null
+            WHERE c."status" = 'PROCESSING'
+            AND c."timestamp_rerun_after" < :timestamp
             """)
     int updateStaleEventsToPendingState(LocalDateTime timestamp);
 
     @Modifying
     @Query("""
-            UPDATE sc_callback_event c
-            SET status = 'PENDING',
-                timestamp_next_call = c.timestamp_last_call,
-                timestamp_rerun_after = null
-            WHERE c.id = :id
+            UPDATE "sc_callback_event" c
+            SET "status" = 'PENDING',
+                "timestamp_next_call" = c."timestamp_last_call",
+                "timestamp_rerun_after" = null
+            WHERE c."id" = :id
             """)
     void updateEventToPendingState(Long id);
 }

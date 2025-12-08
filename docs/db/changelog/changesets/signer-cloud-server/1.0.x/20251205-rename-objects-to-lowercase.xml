@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd"
+                   objectQuotingStrategy="QUOTE_ALL_OBJECTS">
+
+    <changeSet id="1" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="SC_CALLBACK_EVENT"/>
+        </preConditions>
+
+        <renameTable oldTableName="SC_CALLBACK_EVENT" newTableName="sc_callback_event"/>
+    </changeSet>
+
+    <changeSet id="2" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="sc_callback_event"/>
+        </preConditions>
+
+        <renameColumn tableName="sc_callback_event" oldColumnName="ID" newColumnName="id" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="CALLBACK_TYPE" newColumnName="callback_type" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="CALLBACK_DATA" newColumnName="callback_data" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="STATUS" newColumnName="status" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="TIMESTAMP_CREATED" newColumnName="timestamp_created" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="TIMESTAMP_LAST_CALL" newColumnName="timestamp_last_call" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="TIMESTAMP_NEXT_CALL" newColumnName="timestamp_next_call" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="TIMESTAMP_DELETE_AFTER" newColumnName="timestamp_delete_after" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="TIMESTAMP_RERUN_AFTER" newColumnName="timestamp_rerun_after" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="ATTEMPTS" newColumnName="attempts" />
+        <renameColumn tableName="sc_callback_event" oldColumnName="IDEMPOTENCY_KEY" newColumnName="idempotency_key" />
+    </changeSet>
+
+    <changeSet id="3" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="SC_DOCUMENT" />
+        </preConditions>
+
+        <renameTable oldTableName="SC_DOCUMENT" newTableName="sc_document"/>
+    </changeSet>
+
+    <changeSet id="4" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="sc_document"/>
+        </preConditions>
+
+        <renameColumn tableName="sc_document" oldColumnName="ID" newColumnName="id" />
+        <renameColumn tableName="sc_document" oldColumnName="TIMESTAMP_CREATED" newColumnName="timestamp_created" />
+        <renameColumn tableName="sc_document" oldColumnName="TIMESTAMP_LAST_UPDATED" newColumnName="timestamp_last_updated" />
+        <renameColumn tableName="sc_document" oldColumnName="DOCUMENT_ID" newColumnName="document_id" />
+        <renameColumn tableName="sc_document" oldColumnName="SIGNER_ID" newColumnName="signer_id" />
+        <renameColumn tableName="sc_document" oldColumnName="EXTERNAL_ID" newColumnName="external_id" />
+        <renameColumn tableName="sc_document" oldColumnName="DOCUMENT_NAME" newColumnName="document_name" />
+        <renameColumn tableName="sc_document" oldColumnName="FILE_NAME" newColumnName="file_name" />
+        <renameColumn tableName="sc_document" oldColumnName="FILE_SIZE" newColumnName="file_size" />
+        <renameColumn tableName="sc_document" oldColumnName="DOCUMENT_CONTENT_ID" newColumnName="document_content_id" />
+        <renameColumn tableName="sc_document" oldColumnName="HASH" newColumnName="hash" />
+        <renameColumn tableName="sc_document" oldColumnName="STATUS" newColumnName="status" />
+        <renameColumn tableName="sc_document" oldColumnName="SIGNATURE" newColumnName="signature" />
+        <renameColumn tableName="sc_document" oldColumnName="SIGNATURE_LEVEL" newColumnName="signature_level" />
+        <renameColumn tableName="sc_document" oldColumnName="VISUAL_SIGNATURE_JSON" newColumnName="visual_signature_json" />
+
+    </changeSet>
+
+    <changeSet id="5" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="SC_DOCUMENT_CONTENT" />
+        </preConditions>
+
+        <renameTable oldTableName="SC_DOCUMENT_CONTENT" newTableName="sc_document_content"/>
+    </changeSet>
+
+    <changeSet id="6" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="sc_document_content"/>
+        </preConditions>
+
+        <renameColumn tableName="sc_document_content" oldColumnName="ID" newColumnName="id" />
+        <renameColumn tableName="sc_document_content" oldColumnName="CONTENT" newColumnName="content" />
+    </changeSet>
+
+    <changeSet id="7" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="SC_ISSUED_CERTIFICATE_METADATA" />
+        </preConditions>
+
+        <renameTable oldTableName="SC_ISSUED_CERTIFICATE_METADATA" newTableName="sc_issued_certificate_metadata" />
+    </changeSet>
+
+    <changeSet id="8" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="sc_issued_certificate_metadata" />
+        </preConditions>
+
+        <renameColumn tableName="sc_issued_certificate_metadata" oldColumnName="ID" newColumnName="id" />
+        <renameColumn tableName="sc_issued_certificate_metadata" oldColumnName="TIMESTAMP_CREATED" newColumnName="timestamp_created" />
+        <renameColumn tableName="sc_issued_certificate_metadata" oldColumnName="TIMESTAMP_LAST_UPDATED" newColumnName="timestamp_last_updated" />
+        <renameColumn tableName="sc_issued_certificate_metadata" oldColumnName="SIGNER_ID" newColumnName="signer_id" />
+        <renameColumn tableName="sc_issued_certificate_metadata" oldColumnName="SERIAL_NUMBER" newColumnName="serial_number" />
+        <renameColumn tableName="sc_issued_certificate_metadata" oldColumnName="ISSUER_DN" newColumnName="issuer_dn" />
+        <renameColumn tableName="sc_issued_certificate_metadata" oldColumnName="TIMESTAMP_CERTIFICATE_EXPIRATION" newColumnName="timestamp_certificate_expiration" />
+        <renameColumn tableName="sc_issued_certificate_metadata" oldColumnName="STATUS" newColumnName="status" />
+    </changeSet>
+
+    <changeSet id="9" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="SC_SIGNER" />
+        </preConditions>
+
+        <renameTable oldTableName="SC_SIGNER" newTableName="sc_signer" />
+    </changeSet>
+
+    <changeSet id="10" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="sc_signer" />
+        </preConditions>
+
+        <renameColumn tableName="sc_signer" oldColumnName="ID" newColumnName="id" />
+        <renameColumn tableName="sc_signer" oldColumnName="TIMESTAMP_CREATED" newColumnName="timestamp_created" />
+        <renameColumn tableName="sc_signer" oldColumnName="TIMESTAMP_LAST_UPDATED" newColumnName="timestamp_last_updated" />
+        <renameColumn tableName="sc_signer" oldColumnName="EXTERNAL_SIGNER_ID" newColumnName="external_signer_id" />
+        <renameColumn tableName="sc_signer" oldColumnName="USER_ID" newColumnName="user_id" />
+        <renameColumn tableName="sc_signer" oldColumnName="CSR" newColumnName="csr" />
+        <renameColumn tableName="sc_signer" oldColumnName="CERTIFICATE" newColumnName="certificate" />
+        <renameColumn tableName="sc_signer" oldColumnName="TIMESTAMP_CERTIFICATE_EXPIRATION" newColumnName="timestamp_certificate_expiration" />
+        <renameColumn tableName="sc_signer" oldColumnName="STATUS" newColumnName="status" />
+        <renameColumn tableName="sc_signer" oldColumnName="CERTIFICATE_CHAIN" newColumnName="certificate_chain" />
+    </changeSet>
+
+    <changeSet id="11" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <tableExists tableName="SHEDLOCK" />
+        </preConditions>
+
+        <renameTable oldTableName="SHEDLOCK" newTableName="shedlock" />
+    </changeSet>
+
+    <changeSet id="12" author="Michal Rozehnal" dbms="oracle">
+        <preConditions>
+            <tableExists tableName="shedlock" />
+        </preConditions>
+
+        <renameColumn tableName="shedlock" oldColumnName="NAME" newColumnName="name" />
+        <renameColumn tableName="shedlock" oldColumnName="LOCK_UNTIL" newColumnName="lock_until" />
+        <renameColumn tableName="shedlock" oldColumnName="LOCKED_AT" newColumnName="locked_at" />
+        <renameColumn tableName="shedlock" oldColumnName="LOCKED_BY" newColumnName="locked_by" />
+    </changeSet>
+    
+    <changeSet id="13" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*)
+                FROM USER_SEQUENCES
+                WHERE SEQUENCE_NAME = 'SC_CALLBACK_EVENT_SEQ';
+            </sqlCheck>
+        </preConditions>
+
+        <renameSequence oldSequenceName="SC_CALLBACK_EVENT_SEQ" newSequenceName="sc_callback_event_seq" />
+    </changeSet>
+
+    <changeSet id="14" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*)
+                FROM USER_SEQUENCES
+                WHERE SEQUENCE_NAME = 'SC_DOCUMENT_CONTENT_SEQ';
+            </sqlCheck>
+        </preConditions>
+
+        <renameSequence oldSequenceName="SC_DOCUMENT_CONTENT_SEQ" newSequenceName="sc_document_content_seq" />
+    </changeSet>
+
+    <changeSet id="15" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*)
+                FROM USER_SEQUENCES
+                WHERE SEQUENCE_NAME = 'SC_DOCUMENT_SEQ';
+            </sqlCheck>
+        </preConditions>
+
+        <renameSequence oldSequenceName="SC_DOCUMENT_SEQ" newSequenceName="sc_document_seq" />
+    </changeSet>
+
+    <changeSet id="16" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*)
+                FROM USER_SEQUENCES
+                WHERE SEQUENCE_NAME = 'SC_ISSUED_CERTIFICATE_METADATA_SEQ';
+            </sqlCheck>
+        </preConditions>
+
+        <renameSequence oldSequenceName="SC_ISSUED_CERTIFICATE_METADATA_SEQ" newSequenceName="sc_issued_certificate_metadata_seq" />
+    </changeSet>
+
+    <changeSet id="17" author="Michal Rozehnal" dbms="oracle">
+        <preConditions onFail="MARK_RAN">
+            <sqlCheck expectedResult="1">
+                SELECT COUNT(*)
+                FROM USER_SEQUENCES
+                WHERE SEQUENCE_NAME = 'SC_SIGNER_SEQ';
+            </sqlCheck>
+        </preConditions>
+
+        <renameSequence oldSequenceName="SC_SIGNER_SEQ" newSequenceName="sc_signer_seq" />
+    </changeSet>
+
+</databaseChangeLog>

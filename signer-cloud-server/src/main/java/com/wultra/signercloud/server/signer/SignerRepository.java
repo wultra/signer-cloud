@@ -43,8 +43,8 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-        SELECT * FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration < NOW()
-                ORDER BY timestamp_certificate_expiration
+        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" < NOW()
+                ORDER BY "timestamp_certificate_expiration"
                 FETCH FIRST :limit ROWS ONLY
         """)
     List<Signer> findForExpiration(int limit);
@@ -58,8 +58,8 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-        SELECT * FROM sc_signer WHERE status = 'ACTIVE' AND timestamp_certificate_expiration BETWEEN NOW() AND :expirationThreshold
-                ORDER BY timestamp_certificate_expiration
+        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" BETWEEN NOW() AND :expirationThreshold
+                ORDER BY "timestamp_certificate_expiration"
                 FETCH FIRST :limit ROWS ONLY
         """)
     List<Signer> findForRenewal(Instant expirationThreshold, int limit);
@@ -72,7 +72,9 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * @param ids Signer IDs to mark as expired.
      */
     @Modifying
-    @Query("UPDATE sc_signer SET timestamp_last_updated = NOW(), status = 'EXPIRED' WHERE id IN (:ids)")
+    @Query("""
+        UPDATE "sc_signer" SET "timestamp_last_updated" = NOW(), "status" = 'EXPIRED' WHERE "id" IN (:ids)
+        """)
     void markAsExpired(List<Long> ids);
 
     /**
