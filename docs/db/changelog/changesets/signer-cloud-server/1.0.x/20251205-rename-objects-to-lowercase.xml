@@ -125,6 +125,25 @@
         <renameColumn tableName="sc_signer" oldColumnName="STATUS" newColumnName="status" />
         <renameColumn tableName="sc_signer" oldColumnName="CERTIFICATE_CHAIN" newColumnName="certificate_chain" />
     </changeSet>
+
+    <changeSet id="11" author="Michal Rozehnal" dbms="oracle">
+        <preConditions>
+            <tableExists tableName="SHEDLOCK" />
+        </preConditions>
+
+        <renameTable oldTableName="SHEDLOCK" newTableName="shedlock" />
+    </changeSet>
+
+    <changeSet id="12" author="Michal Rozehnal" dbms="oracle">
+        <preConditions>
+            <tableExists tableName="shedlock" />
+        </preConditions>
+
+        <renameColumn tableName="shedlock" oldColumnName="NAME" newColumnName="name" />
+        <renameColumn tableName="shedlock" oldColumnName="LOCK_UNTIL" newColumnName="lock_until" />
+        <renameColumn tableName="shedlock" oldColumnName="LOCKED_AT" newColumnName="locked_at" />
+        <renameColumn tableName="shedlock" oldColumnName="LOCKED_BY" newColumnName="locked_by" />
+    </changeSet>
     
     <changeSet id="13" author="Michal Rozehnal" dbms="oracle">
         <preConditions>
