@@ -33,6 +33,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
@@ -73,12 +74,24 @@ class SignerService {
 
     /**
      * Marks all signers that have expired as expired and creates expiration callbacks if configured.
+     * <p>
+     * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
      *
      * @param limit Maximum number of signers to mark as expired.
      * @return Number of expired signers.
      */
     long cleanupSigners(final int limit) {
-        final List<Signer> signers = signerRepository.markAsExpired(limit);
+        final var signers = signerRepository.findForExpiration(limit);
+
+        if (CollectionUtils.isEmpty(signers)) {
+            return 0;
+        }
+
+        final List<Long> ids = signers.stream()
+                .map(Signer::getId)
+                .toList();
+
+        signerRepository.markAsExpired(ids);
 
         if (callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)) {
             logger.info("Creating {} expiration callbacks.", signers.size());
