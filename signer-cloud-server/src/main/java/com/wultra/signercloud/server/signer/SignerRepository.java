@@ -38,44 +38,47 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
     /**
      * Find signers for expiration.
      *
+     * @param now Current time
      * @param limit Limit of signers to return.
      * @return List of signers.
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" < NOW()
+        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" < :now
                 ORDER BY "timestamp_certificate_expiration"
                 FETCH FIRST :limit ROWS ONLY
         """)
-    List<Signer> findForExpiration(int limit);
+    List<Signer> findForExpiration(final Instant now, final int limit);
 
     /**
      * Find signers for renewal.
      *
+     * @param now Current time
      * @param expirationThreshold Limit signers to this expiration threshold.
      * @param limit Limit of signers to return.
      * @return List of signers.
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" BETWEEN NOW() AND :expirationThreshold
+        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" BETWEEN :now AND :expirationThreshold
                 ORDER BY "timestamp_certificate_expiration"
                 FETCH FIRST :limit ROWS ONLY
         """)
-    List<Signer> findForRenewal(Instant expirationThreshold, int limit);
+    List<Signer> findForRenewal(final Instant now, final Instant expirationThreshold, final int limit);
 
     /**
      * Marks signers as expired.
      * <p>
      * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
      *
+     * @param now Current time
      * @param ids Signer IDs to mark as expired.
      */
     @Modifying
     @Query("""
-        UPDATE "sc_signer" SET "timestamp_last_updated" = NOW(), "status" = 'EXPIRED' WHERE "id" IN (:ids)
+        UPDATE "sc_signer" SET "timestamp_last_updated" = :now, "status" = 'EXPIRED' WHERE "id" IN (:ids)
         """)
-    void markAsExpired(List<Long> ids);
+    void markAsExpired(final Instant now, final List<Long> ids);
 
     /**
      * Find signer by aggregate reference.

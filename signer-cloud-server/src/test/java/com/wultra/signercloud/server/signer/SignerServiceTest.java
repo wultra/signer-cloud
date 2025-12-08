@@ -440,7 +440,7 @@ class SignerServiceTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED, null);
 
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+        when(issuedCertificateMetadataRepository.findForRevocation(eq(SIGNER_ID), any(Instant.class))).thenReturn(List.of(issuedCertificateMetadata));
         doThrow(new CertificateProcessingException("Test", new RuntimeException()))
                 .when(certificateRevocationService).revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED);
 
@@ -461,7 +461,7 @@ class SignerServiceTest {
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
 
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+        when(issuedCertificateMetadataRepository.findForRevocation(eq(SIGNER_ID), any(Instant.class))).thenReturn(List.of(issuedCertificateMetadata));
 
         // when
         signerService.updateStatus(
@@ -480,7 +480,7 @@ class SignerServiceTest {
         final var reason = RevocationReason.CESSATION_OF_OPERATION;
 
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+        when(issuedCertificateMetadataRepository.findForRevocation(eq(SIGNER_ID), any(Instant.class))).thenReturn(List.of(issuedCertificateMetadata));
 
         // when
         signerService.updateStatus(
@@ -522,7 +522,7 @@ class SignerServiceTest {
     @Test
     void testCleanupSigners_noSignerForExpiration_correctCountIsReturned() {
         // given
-        when(signerRepository.findForExpiration(10)).thenReturn(Collections.emptyList());
+        when(signerRepository.findForExpiration(any(Instant.class), eq(10))).thenReturn(Collections.emptyList());
 
         // when
         final var count = signerService.cleanupSigners(10);
@@ -534,13 +534,13 @@ class SignerServiceTest {
     @Test
     void testCleanupSigners_noSignerForExpiration_repositoryForUpdateIsNotCalled() {
         // given
-        when(signerRepository.findForExpiration(10)).thenReturn(Collections.emptyList());
+        when(signerRepository.findForExpiration(any(Instant.class), eq(10))).thenReturn(Collections.emptyList());
 
         // when
         signerService.cleanupSigners(10);
 
         // then
-        verify(signerRepository, never()).markAsExpired(any());
+        verify(signerRepository, never()).markAsExpired(any(Instant.class), any());
     }
 
     @Test
@@ -548,7 +548,7 @@ class SignerServiceTest {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
 
-        when(signerRepository.findForExpiration(10)).thenReturn(List.of(signer));
+        when(signerRepository.findForExpiration(any(Instant.class), eq(10))).thenReturn(List.of(signer));
         when(callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)).thenReturn(false);
 
         // when
@@ -563,14 +563,14 @@ class SignerServiceTest {
         // given
         final var signer = buildSigner(SignerStatus.ACTIVE);
 
-        when(signerRepository.findForExpiration(10)).thenReturn(List.of(signer));
+        when(signerRepository.findForExpiration(any(Instant.class), eq(10))).thenReturn(List.of(signer));
         when(callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)).thenReturn(false);
 
         // when
         signerService.cleanupSigners(10);
 
         // then
-        verify(signerRepository).markAsExpired(List.of(SIGNER_ID));
+        verify(signerRepository).markAsExpired(any(Instant.class), eq(List.of(SIGNER_ID)));
     }
 
     private Signer buildSigner(final SignerStatus status) throws CertificateEncodingException {

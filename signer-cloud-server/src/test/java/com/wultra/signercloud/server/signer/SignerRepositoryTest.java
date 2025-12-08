@@ -47,12 +47,12 @@ class SignerRepositoryTest {
     @Test
     void testMarkAsExpired() {
         final Instant start = Instant.now();
-        final var signerIds = signerRepository.findForExpiration(1)
+        final var signerIds = signerRepository.findForExpiration(Instant.now(), 1)
                 .stream()
                 .map(Signer::getId)
                 .toList();
 
-        signerRepository.markAsExpired(signerIds);
+        signerRepository.markAsExpired(Instant.now(), signerIds);
         final Instant end = Instant.now();
 
         assertEquals(1, signerIds.size());
