@@ -40,7 +40,6 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      *
      * @param limit Limit of signers to return.
      * @return List of signers.
-     * @apiNote Internal API, use {@link #markAsExpired(int)} instead.
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
@@ -71,29 +70,16 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
      *
      * @param ids Signer IDs to mark as expired.
-     * @apiNote Internal API, use {@link #markAsExpired(int)} instead.
      */
     @Modifying
     @Query("UPDATE sc_signer SET timestamp_last_updated = NOW(), status = 'EXPIRED' WHERE id IN (:ids)")
     void markAsExpired(List<Long> ids);
 
     /**
-     * Marks signers as expired.
-     * <p>
-     * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
+     * Find signer by aggregate reference.
      *
-     * @param limit Limit of signers to mark as expired in a single query.
-     * @return List of signers marked as expired.
-     * @implSpec Unfortunately, usage of Common Table Expressions is limited to PostgreSQL only.
+     * @param reference Aggregate reference.
+     * @return Optional signer.
      */
-    default List<Signer> markAsExpired(int limit) {
-        final List<Signer> signers = findForExpiration(limit);
-        final List<Long> ids = signers.stream()
-                .map(Signer::getId)
-                .toList();
-        markAsExpired(ids);
-        return signers;
-    }
-
     Optional<Signer> findById(AggregateReference<Signer, Long> reference);
 }
