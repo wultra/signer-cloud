@@ -61,7 +61,7 @@ interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
 
     @Modifying
     @Query("""
-            UPDATE sc_callback_event c
+            UPDATE "sc_callback_event" c
             SET "status" = 'PENDING',
                 "timestamp_next_call" = c."timestamp_last_call",
                 "timestamp_rerun_after" = null
@@ -72,7 +72,7 @@ interface CallbackEventRepository extends CrudRepository<CallbackEvent, Long>  {
 
     @Modifying
     @Query("""
-            UPDATE sc_callback_event c
+            UPDATE "sc_callback_event" c
             SET "status" = 'PENDING',
                 "timestamp_next_call" = c."timestamp_last_call",
                 "timestamp_rerun_after" = null
