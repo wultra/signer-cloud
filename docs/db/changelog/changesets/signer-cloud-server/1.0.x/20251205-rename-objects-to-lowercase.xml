@@ -13,7 +13,7 @@
     </changeSet>
 
     <changeSet id="2" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="sc_callback_event"/>
         </preConditions>
 
@@ -31,7 +31,7 @@
     </changeSet>
 
     <changeSet id="3" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="SC_DOCUMENT" />
         </preConditions>
 
@@ -39,7 +39,7 @@
     </changeSet>
 
     <changeSet id="4" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="sc_document"/>
         </preConditions>
 
@@ -62,7 +62,7 @@
     </changeSet>
 
     <changeSet id="5" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="SC_DOCUMENT_CONTENT" />
         </preConditions>
 
@@ -70,7 +70,7 @@
     </changeSet>
 
     <changeSet id="6" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="sc_document_content"/>
         </preConditions>
 
@@ -79,7 +79,7 @@
     </changeSet>
 
     <changeSet id="7" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="SC_ISSUED_CERTIFICATE_METADATA" />
         </preConditions>
 
@@ -87,7 +87,7 @@
     </changeSet>
 
     <changeSet id="8" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="sc_issued_certificate_metadata" />
         </preConditions>
 
@@ -102,7 +102,7 @@
     </changeSet>
 
     <changeSet id="9" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="SC_SIGNER" />
         </preConditions>
 
@@ -110,7 +110,7 @@
     </changeSet>
 
     <changeSet id="10" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="sc_signer" />
         </preConditions>
 
@@ -127,7 +127,7 @@
     </changeSet>
 
     <changeSet id="11" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <tableExists tableName="SHEDLOCK" />
         </preConditions>
 
@@ -146,7 +146,7 @@
     </changeSet>
     
     <changeSet id="13" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="1">
                 SELECT COUNT(*)
                 FROM USER_SEQUENCES
@@ -158,7 +158,7 @@
     </changeSet>
 
     <changeSet id="14" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="1">
                 SELECT COUNT(*)
                 FROM USER_SEQUENCES
@@ -170,7 +170,7 @@
     </changeSet>
 
     <changeSet id="15" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="1">
                 SELECT COUNT(*)
                 FROM USER_SEQUENCES
@@ -182,7 +182,7 @@
     </changeSet>
 
     <changeSet id="16" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="1">
                 SELECT COUNT(*)
                 FROM USER_SEQUENCES
@@ -194,7 +194,7 @@
     </changeSet>
 
     <changeSet id="17" author="Michal Rozehnal" dbms="oracle">
-        <preConditions>
+        <preConditions onFail="MARK_RAN">
             <sqlCheck expectedResult="1">
                 SELECT COUNT(*)
                 FROM USER_SEQUENCES
