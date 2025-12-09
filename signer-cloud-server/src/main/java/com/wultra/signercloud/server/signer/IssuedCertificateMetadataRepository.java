@@ -33,7 +33,7 @@ interface IssuedCertificateMetadataRepository extends CrudRepository<IssuedCerti
     /**
      * Finds all active issued certificates for the signer.
      *
-     * @param signerId id of Signer to be revocated
+     * @param signerId id of Signer to be revoked
      * @param now Current time
      * @return list of certificates metadata
      */
