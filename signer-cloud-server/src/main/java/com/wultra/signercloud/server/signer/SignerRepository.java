@@ -33,36 +33,38 @@ import java.util.Optional;
  */
 public interface SignerRepository extends CrudRepository<Signer, Long> {
 
-    Optional<Signer> findByExternalSignerId(String externalSignerId);
+    Optional<Signer> findByExternalSignerId(final String externalSignerId);
 
     /**
      * Find signers for expiration.
      *
      * @param limit Limit of signers to return.
+     * @param now Current time.
      * @return List of signers.
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" < NOW()
+        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" < :now
                 ORDER BY "timestamp_certificate_expiration"
                 FETCH FIRST :limit ROWS ONLY
         """)
-    List<Signer> findForExpiration(int limit);
+    List<Signer> findForExpiration(final int limit, final Instant now);
 
     /**
      * Find signers for renewal.
      *
      * @param expirationThreshold Limit signers to this expiration threshold.
      * @param limit Limit of signers to return.
+     * @param now Current time.
      * @return List of signers.
      * @implSpec {@code FETCH FIRST} is supported by {@code ANSI SQL:2008}.
      */
     @Query("""
-        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" BETWEEN NOW() AND :expirationThreshold
+        SELECT * FROM "sc_signer" WHERE "status" = 'ACTIVE' AND "timestamp_certificate_expiration" BETWEEN :now AND :expirationThreshold
                 ORDER BY "timestamp_certificate_expiration"
                 FETCH FIRST :limit ROWS ONLY
         """)
-    List<Signer> findForRenewal(Instant expirationThreshold, int limit);
+    List<Signer> findForRenewal(final Instant expirationThreshold, final int limit, final Instant now);
 
     /**
      * Marks signers as expired.
@@ -70,12 +72,13 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
      *
      * @param ids Signer IDs to mark as expired.
+     * @param now Current time.
      */
     @Modifying
     @Query("""
-        UPDATE "sc_signer" SET "timestamp_last_updated" = NOW(), "status" = 'EXPIRED' WHERE "id" IN (:ids)
+        UPDATE "sc_signer" SET "timestamp_last_updated" = :now, "status" = 'EXPIRED' WHERE "id" IN (:ids)
         """)
-    void markAsExpired(List<Long> ids);
+    void markAsExpired(final List<Long> ids, final Instant now);
 
     /**
      * Find signer by aggregate reference.
@@ -83,5 +86,5 @@ public interface SignerRepository extends CrudRepository<Signer, Long> {
      * @param reference Aggregate reference.
      * @return Optional signer.
      */
-    Optional<Signer> findById(AggregateReference<Signer, Long> reference);
+    Optional<Signer> findById(final AggregateReference<Signer, Long> reference);
 }
