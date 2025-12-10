@@ -12,7 +12,8 @@ ENV JAVA_HOME=/opt/java/openjdk \
     TZ=UTC \
     APP_PATH="/app/signer-cloud-server.war" \
     EXTLIB_PATH="/app/extlib" \
-    OJDBC_VERSION="23.8.0.25.04"
+    OJDBC_VERSION="23.8.0.25.04" \
+    LQ_ENABLED=true
 
 ENV PATH=$PATH:$LB_HOME
 
@@ -39,10 +40,10 @@ RUN apt-get -y update  \
     && groupadd -r powerauth && useradd -r -g powerauth -s /sbin/nologin powerauth
 
 # Copy new Liquibase data
-COPY docs/db/changelog $LB_HOME/db/changelog
+COPY ./docs/db/changelog $LB_HOME/db/changelog
 
 # Deploy and run applications
-COPY signer-cloud-server/target/signer-cloud-server.war "${APP_PATH}"
+COPY ./signer-cloud-server/target/signer-cloud-server.war "${APP_PATH}"
 
 # Docker configuration
 EXPOSE 8080
@@ -51,8 +52,8 @@ STOPSIGNAL SIGQUIT
 # Add PowerAuth User
 USER powerauth
 
-COPY deploy/conf/logback/* $LOGBACK_CONF/
+COPY ./signer-cloud-server/docker/deploy/conf/logback/* $LOGBACK_CONF/
 
 # Define entry point with mandatory commands (nginx)
-COPY deploy/docker-entrypoint.sh /
+COPY ./signer-cloud-server/docke/docker-entrypoint.sh /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
