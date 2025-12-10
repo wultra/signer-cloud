@@ -60,5 +60,5 @@ USER powerauth
 COPY ./signer-cloud-server/docker/deploy/conf/logback/* $LOGBACK_CONF/
 
 # Define entry point with mandatory commands (nginx)
-COPY ./signer-cloud-server/docke/docker-entrypoint.sh /docker-entrypoint.sh
+COPY ./signer-cloud-server/docker/docker-entrypoint.sh /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
