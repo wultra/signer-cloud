@@ -33,6 +33,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 
 import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
@@ -73,12 +74,24 @@ class SignerService {
 
     /**
      * Marks all signers that have expired as expired and creates expiration callbacks if configured.
+     * <p>
+     * The signers are marked as expired if they are active and their certificate expiration date is before the current time.
      *
      * @param limit Maximum number of signers to mark as expired.
      * @return Number of expired signers.
      */
     long cleanupSigners(final int limit) {
-        final List<Signer> signers = signerRepository.markAsExpired(limit);
+        final var signers = signerRepository.findForExpiration(limit, Instant.now());
+
+        if (CollectionUtils.isEmpty(signers)) {
+            return 0;
+        }
+
+        final List<Long> ids = signers.stream()
+                .map(Signer::getId)
+                .toList();
+
+        signerRepository.markAsExpired(ids, Instant.now());
 
         if (callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)) {
             logger.info("Creating {} expiration callbacks.", signers.size());
@@ -110,7 +123,7 @@ class SignerService {
      */
     long renewSigners(final int limit) {
         final Instant expirationThreshold = Instant.now().plus(configurationProperties.getRenewal().threshold());
-        final List<Signer> signers = signerRepository.findForRenewal(expirationThreshold, limit);
+        final List<Signer> signers = signerRepository.findForRenewal(expirationThreshold, limit, Instant.now());
 
         for (final Signer signer : signers) {
             renewSigner(signer);
@@ -350,7 +363,7 @@ class SignerService {
     private void revokeCertificates(final Signer signer, final RevocationReason revocationReason) {
         final var signerId = signer.getId();
 
-        final var certificatesMetadata = issuedCertificateMetadataRepository.findForRevocation(signerId);
+        final var certificatesMetadata = issuedCertificateMetadataRepository.findForRevocation(signerId, Instant.now());
         final var certificatesToRevokeCount = certificatesMetadata.size();
 
         for (var i = 0; i < certificatesToRevokeCount; i++) {

@@ -18,6 +18,7 @@
 package com.wultra.signercloud.server.document;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wultra.signercloud.server.IntTestUtils;
 import com.wultra.signercloud.server.signer.Signer;
 import com.wultra.signercloud.server.signer.SignerRepository;
 import com.wultra.signercloud.server.signer.SignerStatus;
@@ -33,7 +34,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -41,7 +41,6 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import java.io.IOException;
 import java.security.cert.CertificateEncodingException;
 import java.time.Instant;
 import java.util.Base64;
@@ -64,7 +63,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         "ejbca.rest-client.key-alias=testAlias",
         "ejbca.rest-client.key-password=testKeyPassword",
         "signer-cloud.server.document.waiting.timeout=",
-        "signer-cloud.server.pades.hash-algorithm=SHA384",
         "signer-cloud.server.pades.signature-algorithm=ECDSA_SHA384"
 })
 @AutoConfigureMockMvc
@@ -76,18 +74,9 @@ class DocumentControllerSha384IntTest {
 
     // Signer
     private static final String EXTERNAL_SIGNER_ID = "17056bde-9e5c-4bcc-9001-fa1fef3b5965";
-    private static final String CSR_BASE64 = "MIIBLjCBtQIBADA2MREwDwYDVQQDDAhKb2huIERvZTEUMBIGA1UECgwLRXhhbXBsZUNvcnAxCzAJBgNVBAYTAlVTMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEQ2Z9Zsg45e2YZ89B03uhjz7LSkXuuWJW+DvT03tfdD+5bmDutM7slZzgE9fz6saNuRoBTu07qe3QkJoG1iXDOYYuTDLBp813iJOwVplFsUs11m579zSmhU31GbAtM4f/oAAwCgYIKoZIzj0EAwIDaAAwZQIxALBSF8rbVBamT1y+cJ3cn2DgHnuhNojQ67ktyO6jXYtX/vHUZCSArVbYKp7QlFWsWgIwMhvLRHnifLaKBcLVlGB8S/c6LzBg0/NCEPhIiZka0Ka2tUSscGbncam0+q+FCjqQ";
-    private static final String CERTIFICATE_BASE64 = "MIICFTCCAZugAwIBAgIURn+iqCgVXFi4i0EVAeTaPHOwrNgwCgYIKoZIzj0EAwMwFDESMBAGA1UEAwwJSXNzdWluZ0NBMB4XDTI1MTAxMzA5NTIwMloXDTI3MDgxMTA5MTQ0NlowNjERMA8GA1UEAwwISm9obiBEb2UxFDASBgNVBAoMC0V4YW1wbGVDb3JwMQswCQYDVQQGEwJVUzB2MBAGByqGSM49AgEGBSuBBAAiA2IABENmfWbIOOXtmGfPQdN7oY8+y0pF7rliVvg709N7X3Q/uW5g7rTO7JWc4BPX8+rGjbkaAU7tO6nt0JCaBtYlwzmGLkwywafNd4iTsFaZRbFLNdZue/c0poVN9RmwLTOH/6OBizCBiDAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFJ0dk1DJP8vLqD/Dx15EMOEpmqkOMCgGA1UdJQQhMB8GCCsGAQUFBwMCBggrBgEFBQcDBAYJKoZIhvcvAQEFMB0GA1UdDgQWBBT9ooCMF8fza6pXM3q4FQrfJ0nkhjAOBgNVHQ8BAf8EBAMCBeAwCgYIKoZIzj0EAwMDaAAwZQIwJbloV/D6lYnlLdBVakwnLPxc0zOlzFhci+e35oMYG41W3XTYMu4uDCRqddx4tXcmAjEAqw14a30UnJL8BogiHBbpZmnQyNTKqRP6q3R73u98wz3qjyKoR90rpQBU8eI/Po6z";
-    private static final List<String> CERTIFICATE_CHAIN_BASE64 = List.of(
-            "MIIBxzCCAU2gAwIBAgIUE0be+N9+2stvvu7y3BKDiHPWBVkwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTQ0N1oXDTI3MDgxMTA5MTQ0NlowFDESMBAGA1UEAwwJSXNzdWluZ0NBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEvq7LXohpIAISl1vcnH+8zMGFAyfEnyTOqTZAP40b9PzYmMLBbHGoDxvuJwdmF/mrXxfaQ9+Ki1/QRpkoLc6Ugsywu9agdA3Zu+54GPyxmTo8MvU/txcuRt1+7UMPxTAUo2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBSdHZNQyT/Ly6g/w8deRDDhKZqpDjAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDaAAwZQIwMlzNpdVjPFt5/sac/ZVu/56n+vNiNFOywD8Ho8SjdDNnXeBBf3zoQ2aTwPdHtgCXAjEAkNCSl2buX5U3dsxavP2gcgjrxszNQGiQJ1AcRPL1ATHnaFrHwVGNqiFX5r9QQ7ud",
-            "MIIBwzCCAUqgAwIBAgIUBiKRFuSkQ2w0B+eLnFGNCVBLTfwwCgYIKoZIzj0EAwMwETEPMA0GA1UEAwwGUm9vdENBMB4XDTI1MDgxMTA5MTMxMFoXDTM1MDgwOTA5MTMwOVowETEPMA0GA1UEAwwGUm9vdENBMHYwEAYHKoZIzj0CAQYFK4EEACIDYgAEGTbosZgh/n+FWrbU7u05huRtjxUT8PE+fuFFHBtbcKNXYSl5Jf51gMBDn2dJKbM5oRsDLpl/nwscEvRKtibnw8AsIxXZYmyzBVA9meE5FGXswp6kAb/Sc4zQYo/O8RT5o2MwYTAPBgNVHRMBAf8EBTADAQH/MB8GA1UdIwQYMBaAFDRg+bZxfbWJjzFI/oRV88EzZE3BMB0GA1UdDgQWBBQ0YPm2cX21iY8xSP6EVfPBM2RNwTAOBgNVHQ8BAf8EBAMCAYYwCgYIKoZIzj0EAwMDZwAwZAIxAKsQhZDkBpxdGzn/gxDtqbtl5VtJFl3IJzXb36hWRf26P5Vha2vLAcFipD7koHF6bwIvYJHWRuq+SAzVYue9oId39+8AGKFXvzY+xDiSb/q7+ll/CwwQwcnoRundq8TSVYE="
-    );
 
     // Document
     private static final String DOCUMENT_UUID = "f58f0051-a86a-4943-a67b-c039f01f4dcb";
-    private static final Instant DOCUMENT_TIMESTAMP_CREATED = Instant.parse("2025-10-13T12:03:15.123426Z");
-    private static final String HASH = "MYHkMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwPwYJKoZIhvcNAQkEMTIEMCanSFpGsxmrUExda1TNi9jIZLD8+lhU4kBJJcQZ7+qUhvbQPzC2YY6Wmg2zzCJ2ajCBhgYLKoZIhvcNAQkQAi8xdzB1MHMwcTALBglghkgBZQMEAgIEMBTvwU0Hq3Wyvw/AoRWwr1EZSkCEH3QMtK5WWYFnZPerMGvGrJhr5jdOnGBRkduoeDAwMBikFjAUMRIwEAYDVQQDDAlJc3N1aW5nQ0ECFEZ/oqgoFVxYuItBFQHk2jxzsKzY";
-    private static final String SIGNATURE = "MGUCMDVGyGoRokFaMIjlY+mRWTz/vq7PMjFzpzK62oA+HNKZFx3F165F+/NogdHErcIjogIxAIRJ63DTULv2l7PVxLZzb3T0alqceBqTG7HUZeHXfbi7nBP6xg+Nr6QU6TKdIO/BJg==";
 
     @Autowired
     private SignerRepository signerRepository;
@@ -104,11 +93,37 @@ class DocumentControllerSha384IntTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private static byte[] uploadedDocumentContent;
+    private static String userCsrDerBase64;
+    private static String userCertificateDerBase64;
+    private static List<String> userCertificateChainBase64;
+
+    private static Instant documentTimestampCreated;
+    private static byte[] documentUnsignedContent;
+    private static String documentHashBase64;
+    private static String documentSignatureBase64;
 
     @BeforeAll
-    static void setUp() throws IOException {
-        uploadedDocumentContent = new ClassPathResource("input.pdf").getContentAsByteArray();
+    static void setUp() throws Exception {
+        final var testResources = IntTestUtils.prepare();
+
+        final var signerResources = testResources.signerResources();
+        userCsrDerBase64 = Base64.getEncoder().encodeToString(signerResources.userCsrDer());
+        userCertificateDerBase64 = Base64.getEncoder().encodeToString(signerResources.userCertificate().getEncoded());
+        userCertificateChainBase64 = signerResources.userCertificateChain().stream()
+                .map(c -> {
+                    try {
+                        return Base64.getEncoder().encodeToString(c.getEncoded());
+                    } catch (final CertificateEncodingException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .toList();
+
+        final var documentResources = testResources.documentResources();
+        documentTimestampCreated = documentResources.timestampCreated();
+        documentUnsignedContent = documentResources.unsignedContent();
+        documentHashBase64 = Base64.getEncoder().encodeToString(documentResources.hashSha384());
+        documentSignatureBase64 = Base64.getEncoder().encodeToString(documentResources.signatureSha384());
     }
 
     @AfterEach
@@ -122,10 +137,10 @@ class DocumentControllerSha384IntTest {
     void testSignWhenSha384IsUsedThenSignatureIsValid() throws Exception {
         // given
         final var signerId = createSignerInDatabase();
-        final var documentContentId = createDocumentContentInDatabase(uploadedDocumentContent);
+        final var documentContentId = createDocumentContentInDatabase(documentUnsignedContent);
         createDocumentInDatabase(signerId, documentContentId);
 
-        final var request = new SignDocumentRequest(SIGNATURE, null);
+        final var request = new SignDocumentRequest(documentSignatureBase64, null);
 
         // when
         mockMvc.perform(MockMvcRequestBuilders.post("/documents/{documentId}/signature", DOCUMENT_UUID)
@@ -143,11 +158,11 @@ class DocumentControllerSha384IntTest {
                 .timestampCreated(Instant.now())
                 .externalSignerId(EXTERNAL_SIGNER_ID)
                 .userId("dummyUserId")
-                .csr(CSR_BASE64)
-                .certificate(CERTIFICATE_BASE64)
+                .csr(userCsrDerBase64)
+                .certificate(userCertificateDerBase64)
                 .timestampCertificateExpiration(Instant.now())
                 .status(SignerStatus.ACTIVE)
-                .certificateChainFromList(CERTIFICATE_CHAIN_BASE64)
+                .certificateChainFromList(userCertificateChainBase64)
                 .build();
 
         final var savedSigner = signerRepository.save(signer);
@@ -165,14 +180,14 @@ class DocumentControllerSha384IntTest {
 
     private void createDocumentInDatabase(final long signerId, final long documentContentId) {
         final var document = Document.builder()
-                .timestampCreated(DOCUMENT_TIMESTAMP_CREATED)
+                .timestampCreated(documentTimestampCreated)
                 .documentId(DOCUMENT_UUID)
                 .signer(AggregateReference.to(signerId))
                 .externalId("test-external-document-id")
                 .documentName("text-document-name")
                 .fileName("input.pdf")
                 .fileSize(7757)
-                .hash(HASH)
+                .hash(documentHashBase64)
                 .status(DocumentStatus.WAITING)
                 .documentContent(AggregateReference.to(documentContentId))
                 .build();
@@ -210,7 +225,7 @@ class DocumentControllerSha384IntTest {
 
         assertEquals(
                 simpleReport.getSigningTime(signatureId).getTime(),
-                Date.from(DOCUMENT_TIMESTAMP_CREATED).getTime(),
+                Date.from(documentTimestampCreated).getTime(),
                 MILLISECONDS_DELTA
         );
 
@@ -235,7 +250,7 @@ class DocumentControllerSha384IntTest {
                 .map(certificateBytes -> Base64.getEncoder().encodeToString(certificateBytes))
                 .collect(Collectors.toSet());
 
-        final var expectedChain = Stream.concat(CERTIFICATE_CHAIN_BASE64.stream(), Stream.of(CERTIFICATE_BASE64))
+        final var expectedChain = Stream.concat(userCertificateChainBase64.stream(), Stream.of(userCertificateDerBase64))
                 .collect(Collectors.toSet());
         assertEquals(expectedChain, certificateChainBase64, "Incorrect certificate chain in document");
     }

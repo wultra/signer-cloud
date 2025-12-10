@@ -94,8 +94,7 @@ For local setup see the [PowerAuth documentation](https://github.com/wultra/powe
 
 The EJBCA instance is a Certificate Authority used for certificate management — creating new certificates and keeping existing ones linked to a specific `user` and `externalSignerId`.
 
-There is a docker image available ([here](https://hub.docker.com/r/keyfactor/ejbca-ce)), however for local development we use an instance created in our cloud infrastructure.
-It is available at `https://smoke-ejbca-dev.wultra.app/ejbca/`.
+There is a docker image available ([here](https://hub.docker.com/r/keyfactor/ejbca-ce)). Follow [Certification Authority](./../docs/Configuration.md#certification-authority) instructions to configure the instance.
 
 
 ### Enroll Certificate
@@ -103,7 +102,7 @@ It is available at `https://smoke-ejbca-dev.wultra.app/ejbca/`.
 The EJBCA provides a REST API. For creating a new certificate call:
 
 ```shell
-curl --location 'https://smoke-ejbca-dev.wultra.app/ejbca/ejbca-rest-api/v1/certificate/pkcs10enroll' \
+curl --location "${SIGNER_CLOUD_EJBCA_URL}/v1/certificate/pkcs10enroll" \
      --cert client.crt \
      --key client.key \
      --json '{
@@ -150,7 +149,7 @@ The reason value is also required; in the example call, the value `UNSPECIFIED` 
 
 ```shell
 curl -X PUT \
-    --location 'https://smoke-ejbca-dev.wultra.app/ejbca/ejbca-rest-api/v1/certificate/CN%3DIssuingCA/76D893C8C9BA218D3AEA5CC24411128D63D86F7C/revoke?reason=UNSPECIFIED' \
+    --location "${SIGNER_CLOUD_EJBCA_URL}/v1/certificate/CN%3DIssuingCA/76D893C8C9BA218D3AEA5CC24411128D63D86F7C/revoke?reason=UNSPECIFIED" \
      --cert admin-cert.pem \
      --key admin-key.pem
 ```

@@ -24,7 +24,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.jdbc.Sql;
 
-import java.util.List;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
@@ -58,7 +58,7 @@ class IssuedCertificateMetadataRepositoryIntTest {
         // - see the SQL script
 
         // when
-        final var result = repository.findForRevocation(SIGNER_ID);
+        final var result = repository.findForRevocation(SIGNER_ID, Instant.now());
 
         // then
         final var expectedIds = new Long[]{ 4L };

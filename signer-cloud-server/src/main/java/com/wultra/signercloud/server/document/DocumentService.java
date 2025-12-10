@@ -17,24 +17,10 @@
  */
 package com.wultra.signercloud.server.document;
 
-import com.wultra.signercloud.server.configuration.PAdESConfigurationProperties;
 import com.wultra.signercloud.server.signer.*;
-import com.wultra.signercloud.server.utils.CertificateUtils;
-import eu.europa.esig.dss.enumerations.SignatureLevel;
-import eu.europa.esig.dss.model.DSSDocument;
-import eu.europa.esig.dss.model.InMemoryDocument;
-import eu.europa.esig.dss.model.SignatureValue;
-import eu.europa.esig.dss.model.x509.CertificateToken;
-import eu.europa.esig.dss.pades.PAdESSignatureParameters;
-import eu.europa.esig.dss.pades.SignatureImageParameters;
-import eu.europa.esig.dss.pades.signature.PAdESService;
-import eu.europa.esig.dss.pdf.AnnotationBox;
-import eu.europa.esig.dss.pdf.PdfSignatureFieldPositionChecker;
-import eu.europa.esig.dss.pdf.pdfbox.PdfBoxDocumentReader;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.hc.core5.http.ContentType;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -45,11 +31,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
-import java.security.cert.CertificateException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.UUID;
 import java.util.function.Consumer;
+
 /**
  * Document service.
  *
@@ -66,10 +52,7 @@ class DocumentService {
     private final DocumentRepository documentRepository;
     private final DocumentContentRepository documentContentRepository;
     private final SignerRepository signerRepository;
-    private final PAdESService padesService;
-    private final PAdESConfigurationProperties pAdESConfigurationProperties;
-    private final DocumentVisualSignatureService documentVisualSignatureService;
-    private final PdfSignatureFieldPositionChecker visualSignatureChecker;
+    private final DocumentSigningService documentSigningService;
 
     /**
      * Cleanup documents.
@@ -143,7 +126,7 @@ class DocumentService {
         final var fileName = file.getOriginalFilename();
         final var fileSize = getFileSize(file);
         final var fileContent = getFileBytes(file);
-        final var hash = computeHash(fileContent, signer, timestampCreated, visualSignature);
+        final var hash = documentSigningService.computeToBeSigned(fileContent, signer, timestampCreated, visualSignature);
 
         final var documentContent = DocumentContent.builder()
                 .content(fileContent)
@@ -194,46 +177,6 @@ class DocumentService {
         }
     }
 
-    private String computeHash(
-            final byte[] content,
-            final Signer signer,
-            final Instant timestampSigned,
-            final DocumentVisualSignature visualSignature
-    ) {
-        final var certificate = convertCertificate(signer);
-        final var certificateChain = convertCertificateChain(signer);
-
-        final var dssDocument = new InMemoryDocument(content);
-
-        final var signatureParams = createSignatureParameters(
-                certificate,
-                certificateChain,
-                timestampSigned,
-                pAdESConfigurationProperties.getSignatureLevel(),
-                visualSignature,
-                dssDocument
-        );
-
-        Optional.ofNullable(signatureParams.getImageParameters())
-                .ifPresent(imageParams -> verifyVisualSignature(dssDocument, imageParams));
-
-        final var toSignBytes = padesService.getDataToSign(dssDocument, signatureParams);
-
-        return Base64.getEncoder().encodeToString(toSignBytes.getBytes());
-    }
-
-    private void verifyVisualSignature(
-            final DSSDocument dssDocument,
-            final SignatureImageParameters signatureImageParameters
-    ) {
-        try (final var pdfReader = new PdfBoxDocumentReader(dssDocument)) {
-            final var fieldParams = signatureImageParameters.getFieldParameters();
-            visualSignatureChecker.assertSignatureFieldPositionValid(pdfReader, new AnnotationBox(fieldParams), fieldParams.getPage());
-        } catch (final IOException | RuntimeException e) {
-            throw new DocumentVisualSignatureException(e.getMessage(), e);
-        }
-    }
-
     /**
      * Signs the {@link Document} identified by {@code documentId} if it is in the correct state and signature is valid.
      *
@@ -264,27 +207,26 @@ class DocumentService {
         verifyDocumentCanBeSigned(signer, document);
 
         final var signature = requestBody.signature();
-        final var signatureLevel = resolveDocumentSignatureLevel(requestBody.signatureLevel());
-        final var signedDocumentBytes = verifySignatureAndSignDocument(
+        final var signedDocument = documentSigningService.sign(
                 signer,
                 signature,
                 documentContent.getContent(),
                 document.getTimestampCreated(),
-                signatureLevel,
+                requestBody.signatureLevel(),
                 document.getVisualSignature());
 
         final var updatedDocumentContent = documentContent.toBuilder()
-                .content(signedDocumentBytes)
+                .content(signedDocument.content())
                 .build();
 
         documentContentRepository.save(updatedDocumentContent);
 
         final var updatedDocument = document.toBuilder()
                 .timestampLastUpdated(Instant.now())
-                .fileSize(signedDocumentBytes.length)
+                .fileSize(signedDocument.content().length)
                 .status(DocumentStatus.SIGNED)
                 .signature(signature)
-                .signatureLevel(signatureLevel)
+                .signatureLevel(signedDocument.signatureLevel())
                 .build();
 
         documentRepository.save(updatedDocument);
@@ -308,135 +250,6 @@ class DocumentService {
             if (Instant.now().isAfter(documentSigningDeadline)) {
                 throw new DocumentStateException("Document signing timeout exceeded");
             }
-        }
-    }
-
-    private DocumentSignatureLevel resolveDocumentSignatureLevel(final DocumentSignatureLevel requestedSignatureLevel) {
-        final var signatureLevel = Optional.ofNullable(requestedSignatureLevel)
-                .orElse(pAdESConfigurationProperties.getSignatureLevel());
-
-        if (signatureLevel == DocumentSignatureLevel.PADES_B_T && StringUtils.isEmpty(pAdESConfigurationProperties.getTsaUrl())) {
-            throw new TimestampAuthorityException("TSA URL not set in configuration");
-        }
-
-        return signatureLevel;
-    }
-
-    private byte[] verifySignatureAndSignDocument(
-            final Signer signer,
-            final String hashSignatureBase64,
-            final byte[] documentBytes,
-            final Instant timestampSigned,
-            final DocumentSignatureLevel signatureLevel,
-            final DocumentVisualSignature visualSignature) {
-
-        final var certificate = convertCertificate(signer);
-        final var certificateChain = convertCertificateChain(signer);
-
-        final var unsignedDocument = new InMemoryDocument(documentBytes);
-
-        final var signatureParams = createSignatureParameters(
-                certificate,
-                certificateChain,
-                timestampSigned,
-                signatureLevel,
-                visualSignature,
-                unsignedDocument
-        );
-
-        final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
-
-        final var signatureBytes = Base64.getDecoder().decode(hashSignatureBase64);
-        final var signatureValue = new SignatureValue(pAdESConfigurationProperties.getSignatureAlgorithm(), signatureBytes);
-
-        final var isSignatureValid = padesService.isValidSignatureValue(documentHash, signatureValue, certificate);
-        if (!isSignatureValid) {
-            throw new DocumentInvalidSignatureException("Invalid signature");
-        }
-
-        final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
-
-        return readSignedDocumentBytes(signedDocument);
-    }
-
-    private static CertificateToken convertCertificate(final Signer signer) {
-        try {
-            final var x509Certificate = signer.getX509Certificate();
-            return new CertificateToken(x509Certificate);
-        } catch (final CertificateException e) {
-            throw new CertificateProcessingException("Exception when processing certificate: " + e.getMessage(), e);
-        }
-    }
-
-    private static List<CertificateToken> convertCertificateChain(final Signer signer) {
-        try {
-            final var chain = new ArrayList<CertificateToken>();
-
-            for (final var base64Certificate : signer.getCertificateChain()) {
-                final var x509Certificate = CertificateUtils.base64ToX509Certificate(base64Certificate);
-                chain.add(new CertificateToken(x509Certificate));
-            }
-
-            return chain;
-        } catch (final CertificateException e) {
-            throw new CertificateProcessingException("Exception when processing certificate chain: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Creates signature parameters with a deterministic context.
-     *
-     * This method always creates a new instance. These parameters affect the {@link eu.europa.esig.dss.model.ToBeSigned}
-     * value returned by {@link PAdESService#getDataToSign(DSSDocument, PAdESSignatureParameters)}
-     * and computed internally in {@link PAdESService#signDocument(DSSDocument, PAdESSignatureParameters, SignatureValue)}.
-     * Therefore, it is important that the same context is used for the same signature, so that {@link eu.europa.esig.dss.model.ToBeSigned}
-     * is computed deterministically (i.e., the value is always the same).
-     * Pay attention to the {@link eu.europa.esig.dss.model.BLevelParameters#setSigningDate(Date)} in {@link PAdESSignatureParameters#bLevel}. From this value, the
-     * {@code deterministicId} in {@link PAdESSignatureParameters#getContext()} is computed.
-     * If {@code signingDate} is not explicitly set, the current machine time is used by default, and each call
-     * to obtain {@link eu.europa.esig.dss.model.ToBeSigned} will produce a different value.
-     * A list of signed parameters is available <a href="https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#_table_with_all_attributes_per_format_and_class">here</a>.
-     *
-     * @param certificateToken signature certificate
-     * @param certificateChain signature certificate chain
-     * @param timestampSigned timestamp in UTC set as {@code signingDate} in order to create deterministic context
-     * @return parameters with deterministic context
-     */
-    private PAdESSignatureParameters createSignatureParameters(
-            final CertificateToken certificateToken,
-            final List<CertificateToken> certificateChain,
-            final Instant timestampSigned,
-            final DocumentSignatureLevel documentSignatureLevel,
-            final DocumentVisualSignature visualSignature,
-            final DSSDocument dssDocument
-    ) {
-        final var params = new PAdESSignatureParameters();
-        params.setDigestAlgorithm(pAdESConfigurationProperties.getHashAlgorithm());
-        params.setSigningCertificate(certificateToken);
-        params.setCertificateChain(certificateChain);
-
-        final var signatureLevel = switch (documentSignatureLevel) {
-            case PADES_B_B -> SignatureLevel.PAdES_BASELINE_B;
-            case PADES_B_T -> SignatureLevel.PAdES_BASELINE_T;
-        };
-
-        params.setSignatureLevel(signatureLevel);
-
-        Optional.ofNullable(visualSignature)
-                .map(vs -> documentVisualSignatureService.createVisualSignature(vs, dssDocument))
-                .ifPresent(params::setImageParameters);
-
-        params.bLevel().setSigningDate(Date.from(timestampSigned));
-        params.setSigningTimeZone(TimeZone.getTimeZone("UTC"));
-
-        return params;
-    }
-
-    private static byte[] readSignedDocumentBytes(final DSSDocument signedDocument) {
-        try (final var stream = signedDocument.openStream()) {
-            return stream.readAllBytes();
-        } catch (final IOException e) {
-            throw new DocumentSigningException("Exception when reading bytes of signed document: " + e.getMessage(), e);
         }
     }
 

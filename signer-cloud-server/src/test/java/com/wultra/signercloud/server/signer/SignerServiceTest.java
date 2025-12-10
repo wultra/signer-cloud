@@ -20,6 +20,8 @@ package com.wultra.signercloud.server.signer;
 import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
 import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
+import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
+import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
 import com.wultra.signercloud.server.powerauth.PowerAuthService;
 import com.wultra.signercloud.server.utils.CertificateUtils;
@@ -40,6 +42,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -48,7 +51,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 /**
- * Tests for {@link SignerService}.
+ * Unit tests for {@link SignerService}.
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
@@ -85,7 +88,6 @@ class SignerServiceTest {
 
     private static final int MILLISECONDS_DELTA = 1_000;
 
-
     private X509Certificate x509Certificate1;
     private X509Certificate x509Certificate2;
     private VerifyECDSASignatureRequest powerAuthRequest;
@@ -108,6 +110,9 @@ class SignerServiceTest {
 
     @Mock
     private CertificateRevocationService certificateRevocationService;
+
+    @Mock
+    private CallbackNotificationService callbackNotificationService;
 
     @InjectMocks
     private SignerService signerService;
@@ -435,7 +440,7 @@ class SignerServiceTest {
         final var request = new UpdateSignerStatusRequest(SignerStatus.REVOKED, null);
 
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+        when(issuedCertificateMetadataRepository.findForRevocation(eq(SIGNER_ID), any(Instant.class))).thenReturn(List.of(issuedCertificateMetadata));
         doThrow(new CertificateProcessingException("Test", new RuntimeException()))
                 .when(certificateRevocationService).revokeCertificate(issuedCertificateMetadata, RevocationReason.UNSPECIFIED);
 
@@ -456,7 +461,7 @@ class SignerServiceTest {
         final var issuedCertificateMetadata = buildIssuedCertificateMetadata();
 
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+        when(issuedCertificateMetadataRepository.findForRevocation(eq(SIGNER_ID), any(Instant.class))).thenReturn(List.of(issuedCertificateMetadata));
 
         // when
         signerService.updateStatus(
@@ -475,7 +480,7 @@ class SignerServiceTest {
         final var reason = RevocationReason.CESSATION_OF_OPERATION;
 
         when(signerRepository.findByExternalSignerId(EXTERNAL_SIGNER_ID)).thenReturn(Optional.of(signer));
-        when(issuedCertificateMetadataRepository.findForRevocation(SIGNER_ID)).thenReturn(List.of(issuedCertificateMetadata));
+        when(issuedCertificateMetadataRepository.findForRevocation(eq(SIGNER_ID), any(Instant.class))).thenReturn(List.of(issuedCertificateMetadata));
 
         // when
         signerService.updateStatus(
@@ -512,6 +517,60 @@ class SignerServiceTest {
 
         // then
         assertSignerDetailResponse(response);
+    }
+
+    @Test
+    void testCleanupSigners_noSignerForExpiration_correctCountIsReturned() {
+        // given
+        when(signerRepository.findForExpiration(eq(10), any(Instant.class))).thenReturn(Collections.emptyList());
+
+        // when
+        final var count = signerService.cleanupSigners(10);
+
+        // then
+        assertEquals(0, count);
+    }
+
+    @Test
+    void testCleanupSigners_noSignerForExpiration_repositoryForUpdateIsNotCalled() {
+        // given
+        when(signerRepository.findForExpiration(eq(10), any(Instant.class))).thenReturn(Collections.emptyList());
+
+        // when
+        signerService.cleanupSigners(10);
+
+        // then
+        verify(signerRepository, never()).markAsExpired(any(), any(Instant.class));
+    }
+
+    @Test
+    void testCleanupSigners_signerForExpirationFound_correctCountIsReturned() throws CertificateEncodingException {
+        // given
+        final var signer = buildSigner(SignerStatus.ACTIVE);
+
+        when(signerRepository.findForExpiration(eq(10), any(Instant.class))).thenReturn(List.of(signer));
+        when(callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)).thenReturn(false);
+
+        // when
+        final var count = signerService.cleanupSigners(10);
+
+        // then
+        assertEquals(1, count);
+    }
+
+    @Test
+    void testCleanupSigners_signerForExpirationFound_repositoryForUpdateIsCalled() throws CertificateEncodingException {
+        // given
+        final var signer = buildSigner(SignerStatus.ACTIVE);
+
+        when(signerRepository.findForExpiration(eq(10), any(Instant.class))).thenReturn(List.of(signer));
+        when(callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)).thenReturn(false);
+
+        // when
+        signerService.cleanupSigners(10);
+
+        // then
+        verify(signerRepository).markAsExpired(eq(List.of(SIGNER_ID)), any(Instant.class));
     }
 
     private Signer buildSigner(final SignerStatus status) throws CertificateEncodingException {

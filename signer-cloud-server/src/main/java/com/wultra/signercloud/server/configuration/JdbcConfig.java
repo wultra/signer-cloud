@@ -18,9 +18,15 @@
 package com.wultra.signercloud.server.configuration;
 
 import com.wultra.signercloud.server.document.DocumentVisualSignatureConverter;
-import lombok.NonNull;
+import jakarta.annotation.Nonnull;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.data.jdbc.repository.config.AbstractJdbcConfiguration;
+import org.springframework.data.jdbc.core.convert.JdbcCustomConversions;
+import org.springframework.data.jdbc.core.dialect.DialectResolver;
+import org.springframework.data.relational.core.dialect.Dialect;
+import org.springframework.data.relational.core.dialect.OracleDialect;
+import org.springframework.data.relational.core.sql.IdentifierProcessing;
+import org.springframework.jdbc.core.JdbcOperations;
 
 import java.util.List;
 
@@ -30,13 +36,36 @@ import java.util.List;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 @Configuration
-public class JdbcConfig extends AbstractJdbcConfiguration {
+public class JdbcConfig {
 
-    @Override
-    public @NonNull List<?> userConverters() {
-        return List.of(
+    @Bean
+    public JdbcCustomConversions jdbcCustomConversions() {
+        return new JdbcCustomConversions(List.of(
                 new DocumentVisualSignatureConverter.VisualSignatureToJsonConverter(),
                 new DocumentVisualSignatureConverter.JsonToVisualSignatureConverter()
-        );
+        ));
     }
+
+    @Bean
+    public Dialect dialect(final JdbcOperations jdbcOperations) {
+        final var defaultDialect = DialectResolver.getDialect(jdbcOperations);
+
+        return defaultDialect instanceof OracleDialect ? new OracleLowerCaseDialect() : defaultDialect;
+    }
+
+    /**
+     * Custom Oracle dialect with lower case object identifiers.
+     *
+     * @author Michal Rozehnal, michal.rozehnal@wultra.com
+     */
+    public static class OracleLowerCaseDialect extends OracleDialect {
+
+        @Override
+        @Nonnull
+        public IdentifierProcessing getIdentifierProcessing() {
+            return IdentifierProcessing.create(IdentifierProcessing.Quoting.ANSI, IdentifierProcessing.LetterCasing.LOWER_CASE);
+        }
+
+    }
+
 }

@@ -18,3 +18,4 @@ jobs:
     secrets: inherit
     with:
       java_version: 21
+      artifacts_path: '**/signer-cloud-server/target/test-resources'

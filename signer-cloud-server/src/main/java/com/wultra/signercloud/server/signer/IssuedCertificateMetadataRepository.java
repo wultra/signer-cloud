@@ -20,6 +20,7 @@ package com.wultra.signercloud.server.signer;
 import org.springframework.data.jdbc.repository.query.Query;
 import org.springframework.data.repository.CrudRepository;
 
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -29,9 +30,16 @@ import java.util.List;
  */
 interface IssuedCertificateMetadataRepository extends CrudRepository<IssuedCertificateMetadata, Long> {
 
+    /**
+     * Finds all active issued certificates for the signer.
+     *
+     * @param signerId id of Signer to be revoked
+     * @param now Current time
+     * @return list of certificates metadata
+     */
     @Query("""
-        SELECT * FROM sc_issued_certificate_metadata
-        WHERE signer_id = :signerId AND timestamp_certificate_expiration > NOW() AND status != 'REVOKED'
+        SELECT * FROM "sc_issued_certificate_metadata"
+        WHERE "signer_id" = :signerId AND "timestamp_certificate_expiration" > :now AND "status" != 'REVOKED'
         """)
-    List<IssuedCertificateMetadata> findForRevocation(final long signerId);
+    List<IssuedCertificateMetadata> findForRevocation(final long signerId, final Instant now);
 }

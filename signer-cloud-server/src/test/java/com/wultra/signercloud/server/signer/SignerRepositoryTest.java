@@ -27,12 +27,11 @@ import org.springframework.test.context.jdbc.Sql;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Test for {@link SignerRepository}.
+ * Integration tests for {@link SignerRepository}.
  *
  * @author Lubos Racansky, lubos.racansky@wultra.com
  */
@@ -48,11 +47,16 @@ class SignerRepositoryTest {
     @Test
     void testMarkAsExpired() {
         final Instant start = Instant.now();
-        final List<Signer> result = signerRepository.markAsExpired(1);
+        final var signerIds = signerRepository.findForExpiration(1, Instant.now())
+                .stream()
+                .map(Signer::getId)
+                .toList();
+
+        signerRepository.markAsExpired(signerIds, Instant.now());
         final Instant end = Instant.now();
 
-        assertEquals(1, result.size());
-        final Long id = result.get(0).getId();
+        assertEquals(1, signerIds.size());
+        final Long id = signerIds.get(0);
         assertEquals(3, id);
 
         final Signer signer = signerRepository.findById(id)
