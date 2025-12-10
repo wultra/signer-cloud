@@ -61,7 +61,7 @@ class SignerServiceIntegrationTest {
 
         assertEquals(1, result);
 
-        final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM sc_callback_event ORDER BY timestamp_created DESC LIMIT 1");
+        final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM \"sc_callback_event\" ORDER BY \"timestamp_created\" DESC FETCH FIRST 1 ROWS ONLY");
         assertNotNull(callbackEvent);
         assertEquals("EXPIRED", callbackEvent.get("CALLBACK_TYPE"));
         assertEquals("PROCESSING", callbackEvent.get("STATUS")); // since callback got 400, staying in the queue
@@ -97,7 +97,7 @@ class SignerServiceIntegrationTest {
         assertEquals("user1", certificateRequest.userId());
         assertEquals(CSR, certificateRequest.csr());
 
-        final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM sc_callback_event ORDER BY timestamp_created DESC LIMIT 1");
+        final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM \"sc_callback_event\" ORDER BY \"timestamp_created\" DESC FETCH FIRST 1 ROWS ONLY");
         assertNotNull(callbackEvent);
         assertEquals("RENEWED", callbackEvent.get("CALLBACK_TYPE"));
         assertEquals("PROCESSING", callbackEvent.get("STATUS")); // since callback got 400, staying in the queue
