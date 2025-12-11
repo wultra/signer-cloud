@@ -45,13 +45,7 @@ is a randomly generated UUID, which can be found in the logs. Here is an example
 We support:
 - PostgreSQL
 - H2 for test purposes
-
-For local development you can use docker image
-```shell
-docker run --name postgres-liquibase -e POSTGRES_USER=signer_cloud_server -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=signer_cloud_server -p 5432:5432 -d postgres:16
-```
-
-Don't forget to run the Liquibase script (see the section below); it is not applied automatically.
+- Oracle
 
 
 #### Liquibase
@@ -79,10 +73,47 @@ To generate SQL script run this command.
 
 #### PostgreSQL
 
+Docker image for local development:
+
+```shell
+docker run --name postgres-liquibase -e POSTGRES_USER=signer_cloud_server -e POSTGRES_HOST_AUTH_METHOD=trust -e POSTGRES_DB=signer_cloud_server -p 5432:5432 -d postgres:16
+```
+
+Command for generating SQL script for PostgreSQL:
+
 ```shell
 liquibase --changeLogFile=./docs/db/changelog/changesets/signer-cloud-server/db.changelog-module.xml --output-file=./docs/sql/postgresql/generated-postgresql-script.sql updateSQL --url=offline:postgresql
 ```
 
+
+#### Oracle
+
+Docker image for local development:
+
+```shell
+docker run -d --name oracle19 \
+  --platform=linux/amd64 \
+  -p 1521:1521 \
+  -e ORACLE_PWD=oracle \
+  wultra.jfrog.io/wultra-docker-internal/database/oracle/enterprise:19.3.0.0
+```
+
+The database needs ~ 20 minutes to start. After that, connect to the database via url `jdbc:oracle:thin:@localhost:1521/ORCLPDB1`,
+user `SYSTEM`, password `oracle`, and create user `signer_cloud_server`:
+
+```shell
+ALTER SESSION SET CONTAINER=ORCLPDB1;
+CREATE USER signer_cloud_server IDENTIFIED BY signer_cloud_server;
+GRANT CONNECT, RESOURCE TO signer_cloud_server;
+ALTER USER signer_cloud_server QUOTA UNLIMITED ON USERS;
+SELECT username FROM dba_users WHERE username = 'SIGNER_CLOUD_SERVER';
+```
+
+As last step, run Liquibase migration with command:
+
+```shell
+liquibase --url="jdbc:oracle:thin:@localhost:1521/ORCLPDB1" --username=signer_cloud_server --password=signer_cloud_server --changeLogFile=docs/db/changelog/changesets/signer-cloud-server/db.changelog-module.xml update
+```
 
 ## PowerAuth
 
