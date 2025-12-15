@@ -27,6 +27,7 @@ jobs:
     outputs:
       environment: ${{ steps.set-env.outputs.environment }}
       should_push: ${{ steps.set-cond.outputs.should_push }}
+      dist_url: ${{ steps.set-dist-url.outputs.dist_url }}
     steps:
       - name: Set environment output
         id: set-env
@@ -47,6 +48,11 @@ jobs:
           else
             echo "should_push=false" >> $GITHUB_OUTPUT
           fi
+      - name: Set distribution URL
+        id: set-dist-url
+        if: vars.DISTRIBUTION_REGISTRY_URL != '' && github.actor != 'dependabot[bot]'
+        run: |
+          echo "dist_url=$(echo "${{ vars.DISTRIBUTION_REGISTRY_URL }}" | cut -d'/' -f1)" >> $GITHUB_OUTPUT
 
   build:
     runs-on: 'ubuntu-latest'
@@ -119,7 +125,7 @@ jobs:
         if: vars.DISTRIBUTION_REGISTRY_URL != '' && github.actor != 'dependabot[bot]'
         uses: docker/login-action@v3
         with:
-          registry: ${{ split(vars.DISTRIBUTION_REGISTRY_URL, '/')[0] }}
+          registry: ${{ needs.set-environment.outputs.dist_url }}
           username: ${{ vars.DISTRIBUTION_USERNAME }}
           password: ${{ secrets.DISTRIBUTION_PASSWORD }}
       - name: Set dynamic tags for image
