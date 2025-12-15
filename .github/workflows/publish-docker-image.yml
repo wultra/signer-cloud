@@ -119,7 +119,7 @@ jobs:
         if: vars.DISTRIBUTION_REGISTRY_URL != '' && github.actor != 'dependabot[bot]'
         uses: docker/login-action@v3
         with:
-          registry: ${{ vars.DISTRIBUTION_REGISTRY_URL }}
+          registry: ${{ split(vars.DISTRIBUTION_REGISTRY_URL, '/')[0] }}
           username: ${{ vars.DISTRIBUTION_USERNAME }}
           password: ${{ secrets.DISTRIBUTION_PASSWORD }}
       - name: Set dynamic tags for image
