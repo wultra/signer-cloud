@@ -5,7 +5,7 @@ LABEL maintainer="Lubos Racansky <lubos.racansky@wultra.com>"
 # Prepare environment variables
 ENV JAVA_HOME=/opt/java/openjdk \
     LB_HOME=/usr/local/liquibase \
-    LB_VERSION=4.30.0 \
+    LB_VERSION=4.33.0 \
     LB_ARCHIVE_SHA256=184ffd609518091da42d6cd75e883b4f6ff1763cce8883e95fc99f7f05ca262d \
     OJDBC_SHA256=756663c916f64e94659c197768f5c7a29706bc0fd4274dfdf88f474885516d06 \
     PKG_RELEASE=1~jammy \
