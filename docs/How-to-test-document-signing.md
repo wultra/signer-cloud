@@ -241,7 +241,7 @@ java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
     --method "sign-asymmetric" \
-    --signature-type "possession_knowledge" \
+    --auth-code-type "possession_knowledge" \
     --data-file "cri.der" \
     --version "3.3" \
     --password "1234"
@@ -330,7 +330,7 @@ java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
     --method "sign-asymmetric" \
-    --signature-type "possession_knowledge" \
+    --auth-code-type "possession_knowledge" \
     --data-file "hash.bin" \
     --version "3.3" \
     --password "1234" 
@@ -618,7 +618,7 @@ java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
     --method "sign-asymmetric" \
-    --signature-type "possession_knowledge" \
+    --auth-code-type "possession_knowledge" \
     --data-file "cri.der" \
     --version "3.3" \
     --password "1234"
@@ -707,7 +707,7 @@ java -jar powerauth-java-cmd-2.0.0-SNAPSHOT.jar \
     --status-file "./device_status.json" \
     --config-file "./sdk_config.json" \
     --method "sign-asymmetric" \
-    --signature-type "possession_knowledge" \
+    --auth-code-type "possession_knowledge" \
     --data-file "hash.bin" \
     --version "3.3" \
     --password "1234"   
