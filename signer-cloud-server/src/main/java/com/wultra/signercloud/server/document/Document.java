@@ -51,7 +51,7 @@ public class Document {
     @Column("signer_id")
     private AggregateReference<Signer, Long> signer;
 
-    private String externalId;
+    private String customDocumentId;
 
     private String documentName;
 

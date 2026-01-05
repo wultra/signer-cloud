@@ -45,7 +45,7 @@ record UploadDocumentResponse(
                 description = "External ID of the document",
                 example = "example-document-id"
         )
-        String externalId,
+        String customDocumentId,
 
         @Schema(
                 description = "Name of the document",

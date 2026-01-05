@@ -85,7 +85,7 @@ class DocumentControllerIntTest {
     private static final String DELETE_DOCUMENT_ENDPOINT = "/documents/{documentId}";
     private static final String CONTENT_TYPE = "application/pdf";
     private static final String DOCUMENT_NAME_PARAM = "name";
-    private static final String EXTERNAL_DOCUMENT_ID_PARAM = "externalId";
+    private static final String CUSTOM_DOCUMENT_ID_PARAM = "customDocumentId";
 
     private static final long MILLISECONDS_DELTA = 1_000;
     private static final String ERROR_STATUS = "ERROR";
@@ -175,7 +175,7 @@ class DocumentControllerIntTest {
         final var result = mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
                         .file(file)
                         .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(CUSTOM_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
                         .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -194,7 +194,7 @@ class DocumentControllerIntTest {
         final var result = mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
                         .file(file)
                         .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(CUSTOM_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
                         .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -215,7 +215,7 @@ class DocumentControllerIntTest {
         final var result = mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
                         .file(file)
                         .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(CUSTOM_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
                         .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -236,7 +236,7 @@ class DocumentControllerIntTest {
         final var result = mockMvc.perform(multipart(UPLOAD_DOCUMENT_ENDPOINT)
                         .file(file)
                         .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(CUSTOM_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
                         .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -261,7 +261,7 @@ class DocumentControllerIntTest {
                         .file(file)
                         .part(visualSignature)
                         .param(EXTERNAL_SIGNER_ID_PARAM, EXTERNAL_SIGNER_ID)
-                        .param(EXTERNAL_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
+                        .param(CUSTOM_DOCUMENT_ID_PARAM, EXTERNAL_DOCUMENT_ID)
                         .param(DOCUMENT_NAME_PARAM, DOCUMENT_NAME))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -683,7 +683,7 @@ class DocumentControllerIntTest {
                 .timestampCreated(creationTime)
                 .documentId(DOCUMENT_UUID)
                 .signer(AggregateReference.to(signerId))
-                .externalId(EXTERNAL_DOCUMENT_ID)
+                .customDocumentId(EXTERNAL_DOCUMENT_ID)
                 .documentName(DOCUMENT_NAME)
                 .fileName(FILENAME)
                 .fileSize(UPLOADED_FILE_SIZE)
@@ -699,7 +699,7 @@ class DocumentControllerIntTest {
     private void assertUploadResponse(final UploadDocumentResponse response) {
         assertDoesNotThrow(() -> UUID.fromString(response.documentId()));
         assertEquals(EXTERNAL_SIGNER_ID, response.externalSignerId());
-        assertEquals(EXTERNAL_DOCUMENT_ID, response.externalId());
+        assertEquals(EXTERNAL_DOCUMENT_ID, response.customDocumentId());
         assertEquals(DOCUMENT_NAME, response.name());
         assertEquals(FILENAME, response.fileName());
         assertEquals(UPLOADED_FILE_SIZE, response.size());
@@ -711,7 +711,7 @@ class DocumentControllerIntTest {
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(expectedDocumentId, document.getDocumentId());
         assertTrue(signerRepository.existsById(document.getSigner().getId()));
-        assertEquals(EXTERNAL_DOCUMENT_ID, document.getExternalId());
+        assertEquals(EXTERNAL_DOCUMENT_ID, document.getCustomDocumentId());
         assertEquals(DOCUMENT_NAME, document.getDocumentName());
         assertEquals(FILENAME, document.getFileName());
         assertEquals(UPLOADED_FILE_SIZE, document.getFileSize());
@@ -736,7 +736,7 @@ class DocumentControllerIntTest {
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(DOCUMENT_UUID, document.getDocumentId());
         assertEquals(signerId, document.getSigner().getId());
-        assertEquals(EXTERNAL_DOCUMENT_ID, document.getExternalId());
+        assertEquals(EXTERNAL_DOCUMENT_ID, document.getCustomDocumentId());
         assertEquals(DOCUMENT_NAME, document.getDocumentName());
         assertEquals(FILENAME, document.getFileName());
         assertEquals(SIGNED_FILE_SIZE, document.getFileSize());

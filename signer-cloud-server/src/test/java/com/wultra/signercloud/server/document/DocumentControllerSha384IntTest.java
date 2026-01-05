@@ -183,7 +183,7 @@ class DocumentControllerSha384IntTest {
                 .timestampCreated(documentTimestampCreated)
                 .documentId(DOCUMENT_UUID)
                 .signer(AggregateReference.to(signerId))
-                .externalId("test-external-document-id")
+                .customDocumentId("test-external-document-id")
                 .documentName("text-document-name")
                 .fileName("input.pdf")
                 .fileSize(7757)
