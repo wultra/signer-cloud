@@ -39,7 +39,7 @@ record UploadDocumentResponse(
                 description = "ID of the signer associated with the document",
                 example = "756419e1-1d85-4172-815d-d8653ecd3a89"
         )
-        String signerId,
+        String externalSignerId,
 
         @Schema(
                 description = "External ID of the document",

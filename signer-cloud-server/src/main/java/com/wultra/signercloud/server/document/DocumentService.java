@@ -152,7 +152,7 @@ class DocumentService {
 
         return UploadDocumentResponse.builder()
                 .documentId(document.getDocumentId())
-                .signerId(signer.getExternalSignerId())
+                .externalSignerId(signer.getExternalSignerId())
                 .externalId(externalDocumentId)
                 .name(documentName)
                 .fileName(fileName)

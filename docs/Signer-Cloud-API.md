@@ -5,8 +5,8 @@ Signer Cloud Server provides a RESTful API that allows to control specific parts
 
 <!-- begin remove -->
 - `POST` [/signers](#create-new-signer) - Create New Signer
-- `PUT` [/signers/{signerId}](#change-signer-status) - Change Signer Status
-- `GET` [/signers/{signerId}](#signer-details) - Signer Details
+- `PUT` [/signers/{externalSignerId}](#change-signer-status) - Change Signer Status
+- `GET` [/signers/{externalSignerId}](#signer-details) - Signer Details
 - `POST` [/documents](#upload-document) - Upload Document
 - `PUT` [/documents/{documentId}](#reject-document) - Reject Document
 - `DELETE` [/documents/{documentId}](#delete-document) - Delete Document
@@ -71,7 +71,7 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 
 ```json
 {
-  "signerId": "456def",
+  "externalSignerId": "456def",
   "userId" : "123abc",
   "csr": "-----BEGIN CERTIFICATE REQUEST-----\ncontent\nwith\ncorrect\nline\nendings\n-----END CERTIFICATE REQUEST-----",
 }
@@ -79,11 +79,11 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 
 ##### Request Params
 
-| Attribute                | Type     | Description                                                                                                                            |
-|:-------------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------|
-| `signerId`               | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                        |
-| `userId`                 | `String` | Custom User ID mostly for tracking purposes.                                                                                           |
-| `csr`                    | `String` | PEM encoded PKCS10 CSR, one line, line endings `\n`.                                                                                   |
+| Attribute          | Type     | Description                                                                                                                            |
+|:-------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------|
+| `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                        |
+| `userId`           | `String` | Custom User ID mostly for tracking purposes.                                                                                           |
+| `csr`              | `String` | PEM encoded PKCS10 CSR, one line, line endings `\n`.                                                                                   |
 
 #### Response 200
 
@@ -93,10 +93,10 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 
 <!-- end -->
 
-<!-- begin api PUT /signers/{signerId} -->
+<!-- begin api PUT /signers/{externalSignerId} -->
 ###  Change Signer Status
 
-Change the status of an existing signer (e.g., activate, deactivate, suspend) identified by <code>signerId</code>.
+Change the status of an existing signer (e.g., activate, deactivate, suspend) identified by <code>externalSignerId</code>.
 
 <!-- begin remove -->
 <table>
@@ -106,7 +106,7 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/signers/{signerId}</code></td>
+        <td><code>/signers/{externalSignerId}</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -124,7 +124,7 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
 
 | Attribute          | Type     | Description                                                                                                                                                                                                                                                                                                                                                                                                           |
 |:-------------------|:---------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `signerId`         | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                                                                                                                                                                                                                       |
+| `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                                                                                                                                                                                                                       |
 | `signerStatus`     | `String` | Select new signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED`                                                                                                                                                                                                                                                                                                                                  |
 | `revocationReason` | `String` | Optional parameter, used only if `signerStatus` is set to `REVOKED`. It specifies the reason for revocation, which is passed to EJBCA. If not provided, the default value `UNSPECIFIED` is used. ENUM: `NOT_REVOKED`, `UNSPECIFIED`, `KEY_COMPROMISE`, `CA_COMPROMISE`, `AFFILIATION_CHANGED`, `SUPERSEDED`, `CESSATION_OF_OPERATION`, `CERTIFICATE_HOLD`, `REMOVE_FROM_CRL`, `PRIVILEGES_WITHDRAWN`, `AA_COMPROMISE` |
 
@@ -136,7 +136,7 @@ Change the status of an existing signer (e.g., activate, deactivate, suspend) id
 
 <!-- end -->
 
-<!-- begin api GET /signers/{signerId} -->
+<!-- begin api GET /signers/{externalSignerId} -->
 ###  Signer Details
 
 Get signer state.
@@ -149,7 +149,7 @@ Get signer state.
     </tr>
     <tr>
         <td>Resource URI</td>
-        <td><code>/signers/{signerId}</code></td>
+        <td><code>/signers/{externalSignerId}</code></td>
     </tr>
 </table>
 <!-- end -->
@@ -160,15 +160,15 @@ Request without body.
 
 ##### Request Params
 
-| Attribute                | Type     | Description                                                                                                                            |
-|:-------------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------|
-| `signerId`               | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                        |
+| Attribute          | Type     | Description                                                                                                                            |
+|:-------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------|
+| `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                        |
 
 #### Response 200
 
 ```json
 {
-  "signerId": "123abc",
+  "externalSignerId": "123abc",
   "userId": "123abc",
   "signerStatus": "ACTIVE"
 }
@@ -176,11 +176,11 @@ Request without body.
 
 ##### Response  Params
 
-| Attribute      | Type     | Description                                                               |
-|:---------------|:---------|:--------------------------------------------------------------------------|
-| `signerId`     | `String` | Activation ID (Registration ID) from PowerAuth.                           |
-| `userId`       | `String` | Custom User ID mostly for tracking purposes.                              |
-| `signerStatus` | `String` | Signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED` |
+| Attribute           | Type     | Description                                                               |
+|:--------------------|:---------|:--------------------------------------------------------------------------|
+| `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                           |
+| `userId`            | `String` | Custom User ID mostly for tracking purposes.                              |
+| `signerStatus`      | `String` | Signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED` |
 <!-- end -->
 
 <!-- begin api POST /documents -->
@@ -212,10 +212,10 @@ Content-Length: {size}
 Content-Type: multipart/form-data; boundary=abcde12345
 
 --abcde12345
-Content-Disposition: form-data; name="signerId"
+Content-Disposition: form-data; name="externalSignerId"
 Content-Type: text/plain
 
-{signerId}
+{externalSignerId}
 --abcde12345
 Content-Disposition: form-data; name="externalId"
 Content-Type: text/plain
@@ -242,15 +242,15 @@ Content-Disposition: form-data; name="visualSignature"; filename="{visualSignatu
 
 ##### Request Params
 
-| Attribute         | Type     | Description                                                                                                                                                                                                    |
-|:------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `size`            | `Number` | Document size in bytes.                                                                                                                                                                                        |
-| `signerId`        | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                |
-| `externalId`      | `String` | Custom unique ID identifying document in client’s systems.                                                                                                                                                     |
-| `name`            | `String` | Document name.                                                                                                                                                                                                 |
-| `fileName`        | `String` | File name (including suffix), e.g. “attachment.pdf”.                                                                                                                                                           |
-| `fileContent`     | `String` | File content (binary data).                                                                                                                                                                                    |
-| `visualSignature` | `String` | Optional parameter for visual signature definition as JSON. See [PAdES Visible Signature](https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#PAdESVisibleSignatureAnnex). |
+| Attribute            | Type     | Description                                                                                                                                                                                                    |
+|:---------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `size`               | `Number` | Document size in bytes.                                                                                                                                                                                        |
+| `externalSignerId`   | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                |
+| `externalId`         | `String` | Custom unique ID identifying document in client’s systems.                                                                                                                                                     |
+| `name`               | `String` | Document name.                                                                                                                                                                                                 |
+| `fileName`           | `String` | File name (including suffix), e.g. “attachment.pdf”.                                                                                                                                                           |
+| `fileContent`        | `String` | File content (binary data).                                                                                                                                                                                    |
+| `visualSignature`    | `String` | Optional parameter for visual signature definition as JSON. See [PAdES Visible Signature](https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#PAdESVisibleSignatureAnnex). |
 
 
 #### Response 200
@@ -258,7 +258,7 @@ Content-Disposition: form-data; name="visualSignature"; filename="{visualSignatu
 ```json
 {
   "documentId": "String",
-  "signerId": "String",
+  "externalSignerId": "String",
   "externalId": "String",
   "name": "String",
   "fileName": "String",

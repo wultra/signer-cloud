@@ -847,7 +847,7 @@ class DocumentServiceTest {
 
     private void assertSuccessUploadResult(final UploadDocumentResponse response) {
         assertDoesNotThrow(() -> UUID.fromString(response.documentId()));
-        assertEquals(EXTERNAL_SIGNER_ID, response.signerId());
+        assertEquals(EXTERNAL_SIGNER_ID, response.externalSignerId());
         assertEquals(EXTERNAL_DOCUMENT_ID, response.externalId());
         assertEquals(DOCUMENT_NAME, response.name());
         assertEquals(FILE_NAME, response.fileName());
