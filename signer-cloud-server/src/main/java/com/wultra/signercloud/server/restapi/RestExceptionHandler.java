@@ -24,6 +24,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -267,6 +268,18 @@ public class RestExceptionHandler {
     public ResponseEntity<ErrorResponse> handleDocumentVisualSignatureException(final DocumentVisualSignatureException ex) {
         logger.warn("Visual signature exception", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.DOCUMENT_VISUAL_SIGNATURE_ERROR, ex.getMessage());
+    }
+
+    /**
+     * Handler for {@link ServletRequestBindingException} producing {@link HttpStatus#BAD_REQUEST} response.
+     *
+     * @param ex the exception
+     * @return response as {@link ResponseEntity}
+     */
+    @ExceptionHandler
+    public ResponseEntity<ErrorResponse> handleServletRequestBindingException(final ServletRequestBindingException ex) {
+        logger.error("Unexpected exception occurred", ex);
+        return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.REQUEST_VALIDATION_ERROR, ex.getMessage());
     }
 
     /**
