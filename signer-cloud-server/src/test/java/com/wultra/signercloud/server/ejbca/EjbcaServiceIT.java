@@ -69,7 +69,7 @@ class EjbcaServiceIT {
                 """;
 
         final var request = EjbcaService.CertificateRequest.builder()
-                .userId("user123")
+                .customUserId("user123")
                 .externalSignerId(UUID.randomUUID().toString())
                 .csr(csr)
                 .build();

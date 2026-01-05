@@ -133,7 +133,7 @@ class SignerServiceTest {
         ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(CSR_BASE64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .build();
     }
 
@@ -577,7 +577,7 @@ class SignerServiceTest {
         return Signer.builder()
                 .id(SIGNER_ID)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .csr(CSR_BASE64)
                 .certificate(Base64.getEncoder().encodeToString(x509Certificate1.getEncoded()))
                 .timestampCertificateExpiration(x509Certificate1.getNotAfter().toInstant())
@@ -588,7 +588,7 @@ class SignerServiceTest {
 
     private void assertSignerDetailResponse(final SignerDetailResponse response) {
         assertEquals(EXTERNAL_SIGNER_ID, response.externalSignerId());
-        assertEquals(USER_ID, response.userId());
+        assertEquals(USER_ID, response.customUserId());
         assertEquals(SignerStatus.ACTIVE, response.signerStatus());
     }
 
@@ -610,7 +610,7 @@ class SignerServiceTest {
                 MILLISECONDS_DELTA);
         assertNull(savedSigner.getTimestampLastUpdated());
         assertEquals(EXTERNAL_SIGNER_ID, savedSigner.getExternalSignerId());
-        assertEquals(USER_ID, savedSigner.getUserId());
+        assertEquals(USER_ID, savedSigner.getCustomUserId());
         assertEquals(CSR_BASE64, savedSigner.getCsr());
         assertEquals(CERTIFICATE_1_DER_BASE64, savedSigner.getCertificate());
         assertEquals(CERTIFICATE_1_EXPIRATION_TIMESTAMP.toEpochMilli(),
@@ -631,7 +631,7 @@ class SignerServiceTest {
                 savedSigner.getTimestampLastUpdated().toEpochMilli(),
                 MILLISECONDS_DELTA);
         assertEquals(EXTERNAL_SIGNER_ID, savedSigner.getExternalSignerId());
-        assertEquals(USER_ID, savedSigner.getUserId());
+        assertEquals(USER_ID, savedSigner.getCustomUserId());
         assertEquals(CSR_BASE64, savedSigner.getCsr());
         assertEquals(CERTIFICATE_2_DER_BASE64, savedSigner.getCertificate());
         assertEquals(CERTIFICATE_2_EXPIRATION_TIMESTAMP.toEpochMilli(),
@@ -652,7 +652,7 @@ class SignerServiceTest {
                 savedSigner.getTimestampLastUpdated().toEpochMilli(),
                 MILLISECONDS_DELTA);
         assertEquals(EXTERNAL_SIGNER_ID, savedSigner.getExternalSignerId());
-        assertEquals(USER_ID, savedSigner.getUserId());
+        assertEquals(USER_ID, savedSigner.getCustomUserId());
         assertEquals(CSR_BASE64, savedSigner.getCsr());
         assertEquals(CERTIFICATE_1_DER_BASE64, savedSigner.getCertificate());
         assertEquals(CERTIFICATE_1_EXPIRATION_TIMESTAMP.toEpochMilli(),

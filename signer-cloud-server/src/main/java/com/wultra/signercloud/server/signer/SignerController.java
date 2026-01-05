@@ -70,7 +70,7 @@ class SignerController {
     )
     @PostMapping
     void createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
-        logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.externalSignerId());
+        logger.info("action: createUpdateSigner, state: initiated, customUserId: {}, externalSignerId: {}", requestBody.customUserId(), requestBody.externalSignerId());
         final var result = Try.execute(
                 () -> signerService.createUpdateSigner(requestBody)
         );
@@ -130,7 +130,7 @@ class SignerController {
 
     @Operation(
             summary = "Gets details of a signer",
-            description = "Gets the details of a signer, including `userId` and `signerStatus`.",
+            description = "Gets the details of a signer, including `customUserId` and `signerStatus`.",
             responses = {
                     @ApiResponse(
                             responseCode = "200",

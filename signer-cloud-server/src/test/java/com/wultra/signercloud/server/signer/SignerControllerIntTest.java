@@ -171,7 +171,7 @@ class SignerControllerIntTest {
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .build();
 
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
@@ -198,7 +198,7 @@ class SignerControllerIntTest {
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .build();
 
         final var request = new CreateUpdateSignerRequest(EXTERNAL_SIGNER_ID, USER_ID, userCsrPem);
@@ -222,7 +222,7 @@ class SignerControllerIntTest {
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .build();
 
         final var certificateResponse = EjbcaService.CertificateResponse.builder()
@@ -249,7 +249,7 @@ class SignerControllerIntTest {
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .build();
 
         final var certificateResponse = EjbcaService.CertificateResponse.builder()
@@ -282,7 +282,7 @@ class SignerControllerIntTest {
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .build();
 
         final var certificateResponse = EjbcaService.CertificateResponse.builder()
@@ -311,7 +311,7 @@ class SignerControllerIntTest {
         final var certificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(userCsrDerBase64)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .build();
 
         final var certificateResponse = EjbcaService.CertificateResponse.builder()
@@ -562,7 +562,7 @@ class SignerControllerIntTest {
         assertNotEquals(0, signer.getId());
         assertEquals(expectedTimestampCreated.toEpochMilli(), signer.getTimestampCreated().toEpochMilli(), MILLISECONDS_DELTA);
         assertEquals(EXTERNAL_SIGNER_ID, signer.getExternalSignerId());
-        assertEquals(USER_ID, signer.getUserId());
+        assertEquals(USER_ID, signer.getCustomUserId());
         assertEquals(userCsrDerBase64, signer.getCsr());
         assertEquals(userCertificateDerBase64, signer.getCertificate());
         assertEquals(userCertificateTimestampExpiration.toEpochMilli(), signer.getTimestampCertificateExpiration().toEpochMilli(), MILLISECONDS_DELTA);
@@ -574,7 +574,7 @@ class SignerControllerIntTest {
         final var signer = Signer.builder()
                 .timestampCreated(TIMESTAMP_CREATED)
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId(USER_ID)
+                .customUserId(USER_ID)
                 .csr(userCsrDerBase64)
                 .certificate(userCertificateDerBase64)
                 .timestampCertificateExpiration(userCertificateTimestampExpiration)
@@ -586,7 +586,7 @@ class SignerControllerIntTest {
 
     private void assertSignerDetailResponse(final SignerDetailResponse response) {
         assertEquals(EXTERNAL_SIGNER_ID, response.externalSignerId());
-        assertEquals(USER_ID, response.userId());
+        assertEquals(USER_ID, response.customUserId());
         assertEquals(SignerStatus.ACTIVE, response.signerStatus());
     }
 

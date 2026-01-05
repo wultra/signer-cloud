@@ -657,7 +657,7 @@ class DocumentControllerIntTest {
         final var signer = Signer.builder()
                 .timestampCreated(Instant.now())
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .userId("dummyUserId")
+                .customUserId("dummyUserId")
                 .csr(userCsrDerBase64)
                 .certificate(userCertificateDerBase64)
                 .timestampCertificateExpiration(Instant.now())

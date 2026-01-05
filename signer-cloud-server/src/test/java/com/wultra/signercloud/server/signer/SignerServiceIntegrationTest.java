@@ -66,7 +66,7 @@ class SignerServiceIntegrationTest {
         assertEquals("EXPIRED", callbackEvent.get("CALLBACK_TYPE"));
         assertEquals("PROCESSING", callbackEvent.get("STATUS")); // since callback got 400, staying in the queue
         JSONAssert.assertEquals("""
-                {"externalSignerId": "signer1", "userId": "user1", "callbackType": "EXPIRED", "certificateSerialNumber": "64309416018842723591211913217267439625813315032", "certificateExpiration": "2027-08-11T09:14:46Z"}""",
+                {"externalSignerId": "signer1", "customUserId": "user1", "callbackType": "EXPIRED", "certificateSerialNumber": "64309416018842723591211913217267439625813315032", "certificateExpiration": "2027-08-11T09:14:46Z"}""",
                 callbackEvent.get("CALLBACK_DATA").toString(), false);
         assertNotNull(callbackEvent.get("IDEMPOTENCY_KEY"));
         assertNotNull(callbackEvent.get("TIMESTAMP_CREATED"));
@@ -94,7 +94,7 @@ class SignerServiceIntegrationTest {
 
         final var certificateRequest = argumentCaptor.getValue();
         assertEquals("signer2", certificateRequest.externalSignerId());
-        assertEquals("user1", certificateRequest.userId());
+        assertEquals("user1", certificateRequest.customUserId());
         assertEquals(CSR, certificateRequest.csr());
 
         final Map<String, Object> callbackEvent = jdbcTemplate.queryForMap("SELECT * FROM sc_callback_event ORDER BY timestamp_created DESC LIMIT 1");
@@ -102,7 +102,7 @@ class SignerServiceIntegrationTest {
         assertEquals("RENEWED", callbackEvent.get("CALLBACK_TYPE"));
         assertEquals("PROCESSING", callbackEvent.get("STATUS")); // since callback got 400, staying in the queue
         JSONAssert.assertEquals("""
-                {"externalSignerId": "signer2", "userId": "user1", "callbackType": "RENEWED", "certificateSerialNumber": "382960601382395725256979170171623638043940842044", "certificateExpiration": "2027-08-11T09:14:46Z"}""",
+                {"externalSignerId": "signer2", "customUserId": "user1", "callbackType": "RENEWED", "certificateSerialNumber": "382960601382395725256979170171623638043940842044", "certificateExpiration": "2027-08-11T09:14:46Z"}""",
                 callbackEvent.get("CALLBACK_DATA").toString(), false);
         assertNotNull(callbackEvent.get("IDEMPOTENCY_KEY"));
         assertNotNull(callbackEvent.get("TIMESTAMP_CREATED"));
