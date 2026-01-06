@@ -72,7 +72,7 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 ```json
 {
   "externalSignerId": "456def",
-  "userId" : "123abc",
+  "customUserId" : "123abc",
   "csr": "-----BEGIN CERTIFICATE REQUEST-----\ncontent\nwith\ncorrect\nline\nendings\n-----END CERTIFICATE REQUEST-----",
 }
 ```
@@ -82,7 +82,7 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 | Attribute          | Type     | Description                                                                                                                            |
 |:-------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------|
 | `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                        |
-| `userId`           | `String` | Custom User ID mostly for tracking purposes.                                                                                           |
+| `customUserId`     | `String` | Custom User ID mostly for tracking purposes.                                                                                           |
 | `csr`              | `String` | PEM encoded PKCS10 CSR, one line, line endings `\n`.                                                                                   |
 
 #### Response 200
@@ -169,18 +169,18 @@ Request without body.
 ```json
 {
   "externalSignerId": "123abc",
-  "userId": "123abc",
+  "customUserId": "123abc",
   "signerStatus": "ACTIVE"
 }
 ```
 
 ##### Response  Params
 
-| Attribute           | Type     | Description                                                               |
-|:--------------------|:---------|:--------------------------------------------------------------------------|
-| `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                           |
-| `userId`            | `String` | Custom User ID mostly for tracking purposes.                              |
-| `signerStatus`      | `String` | Signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED` |
+| Attribute            | Type     | Description                                                               |
+|:---------------------|:---------|:--------------------------------------------------------------------------|
+| `externalSignerId`   | `String` | Activation ID (Registration ID) from PowerAuth.                           |
+| `customUserId`       | `String` | Custom User ID mostly for tracking purposes.                              |
+| `signerStatus`       | `String` | Signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED` |
 <!-- end -->
 
 <!-- begin api POST /documents -->
@@ -217,10 +217,10 @@ Content-Type: text/plain
 
 {externalSignerId}
 --abcde12345
-Content-Disposition: form-data; name="externalId"
+Content-Disposition: form-data; name="customDocumentId"
 Content-Type: text/plain
 
-{externalId}
+{customDocumentId}
 --abcde12345
 Content-Disposition: form-data; name="name"
 Content-Type: text/plain
@@ -246,7 +246,7 @@ Content-Disposition: form-data; name="visualSignature"; filename="{visualSignatu
 |:---------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `size`               | `Number` | Document size in bytes.                                                                                                                                                                                        |
 | `externalSignerId`   | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                |
-| `externalId`         | `String` | Custom unique ID identifying document in client’s systems.                                                                                                                                                     |
+| `customDocumentId`   | `String` | Custom unique ID identifying document in client’s systems.                                                                                                                                                     |
 | `name`               | `String` | Document name.                                                                                                                                                                                                 |
 | `fileName`           | `String` | File name (including suffix), e.g. “attachment.pdf”.                                                                                                                                                           |
 | `fileContent`        | `String` | File content (binary data).                                                                                                                                                                                    |
@@ -259,7 +259,7 @@ Content-Disposition: form-data; name="visualSignature"; filename="{visualSignatu
 {
   "documentId": "String",
   "externalSignerId": "String",
-  "externalId": "String",
+  "customDocumentId": "String",
   "name": "String",
   "fileName": "String",
   "size": Number,
