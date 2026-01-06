@@ -278,7 +278,7 @@ public class RestExceptionHandler {
      */
     @ExceptionHandler
     public ResponseEntity<ErrorResponse> handleServletRequestBindingException(final ServletRequestBindingException ex) {
-        logger.error("Unexpected exception occurred", ex);
+        logger.warn("Unexpected exception occurred", ex);
         return buildErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.REQUEST_VALIDATION_ERROR, ex.getMessage());
     }
 
