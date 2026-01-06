@@ -858,7 +858,7 @@ class DocumentServiceTest {
     private void assertSuccessSignResult(final SignDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://signercloud.wultra.com:8080/documents/%s/download",
+        final var expectedUri = String.format("https://signercloud.wultra.com:8080/documents/%s/file",
                 DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }

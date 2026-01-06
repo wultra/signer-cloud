@@ -46,7 +46,7 @@ import java.util.function.Consumer;
 @Slf4j
 @Transactional
 class DocumentService {
-    private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/download";
+    private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/file";
 
     private final DocumentConfigurationProperties documentConfigurationProperties;
     private final DocumentRepository documentRepository;
