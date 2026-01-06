@@ -795,21 +795,43 @@ public class CriGenerator {
 
     private static final String PUBLIC_KEY_BASE64 = "BHzYZvC6tmL/xFEXX2dLTp/Cm3pgL4OWBhoFq9jaytT/CdwoRaSZ0o12QzLVfun/4qq9fqqJ3gvFdqpFn9GwHSA=";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException {
         Security.addProvider(new BouncyCastleProvider());
 
         final var rawPublicKey = Base64.getDecoder().decode(PUBLIC_KEY_BASE64);
 
-        final var algorithmId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey,
-                org.bouncycastle.asn1.x9.ECNamedCurveTable.getOID("prime256v1"));
+        final var algorithmId = new AlgorithmIdentifier(
+                X9ObjectIdentifiers.id_ecPublicKey,
+                org.bouncycastle.asn1.x9.ECNamedCurveTable.getOID(OID));
 
+        final var subject = new X500Name(X500_NAME);
         final var subjectPublicKeyInfo = new SubjectPublicKeyInfo(algorithmId, rawPublicKey);
-        final var subject = new X500Name("CN=John Doe,O=ExampleCorp,C=US");
-        final var cri = new CertificationRequestInfo(subject, subjectPublicKeyInfo, new DERSet());
+        final var attributes = buildAttributes();
+
+        final var cri = new CertificationRequestInfo(subject, subjectPublicKeyInfo, attributes);
 
         final var criBytes = cri.getEncoded(ASN1Encoding.DER);
         final var criBase64 = Base64.getEncoder().encodeToString(criBytes);
         System.out.println("CRI Base64: " + criBase64);
+    }
+
+    private static DERSet buildAttributes() throws IOException {
+        final var otherNameOid = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.20.2.3");
+        final var otherNameValue = new DERUTF8String("john.doe@example.com");
+
+        final var otherNameVector = new ASN1EncodableVector();
+        otherNameVector.add(otherNameOid);
+        otherNameVector.add(new DERTaggedObject(true, 0, otherNameValue));
+
+        final var otherName = new GeneralName(GeneralName.otherName, new DERSequence(otherNameVector));
+
+        // Subject Alternative Name (SAN)
+        final var san = new GeneralNames(otherName);
+        final var sanExtension = new Extension(Extension.subjectAlternativeName, false, san.getEncoded());
+
+        final var extensions = new Extensions(sanExtension);
+        final var extensionRequest = new Attribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new DERSet(extensions));
+        return new DERSet(extensionRequest);
     }
 }
 ```
