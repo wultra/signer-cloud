@@ -31,6 +31,7 @@ import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.ServletRequestBindingException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
@@ -308,6 +309,18 @@ class RestExceptionHandlerTest {
 
         // then
         assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.DOCUMENT_VISUAL_SIGNATURE_ERROR);
+    }
+
+    @Test
+    void testHandleServletRequestBindingExceptionWhenExceptionIsHandledThenCorrectResponseIsReturned() {
+        // given
+        final var message = "Request binding error";
+
+        // when
+        final var response = restExceptionHandler.handleServletRequestBindingException(new ServletRequestBindingException(message));
+
+        // then
+        assertErrorResponse(HttpStatus.BAD_REQUEST, response, message, ErrorCode.REQUEST_VALIDATION_ERROR);
     }
 
     @Test

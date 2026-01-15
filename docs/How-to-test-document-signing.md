@@ -268,7 +268,7 @@ private static final String SIGNATURE_BASE64 = "MEUCIFM/zV52N+WM6kHVzJePDAKYNkKx
 ### Create signer
 
 When you have CSR, you can create a `signer` in **Signer Cloud** by calling following endpoint.
-The `signerId` is `activationId`, `userId` can be any random value and the `csr` was obtained in previous step. It is already in correct format.
+The `externalSignerId` is `activationId`, `userId` can be any random value and the `csr` was obtained in previous step. It is already in correct format.
 Any call to the **Signer Cloud** must contain proper authorization. See [Signer Cloud Authorization](#signer-cloud-authorization).
 
 ```shell
@@ -276,7 +276,7 @@ curl --location 'http://127.0.0.1:8090/signers' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: ••••••' \
 --data '{
-    "signerId" : "17056bde-9e5c-4bcc-9001-fa1fef3b5965",
+    "externalSignerId" : "17056bde-9e5c-4bcc-9001-fa1fef3b5965",
     "userId" : "sc-demo-user",
     "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIHxMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxl\nQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR82Gbw\nurZi/8RRF19nS06fwpt6YC+DlgYaBavY2srU/wncKEWkmdKNdkMy1X7p/+KqvX6q\nid4LxXaqRZ/RsB0goAAwCgYIKoZIzj0EAwIDSAAwRQIgUz/NXnY35YzqQdXMl48M\nApg2QrGYcgrljDH9BacH1LoCIQDdCUhNGz+w/KNP+JU9Ypc9FRwt8RGqT8+HYvNR\nBzMfiQ==\n-----END CERTIFICATE REQUEST-----\n"
 }'
@@ -292,7 +292,7 @@ Visual signature can be added as optional parameter. See [Document Visual Signat
 ```shell
 curl --location 'http://127.0.0.1:8090/documents' \
 --header 'Authorization: Basic dXNlcjo0ODVmNDNhYS02NThlLTQ0YTUtOTk3OC1mY2U4Yjk5MzY0MzU=' \
---form 'signerId="17056bde-9e5c-4bcc-9001-fa1fef3b5965"' \
+--form 'externalSignerId="17056bde-9e5c-4bcc-9001-fa1fef3b5965"' \
 --form 'externalId="external-id-example"' \
 --form 'name="Demo document"' \
 --form 'file=@"/Users/michalrozehnal/repository/wultra/signer-cloud/signer-cloud-server/src/test/resources/input.pdf"'
@@ -304,7 +304,7 @@ An HTTP `200 OK` response should be returned:
 ```json
 {
   "documentId": "747019f6-a39f-447a-9649-47050413d085",
-  "signerId": "17056bde-9e5c-4bcc-9001-fa1fef3b5965",
+  "externalSignerId": "17056bde-9e5c-4bcc-9001-fa1fef3b5965",
   "externalId": "external-id-example",
   "name": "Demo document",
   "fileName": "input.pdf",
@@ -645,7 +645,7 @@ private static final String SIGNATURE_BASE64 = "MEYCIQDQZ0kbxn1L/3xQxqno4ARZr+G6
 ### Create signer
 
 When you have CSR, you can create a `signer` in **Signer Cloud** by calling following endpoint.
-The `signerId` is `activationId`, `userId` can be any random value and the `csr` was obtained in previous step. It is already in correct format.
+The `externalSignerId` is `activationId`, `userId` can be any random value and the `csr` was obtained in previous step. It is already in correct format.
 Any call to the **Signer Cloud** must contain proper authorization. See [Signer Cloud Authorization](#signer-cloud-authorization).
 
 ```shell
@@ -653,7 +653,7 @@ curl --location 'https://signer-cloud.wultra.app/signers' \
 --header 'Content-Type: application/json' \
 --header 'Authorization: Bearer <TOKEN>' \
 --data '{
-    "signerId" : "0a23495a-b159-4d06-ad4c-5a832c305605",
+    "externalSignerId" : "0a23495a-b159-4d06-ad4c-5a832c305605",
     "userId" : "sc-demo-user",
     "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIHyMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxl\nQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASHTq/W\nL3lk89Jk5IXqn7Kl8c7zswVMSho+NLnBwOoj9Tin5BWk4p5uH4fXd2lcolod0xKT\n2j1vUU5S6JnXHbkboAAwCgYIKoZIzj0EAwIDSQAwRgIhAKSykwJ0ef+rmtsS1RbV\nuLMDLACN/eL4iSR+2R+udH/cAiEA4PAPzYU2S3m5oMLWhLlx5db3HiI8o+rsctLb\n/7kH5d8=\n-----END CERTIFICATE REQUEST-----\n"
 }'
@@ -670,7 +670,7 @@ Visual signature can be added as optional parameter. See [Document Visual Signat
 ```shell
 curl --location 'https://signer-cloud.wultra.app/documents' \
 --header 'Authorization: Bearer <TOKEN>' \
---form 'signerId="0a23495a-b159-4d06-ad4c-5a832c305605"' \
+--form 'externalSignerId="0a23495a-b159-4d06-ad4c-5a832c305605"' \
 --form 'externalId="external-id-example"' \
 --form 'name="Document example"' \
 --form 'file=@"<FILE_PATH>"'
@@ -681,7 +681,7 @@ An HTTP `200 OK` response should be returned:
 ```json
 {
     "documentId": "d8a06ea4-e9c8-4f0c-ac22-c009a1f351b5",
-    "signerId": "0a23495a-b159-4d06-ad4c-5a832c305605",
+    "externalSignerId": "0a23495a-b159-4d06-ad4c-5a832c305605",
     "externalId": "external-id-example",
     "name": "Document example",
     "fileName": "input.pdf",
@@ -779,37 +779,64 @@ Following code generates CRI for given public key and prints it in base64 format
 Set your public key into constant `PUBLIC_KEY_BASE64`.
 
 ```java
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.pkcs.Attribute;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import java.io.IOException;
 import java.security.Security;
 import java.util.Base64;
 
 public class CriGenerator {
 
+    private static final String OID = "prime256v1";
+    private static final String X500_NAME = "CN=John Doe,O=ExampleCorp,C=US";
     private static final String PUBLIC_KEY_BASE64 = "BHzYZvC6tmL/xFEXX2dLTp/Cm3pgL4OWBhoFq9jaytT/CdwoRaSZ0o12QzLVfun/4qq9fqqJ3gvFdqpFn9GwHSA=";
 
-    public static void main(String[] args) throws Exception {
+    public static void main(String[] args) throws IOException {
         Security.addProvider(new BouncyCastleProvider());
 
         final var rawPublicKey = Base64.getDecoder().decode(PUBLIC_KEY_BASE64);
 
-        final var algorithmId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey,
-                org.bouncycastle.asn1.x9.ECNamedCurveTable.getOID("prime256v1"));
+        final var algorithmId = new AlgorithmIdentifier(
+                X9ObjectIdentifiers.id_ecPublicKey,
+                org.bouncycastle.asn1.x9.ECNamedCurveTable.getOID(OID));
 
+        final var subject = new X500Name(X500_NAME);
         final var subjectPublicKeyInfo = new SubjectPublicKeyInfo(algorithmId, rawPublicKey);
-        final var subject = new X500Name("CN=John Doe,O=ExampleCorp,C=US");
-        final var cri = new CertificationRequestInfo(subject, subjectPublicKeyInfo, new DERSet());
+        
+        // call buildAttributes(); if you want to add certificate extension attributes according to RFC 5280
+        final var attributes = new DERSet();
+
+        final var cri = new CertificationRequestInfo(subject, subjectPublicKeyInfo, attributes);
 
         final var criBytes = cri.getEncoded(ASN1Encoding.DER);
         final var criBase64 = Base64.getEncoder().encodeToString(criBytes);
         System.out.println("CRI Base64: " + criBase64);
+    }
+
+    private static DERSet buildAttributes() throws IOException {
+        final var otherNameOid = new ASN1ObjectIdentifier("1.3.6.1.4.1.311.20.2.3");
+        final var otherNameValue = new DERUTF8String("john.doe@example.com");
+
+        final var otherNameVector = new ASN1EncodableVector();
+        otherNameVector.add(otherNameOid);
+        otherNameVector.add(new DERTaggedObject(true, 0, otherNameValue));
+
+        final var otherName = new GeneralName(GeneralName.otherName, new DERSequence(otherNameVector));
+
+        // Subject Alternative Name (SAN)
+        final var san = new GeneralNames(otherName);
+        final var sanExtension = new Extension(Extension.subjectAlternativeName, false, san.getEncoded());
+
+        final var extensions = new Extensions(sanExtension);
+        final var extensionRequest = new Attribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, new DERSet(extensions));
+        return new DERSet(extensionRequest);
     }
 }
 ```

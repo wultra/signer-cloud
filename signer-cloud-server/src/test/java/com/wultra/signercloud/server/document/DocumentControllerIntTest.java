@@ -91,7 +91,7 @@ class DocumentControllerIntTest {
     private static final String ERROR_STATUS = "ERROR";
 
     // Signer
-    private static final String EXTERNAL_SIGNER_ID_PARAM = "signerId";
+    private static final String EXTERNAL_SIGNER_ID_PARAM = "externalSignerId";
 
     // Document
     private static final String DOCUMENT_UUID = "75142815-7adc-4962-afd2-1e498d38b90d";
@@ -698,7 +698,7 @@ class DocumentControllerIntTest {
 
     private void assertUploadResponse(final UploadDocumentResponse response) {
         assertDoesNotThrow(() -> UUID.fromString(response.documentId()));
-        assertEquals(EXTERNAL_SIGNER_ID, response.signerId());
+        assertEquals(EXTERNAL_SIGNER_ID, response.externalSignerId());
         assertEquals(EXTERNAL_DOCUMENT_ID, response.externalId());
         assertEquals(DOCUMENT_NAME, response.name());
         assertEquals(FILENAME, response.fileName());
@@ -726,7 +726,7 @@ class DocumentControllerIntTest {
     private void assertSignResponse(final SignDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://signercloud.wultra.com:8080/documents/%s/download", DOCUMENT_UUID);
+        final var expectedUri = String.format("https://signercloud.wultra.com:8080/documents/%s/file", DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }
 

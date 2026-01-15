@@ -204,7 +204,7 @@ class SignerService {
      * @param request the request containing details of signer
      */
     void createUpdateSigner(final CreateUpdateSignerRequest request) {
-        final var externalSignerId = request.signerId();
+        final var externalSignerId = request.externalSignerId();
         final var userId = request.userId();
         final var csrPem = request.csr();
 

@@ -32,7 +32,7 @@ record CreateUpdateSignerRequest(
                 example = "756419e1-1d85-4172-815d-d8653ecd3a89",
                 format = "uuid"
         )
-        @NotBlank String signerId,
+        @NotBlank String externalSignerId,
 
         @Schema(
                 description = "Identifier of the user owning the signer.",

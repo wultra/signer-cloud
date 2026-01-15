@@ -70,7 +70,7 @@ class SignerController {
     )
     @PostMapping
     void createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
-        logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.signerId());
+        logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.externalSignerId());
         final var result = Try.execute(
                 () -> signerService.createUpdateSigner(requestBody)
         );

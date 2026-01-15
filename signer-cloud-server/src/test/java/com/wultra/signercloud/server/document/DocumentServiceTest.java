@@ -847,7 +847,7 @@ class DocumentServiceTest {
 
     private void assertSuccessUploadResult(final UploadDocumentResponse response) {
         assertDoesNotThrow(() -> UUID.fromString(response.documentId()));
-        assertEquals(EXTERNAL_SIGNER_ID, response.signerId());
+        assertEquals(EXTERNAL_SIGNER_ID, response.externalSignerId());
         assertEquals(EXTERNAL_DOCUMENT_ID, response.externalId());
         assertEquals(DOCUMENT_NAME, response.name());
         assertEquals(FILE_NAME, response.fileName());
@@ -858,7 +858,7 @@ class DocumentServiceTest {
     private void assertSuccessSignResult(final SignDocumentResponse response) {
         assertEquals(DOCUMENT_UUID, response.documentId());
 
-        final var expectedUri = String.format("https://signercloud.wultra.com:8080/documents/%s/download",
+        final var expectedUri = String.format("https://signercloud.wultra.com:8080/documents/%s/file",
                 DOCUMENT_UUID);
         assertEquals(expectedUri, response.uri());
     }

@@ -46,7 +46,7 @@ import java.util.function.Consumer;
 @Slf4j
 @Transactional
 class DocumentService {
-    private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/download";
+    private static final String DOCUMENT_DOWNLOAD_PATH = "/documents/{documentId}/file";
 
     private final DocumentConfigurationProperties documentConfigurationProperties;
     private final DocumentRepository documentRepository;
@@ -101,14 +101,14 @@ class DocumentService {
      * Stores the {@link Document} for signing and calculates its SHA-256 hash.
      *
      * @param externalSignerId {@link Signer#getExternalSignerId()}
-     * @param externalDocumentId unique identifier of the document in the external system
+     * @param externalId unique identifier of the document in the external system
      * @param documentName name of the document
      * @param file the PDF document to be stored for signing
      * @return response with uploaded document details
      */
     UploadDocumentResponse uploadDocument(
             final String externalSignerId,
-            final String externalDocumentId,
+            final String externalId,
             final String documentName,
             final MultipartFile file,
             final DocumentVisualSignature visualSignature
@@ -137,7 +137,7 @@ class DocumentService {
         final var document = Document.builder()
                 .timestampCreated(timestampCreated)
                 .documentId(UUID.randomUUID().toString())
-                .externalId(externalDocumentId)
+                .externalId(externalId)
                 .signer(AggregateReference.to(signer.getId()))
                 .documentName(documentName)
                 .fileName(fileName)
@@ -152,8 +152,8 @@ class DocumentService {
 
         return UploadDocumentResponse.builder()
                 .documentId(document.getDocumentId())
-                .signerId(signer.getExternalSignerId())
-                .externalId(externalDocumentId)
+                .externalSignerId(signer.getExternalSignerId())
+                .externalId(externalId)
                 .name(documentName)
                 .fileName(fileName)
                 .size(fileSize)
