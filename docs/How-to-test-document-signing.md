@@ -806,7 +806,9 @@ public class CriGenerator {
 
         final var subject = new X500Name(X500_NAME);
         final var subjectPublicKeyInfo = new SubjectPublicKeyInfo(algorithmId, rawPublicKey);
-        final var attributes = buildAttributes();
+        
+        // call buildAttributes(); if you want to add certificate extension attributes according to RFC 5280
+        final var attributes = new DERSet();
 
         final var cri = new CertificationRequestInfo(subject, subjectPublicKeyInfo, attributes);
 
