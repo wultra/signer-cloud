@@ -1,6 +1,6 @@
-# Migration from 0.9.2 to 0.9.3
+# Migration from 0.9.2 to 0.10.0
 
-This guide contains instructions for migration from Signer Cloud Server version `0.9.2` to version `0.9.3`.
+This guide contains instructions for migration from Signer Cloud Server version `0.9.2` to version `0.10.0`.
 
 
 ## REST API Changes
