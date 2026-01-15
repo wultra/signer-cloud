@@ -157,7 +157,7 @@ class DocumentControllerSha384IntTest {
         final var signer = Signer.builder()
                 .timestampCreated(Instant.now())
                 .externalSignerId(EXTERNAL_SIGNER_ID)
-                .customUserId("dummyUserId")
+                .userId("dummyUserId")
                 .csr(userCsrDerBase64)
                 .certificate(userCertificateDerBase64)
                 .timestampCertificateExpiration(Instant.now())

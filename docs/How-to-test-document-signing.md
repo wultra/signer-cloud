@@ -268,7 +268,7 @@ private static final String SIGNATURE_BASE64 = "MEUCIFM/zV52N+WM6kHVzJePDAKYNkKx
 ### Create signer
 
 When you have CSR, you can create a `signer` in **Signer Cloud** by calling following endpoint.
-The `externalSignerId` is `activationId`, `customUserId` can be any random value and the `csr` was obtained in previous step. It is already in correct format.
+The `externalSignerId` is `activationId`, `userId` can be any random value and the `csr` was obtained in previous step. It is already in correct format.
 Any call to the **Signer Cloud** must contain proper authorization. See [Signer Cloud Authorization](#signer-cloud-authorization).
 
 ```shell
@@ -277,7 +277,7 @@ curl --location 'http://127.0.0.1:8090/signers' \
 --header 'Authorization: ••••••' \
 --data '{
     "externalSignerId" : "17056bde-9e5c-4bcc-9001-fa1fef3b5965",
-    "customUserId" : "sc-demo-user",
+    "userId" : "sc-demo-user",
     "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIHxMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxl\nQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAR82Gbw\nurZi/8RRF19nS06fwpt6YC+DlgYaBavY2srU/wncKEWkmdKNdkMy1X7p/+KqvX6q\nid4LxXaqRZ/RsB0goAAwCgYIKoZIzj0EAwIDSAAwRQIgUz/NXnY35YzqQdXMl48M\nApg2QrGYcgrljDH9BacH1LoCIQDdCUhNGz+w/KNP+JU9Ypc9FRwt8RGqT8+HYvNR\nBzMfiQ==\n-----END CERTIFICATE REQUEST-----\n"
 }'
 ```
@@ -645,7 +645,7 @@ private static final String SIGNATURE_BASE64 = "MEYCIQDQZ0kbxn1L/3xQxqno4ARZr+G6
 ### Create signer
 
 When you have CSR, you can create a `signer` in **Signer Cloud** by calling following endpoint.
-The `externalSignerId` is `activationId`, `customUserId` can be any random value and the `csr` was obtained in previous step. It is already in correct format.
+The `externalSignerId` is `activationId`, `userId` can be any random value and the `csr` was obtained in previous step. It is already in correct format.
 Any call to the **Signer Cloud** must contain proper authorization. See [Signer Cloud Authorization](#signer-cloud-authorization).
 
 ```shell
@@ -654,7 +654,7 @@ curl --location 'https://signer-cloud.wultra.app/signers' \
 --header 'Authorization: Bearer <TOKEN>' \
 --data '{
     "externalSignerId" : "0a23495a-b159-4d06-ad4c-5a832c305605",
-    "customUserId" : "sc-demo-user",
+    "userId" : "sc-demo-user",
     "csr": "-----BEGIN CERTIFICATE REQUEST-----\nMIHyMIGYAgEAMDYxETAPBgNVBAMMCEpvaG4gRG9lMRQwEgYDVQQKDAtFeGFtcGxl\nQ29ycDELMAkGA1UEBhMCVVMwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAASHTq/W\nL3lk89Jk5IXqn7Kl8c7zswVMSho+NLnBwOoj9Tin5BWk4p5uH4fXd2lcolod0xKT\n2j1vUU5S6JnXHbkboAAwCgYIKoZIzj0EAwIDSQAwRgIhAKSykwJ0ef+rmtsS1RbV\nuLMDLACN/eL4iSR+2R+udH/cAiEA4PAPzYU2S3m5oMLWhLlx5db3HiI8o+rsctLb\n/7kH5d8=\n-----END CERTIFICATE REQUEST-----\n"
 }'
 ```

@@ -54,7 +54,7 @@ public class Signer {
 
     private String externalSignerId;
 
-    private String customUserId;
+    private String userId;
 
     private String csr;
 

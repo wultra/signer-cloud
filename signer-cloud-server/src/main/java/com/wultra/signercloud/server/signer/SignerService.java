@@ -107,7 +107,7 @@ class SignerService {
         final X509CertificateMetadata x509CertificateMetadata = convert(signer);
         final CallbackPayload payload = CallbackPayload.builder()
                 .externalSignerId(signer.getExternalSignerId())
-                .customUserId(signer.getCustomUserId())
+                .userId(signer.getUserId())
                 .callbackType(CallbackType.EXPIRED)
                 .certificateSerialNumber(x509CertificateMetadata.serialNumber())
                 .certificateExpiration(x509CertificateMetadata.expiration())
@@ -136,7 +136,7 @@ class SignerService {
         final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(signer.getCsr())
                 .externalSignerId(signer.getExternalSignerId())
-                .customUserId(signer.getCustomUserId())
+                .userId(signer.getUserId())
                 .build();
 
         final var certificateResponse = enrollCertificate(ejbcaCertificateRequest);
@@ -165,7 +165,7 @@ class SignerService {
     private void notifyRenewalCallback(final Signer signer, final X509Certificate x509Certificate) {
         final CallbackPayload payload = CallbackPayload.builder()
                 .externalSignerId(signer.getExternalSignerId())
-                .customUserId(signer.getCustomUserId())
+                .userId(signer.getUserId())
                 .callbackType(CallbackType.RENEWED)
                 .certificateSerialNumber(x509Certificate.getSerialNumber().toString())
                 .certificateExpiration(x509Certificate.getNotAfter().toInstant())
@@ -205,7 +205,7 @@ class SignerService {
      */
     void createUpdateSigner(final CreateUpdateSignerRequest request) {
         final var externalSignerId = request.externalSignerId();
-        final var customUserId = request.customUserId();
+        final var userId = request.userId();
         final var csrPem = request.csr();
 
         final var csrBase64 = WHITESPACE_PATTERN.matcher(
@@ -221,7 +221,7 @@ class SignerService {
         final var ejbcaCertificateRequest = EjbcaService.CertificateRequest.builder()
                 .csr(csrBase64)
                 .externalSignerId(externalSignerId)
-                .customUserId(customUserId)
+                .userId(userId)
                 .build();
 
         final var certificateResponse = enrollCertificate(ejbcaCertificateRequest);
@@ -234,7 +234,7 @@ class SignerService {
 
         try {
             final var signer = signerBuilder
-                    .customUserId(customUserId)
+                    .userId(userId)
                     .csr(csrBase64)
                     .certificateFromX509(x509Certificate)
                     .timestampCertificateExpiration(x509Certificate.getNotAfter().toInstant())
@@ -381,12 +381,12 @@ class SignerService {
      */
     SignerDetailResponse getDetail(final String externalSignerId) {
         return signerRepository.findByExternalSignerId(externalSignerId)
-                .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getCustomUserId(), signer.getStatus()))
+                .map(signer -> new SignerDetailResponse(signer.getExternalSignerId(), signer.getUserId(), signer.getStatus()))
                 .orElseThrow(() -> SignerNotFoundException.forId(externalSignerId));
     }
 
     @Builder
-    private record CallbackPayload(String externalSignerId, String customUserId, CallbackType callbackType, String certificateSerialNumber, Instant certificateExpiration) { }
+    private record CallbackPayload(String externalSignerId, String userId, CallbackType callbackType, String certificateSerialNumber, Instant certificateExpiration) { }
 
     private record X509CertificateMetadata(String serialNumber, Instant expiration) {}
 }

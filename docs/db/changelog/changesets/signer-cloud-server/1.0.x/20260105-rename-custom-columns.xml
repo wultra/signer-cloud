@@ -6,16 +6,6 @@
     <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20260105-rename-custom-columns.xml" author="Michal Rozehnal">
         <preConditions onFail="MARK_RAN">
             <not>
-                <columnExists tableName="sc_signer" columnName="custom_user_id"/>
-            </not>
-        </preConditions>
-        <comment>Rename column from "user_id" to "custom_user_id"</comment>
-        <renameColumn tableName="sc_signer" oldColumnName="user_id" newColumnName="custom_user_id" />
-    </changeSet>
-
-    <changeSet id="2" logicalFilePath="signer-cloud-server/1.0.x/20260105-rename-custom-columns.xml" author="Michal Rozehnal">
-        <preConditions onFail="MARK_RAN">
-            <not>
                 <columnExists tableName="sc_document" columnName="custom_document_id"/>
             </not>
         </preConditions>

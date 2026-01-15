@@ -72,7 +72,7 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 ```json
 {
   "externalSignerId": "456def",
-  "customUserId" : "123abc",
+  "userId" : "123abc",
   "csr": "-----BEGIN CERTIFICATE REQUEST-----\ncontent\nwith\ncorrect\nline\nendings\n-----END CERTIFICATE REQUEST-----",
 }
 ```
@@ -82,7 +82,7 @@ Create new signer and enroll for new certificate using CSR. System will track ce
 | Attribute          | Type     | Description                                                                                                                            |
 |:-------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------|
 | `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                        |
-| `customUserId`     | `String` | Custom User ID mostly for tracking purposes.                                                                                           |
+| `userId`           | `String` | Custom User ID mostly for tracking purposes.                                                                                           |
 | `csr`              | `String` | PEM encoded PKCS10 CSR, one line, line endings `\n`.                                                                                   |
 
 #### Response 200
@@ -169,18 +169,18 @@ Request without body.
 ```json
 {
   "externalSignerId": "123abc",
-  "customUserId": "123abc",
+  "userId": "123abc",
   "signerStatus": "ACTIVE"
 }
 ```
 
 ##### Response  Params
 
-| Attribute            | Type     | Description                                                               |
-|:---------------------|:---------|:--------------------------------------------------------------------------|
-| `externalSignerId`   | `String` | Activation ID (Registration ID) from PowerAuth.                           |
-| `customUserId`       | `String` | Custom User ID mostly for tracking purposes.                              |
-| `signerStatus`       | `String` | Signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED` |
+| Attribute          | Type     | Description                                                               |
+|:-------------------|:---------|:--------------------------------------------------------------------------|
+| `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                           |
+| `userId`           | `String` | Custom User ID mostly for tracking purposes.                              |
+| `signerStatus`     | `String` | Signer status. ENUM: `ACTIVE`, `BLOCKED`, `REMOVED`, `REVOKED`, `EXPIRED` |
 <!-- end -->
 
 <!-- begin api POST /documents -->

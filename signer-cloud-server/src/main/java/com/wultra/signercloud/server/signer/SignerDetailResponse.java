@@ -37,7 +37,7 @@ record SignerDetailResponse(
                 description = "ID of the user owning the signer",
                 example = "example-user-id"
         )
-        String customUserId,
+        String userId,
 
         @Schema(
                 description = "Status of the signer",

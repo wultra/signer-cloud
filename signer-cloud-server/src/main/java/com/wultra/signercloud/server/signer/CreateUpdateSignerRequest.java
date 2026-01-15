@@ -38,7 +38,7 @@ record CreateUpdateSignerRequest(
                 description = "Identifier of the user owning the signer.",
                 example = "example-user-id"
         )
-        @NotBlank String customUserId,
+        @NotBlank String userId,
 
         @Schema(
                 description = "PEM encoded PKCS10 CSR, one line, line endings '\\n'",

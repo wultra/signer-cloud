@@ -67,7 +67,7 @@ public class EjbcaService {
 
     private EjbcaRestClient.CertificateRequest convert(final CertificateRequest source) {
         return EjbcaRestClient.CertificateRequest.builder()
-                .accountBindingId(source.customUserId())
+                .accountBindingId(source.userId())
                 .username(source.externalSignerId())
                 .certificateRequest(source.csr())
                 .certificateProfileName(configurationProperties.getCertificateProfileName())
@@ -90,12 +90,12 @@ public class EjbcaService {
     /**
      * Parameter object for enrolling a certificate.
      *
-     * @param customUserId user identifier
+     * @param userId user identifier
      * @param externalSignerId signer identifier
      * @param csr Certificate Signing Request in PKCS #10 format
      */
     @Builder
-    public record CertificateRequest(String customUserId, String externalSignerId, String csr){}
+    public record CertificateRequest(String userId, String externalSignerId, String csr){}
 
     /**
      * Enrolled certificate with chain.
