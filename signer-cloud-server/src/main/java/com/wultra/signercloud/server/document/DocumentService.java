@@ -101,14 +101,14 @@ class DocumentService {
      * Stores the {@link Document} for signing and calculates its SHA-256 hash.
      *
      * @param externalSignerId {@link Signer#getExternalSignerId()}
-     * @param customDocumentId unique identifier of the document in the external system
+     * @param externalId unique identifier of the document in the external system
      * @param documentName name of the document
      * @param file the PDF document to be stored for signing
      * @return response with uploaded document details
      */
     UploadDocumentResponse uploadDocument(
             final String externalSignerId,
-            final String customDocumentId,
+            final String externalId,
             final String documentName,
             final MultipartFile file,
             final DocumentVisualSignature visualSignature
@@ -137,7 +137,7 @@ class DocumentService {
         final var document = Document.builder()
                 .timestampCreated(timestampCreated)
                 .documentId(UUID.randomUUID().toString())
-                .customDocumentId(customDocumentId)
+                .externalId(externalId)
                 .signer(AggregateReference.to(signer.getId()))
                 .documentName(documentName)
                 .fileName(fileName)
@@ -153,7 +153,7 @@ class DocumentService {
         return UploadDocumentResponse.builder()
                 .documentId(document.getDocumentId())
                 .externalSignerId(signer.getExternalSignerId())
-                .customDocumentId(customDocumentId)
+                .externalId(externalId)
                 .name(documentName)
                 .fileName(fileName)
                 .size(fileSize)

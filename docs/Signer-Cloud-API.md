@@ -217,10 +217,10 @@ Content-Type: text/plain
 
 {externalSignerId}
 --abcde12345
-Content-Disposition: form-data; name="customDocumentId"
+Content-Disposition: form-data; name="externalId"
 Content-Type: text/plain
 
-{customDocumentId}
+{externalId}
 --abcde12345
 Content-Disposition: form-data; name="name"
 Content-Type: text/plain
@@ -242,15 +242,15 @@ Content-Disposition: form-data; name="visualSignature"; filename="{visualSignatu
 
 ##### Request Params
 
-| Attribute            | Type     | Description                                                                                                                                                                                                    |
-|:---------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `size`               | `Number` | Document size in bytes.                                                                                                                                                                                        |
-| `externalSignerId`   | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                |
-| `customDocumentId`   | `String` | Custom unique ID identifying document in client’s systems.                                                                                                                                                     |
-| `name`               | `String` | Document name.                                                                                                                                                                                                 |
-| `fileName`           | `String` | File name (including suffix), e.g. “attachment.pdf”.                                                                                                                                                           |
-| `fileContent`        | `String` | File content (binary data).                                                                                                                                                                                    |
-| `visualSignature`    | `String` | Optional parameter for visual signature definition as JSON. See [PAdES Visible Signature](https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#PAdESVisibleSignatureAnnex). |
+| Attribute          | Type     | Description                                                                                                                                                                                                    |
+|:-------------------|:---------|:---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `size`             | `Number` | Document size in bytes.                                                                                                                                                                                        |
+| `externalSignerId` | `String` | Activation ID (Registration ID) from PowerAuth.                                                                                                                                                                |
+| `externalId`       | `String` | Custom unique ID identifying document in client’s systems.                                                                                                                                                     |
+| `name`             | `String` | Document name.                                                                                                                                                                                                 |
+| `fileName`         | `String` | File name (including suffix), e.g. “attachment.pdf”.                                                                                                                                                           |
+| `fileContent`      | `String` | File content (binary data).                                                                                                                                                                                    |
+| `visualSignature`  | `String` | Optional parameter for visual signature definition as JSON. See [PAdES Visible Signature](https://ec.europa.eu/digital-building-blocks/DSS/webapp-demo/doc/dss-documentation.html#PAdESVisibleSignatureAnnex). |
 
 
 #### Response 200
@@ -259,7 +259,7 @@ Content-Disposition: form-data; name="visualSignature"; filename="{visualSignatu
 {
   "documentId": "String",
   "externalSignerId": "String",
-  "customDocumentId": "String",
+  "externalId": "String",
   "name": "String",
   "fileName": "String",
   "size": Number,

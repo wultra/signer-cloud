@@ -76,7 +76,7 @@ public class DocumentController {
                     description = "External ID of the document",
                     example = "example-document-id"
             )
-            @RequestParam("customDocumentId") final String customDocumentId,
+            @RequestParam("externalId") final String externalId,
 
             @Schema(
                     description = "Name of the document",
@@ -98,9 +98,9 @@ public class DocumentController {
             )
             @RequestPart(value = "visualSignature", required = false) final DocumentVisualSignature visualSignature
     ) {
-        logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, customDocumentId: {}", externalSignerId, customDocumentId);
+        logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, documentExternalId: {}", externalSignerId, externalId);
         final var result = Try.execute(
-                () -> documentService.uploadDocument(externalSignerId, customDocumentId, documentName, file, visualSignature)
+                () -> documentService.uploadDocument(externalSignerId, externalId, documentName, file, visualSignature)
         );
 
         if (result.isSuccess()) {

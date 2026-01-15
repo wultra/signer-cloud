@@ -16,6 +16,5 @@
     <include file="20251009-visual-signature-params.xml" relativeToChangelogFile="true" />
     <include file="20251013-enlarge-hash.xml" relativeToChangelogFile="true" />
     <include file="20251205-rename-objects-to-lowercase.xml" relativeToChangelogFile="true" />
-    <include file="20260105-rename-custom-columns.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

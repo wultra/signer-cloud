@@ -591,7 +591,7 @@ class DocumentServiceTest {
                 .timestampCreated(Instant.now().minusSeconds(30))
                 .documentId(DOCUMENT_UUID)
                 .signer(AggregateReference.to(SIGNER_ID))
-                .customDocumentId(EXTERNAL_DOCUMENT_ID)
+                .externalId(EXTERNAL_DOCUMENT_ID)
                 .documentName(DOCUMENT_NAME)
                 .fileName(FILE_NAME)
                 .fileSize(uploadedDocumentContent.length)
@@ -848,7 +848,7 @@ class DocumentServiceTest {
     private void assertSuccessUploadResult(final UploadDocumentResponse response) {
         assertDoesNotThrow(() -> UUID.fromString(response.documentId()));
         assertEquals(EXTERNAL_SIGNER_ID, response.externalSignerId());
-        assertEquals(EXTERNAL_DOCUMENT_ID, response.customDocumentId());
+        assertEquals(EXTERNAL_DOCUMENT_ID, response.externalId());
         assertEquals(DOCUMENT_NAME, response.name());
         assertEquals(FILE_NAME, response.fileName());
         assertEquals(uploadedDocumentContent.length, response.size());
@@ -910,7 +910,7 @@ class DocumentServiceTest {
         assertNull(document.getTimestampLastUpdated());
         assertDoesNotThrow(() -> UUID.fromString(document.getDocumentId()));
         assertEquals(AggregateReference.to(SIGNER_ID), document.getSigner());
-        assertEquals(EXTERNAL_DOCUMENT_ID, document.getCustomDocumentId());
+        assertEquals(EXTERNAL_DOCUMENT_ID, document.getExternalId());
         assertEquals(DOCUMENT_NAME, document.getDocumentName());
         assertEquals(FILE_NAME, document.getFileName());
         assertEquals(uploadedDocumentContent.length, document.getFileSize());
@@ -939,7 +939,7 @@ class DocumentServiceTest {
         assertEquals(Instant.now().toEpochMilli(), document.getTimestampLastUpdated().toEpochMilli(), MILLISECONDS_DELTA);
         assertDoesNotThrow(() -> UUID.fromString(document.getDocumentId()));
         assertEquals(AggregateReference.to(SIGNER_ID), document.getSigner());
-        assertEquals(EXTERNAL_DOCUMENT_ID, document.getCustomDocumentId());
+        assertEquals(EXTERNAL_DOCUMENT_ID, document.getExternalId());
         assertEquals(DOCUMENT_NAME, document.getDocumentName());
         assertEquals(FILE_NAME, document.getFileName());
         assertEquals(signedDocumentContent.length, document.getFileSize());

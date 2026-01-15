@@ -286,14 +286,14 @@ An HTTP `200 OK` response should be returned
 
 ### Upload document for signing
 
-Upload the document you want to sign. The values for `customDocumentId` and `name` can be arbitrary. 
+Upload the document you want to sign. The values for `externalId` and `name` can be arbitrary. 
 Visual signature can be added as optional parameter. See [Document Visual Signature](#document-visual-signature).
 
 ```shell
 curl --location 'http://127.0.0.1:8090/documents' \
 --header 'Authorization: Basic dXNlcjo0ODVmNDNhYS02NThlLTQ0YTUtOTk3OC1mY2U4Yjk5MzY0MzU=' \
 --form 'externalSignerId="17056bde-9e5c-4bcc-9001-fa1fef3b5965"' \
---form 'customDocumentId="external-id-example"' \
+--form 'externalId="external-id-example"' \
 --form 'name="Demo document"' \
 --form 'file=@"/Users/michalrozehnal/repository/wultra/signer-cloud/signer-cloud-server/src/test/resources/input.pdf"'
 ```
@@ -305,7 +305,7 @@ An HTTP `200 OK` response should be returned:
 {
   "documentId": "747019f6-a39f-447a-9649-47050413d085",
   "externalSignerId": "17056bde-9e5c-4bcc-9001-fa1fef3b5965",
-  "customDocumentId": "external-id-example",
+  "externalId": "external-id-example",
   "name": "Demo document",
   "fileName": "input.pdf",
   "size": 7757,
@@ -664,14 +664,14 @@ An HTTP `200 OK` response should be returned
 
 ### Upload document for signing
 
-Upload the document you want to sign. The values for `customDocumentId` and `name` can be arbitrary.
+Upload the document you want to sign. The values for `externalId` and `name` can be arbitrary.
 Visual signature can be added as optional parameter. See [Document Visual Signature](#document-visual-signature).
 
 ```shell
 curl --location 'https://signer-cloud.wultra.app/documents' \
 --header 'Authorization: Bearer <TOKEN>' \
 --form 'externalSignerId="0a23495a-b159-4d06-ad4c-5a832c305605"' \
---form 'customDocumentId="external-id-example"' \
+--form 'externalId="external-id-example"' \
 --form 'name="Document example"' \
 --form 'file=@"<FILE_PATH>"'
 ```
@@ -682,7 +682,7 @@ An HTTP `200 OK` response should be returned:
 {
     "documentId": "d8a06ea4-e9c8-4f0c-ac22-c009a1f351b5",
     "externalSignerId": "0a23495a-b159-4d06-ad4c-5a832c305605",
-    "customDocumentId": "external-id-example",
+    "externalId": "external-id-example",
     "name": "Document example",
     "fileName": "input.pdf",
     "size": 7757,
