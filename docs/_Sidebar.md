@@ -13,3 +13,6 @@
 **REST APIs**
 - [Signer Cloud API](./Signer-Cloud-API.md)
 - [How to test document signing](./How-to-test-document-signing.md)
+
+**Migration Instructions**
+- [Migration from 0.9.2 to 0.10.0](./Signer-Cloud-Server-0.10.0.md)
