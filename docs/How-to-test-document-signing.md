@@ -779,20 +779,23 @@ Following code generates CRI for given public key and prints it in base64 format
 Set your public key into constant `PUBLIC_KEY_BASE64`.
 
 ```java
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.*;
+import org.bouncycastle.asn1.pkcs.Attribute;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.*;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import java.io.IOException;
 import java.security.Security;
 import java.util.Base64;
 
 public class CriGenerator {
 
+    private static final String OID = "prime256v1";
+    private static final String X500_NAME = "CN=John Doe,O=ExampleCorp,C=US";
     private static final String PUBLIC_KEY_BASE64 = "BHzYZvC6tmL/xFEXX2dLTp/Cm3pgL4OWBhoFq9jaytT/CdwoRaSZ0o12QzLVfun/4qq9fqqJ3gvFdqpFn9GwHSA=";
 
     public static void main(String[] args) throws IOException {

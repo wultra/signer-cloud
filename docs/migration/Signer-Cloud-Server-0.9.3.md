@@ -6,6 +6,6 @@ This guide contains instructions for migration from Signer Cloud Server version 
 ## REST API Changes
 
 In order to have consistent fields naming `signerId` field was renamed to `externalSignerId`. Following endpoints were affected:
-- Response body in `POST /signers/{externalSignerId}`
+- Response body in `GET /signers/{externalSignerId}`
 - Request body in `POST /signers`
 - Parameter in `POST /documents`
