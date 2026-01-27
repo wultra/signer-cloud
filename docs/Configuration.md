@@ -64,7 +64,7 @@ The username can be set using the `spring.security.user.name` property, and the 
 
 In the case of `OAUTH2`, the properties `spring.security.oauth2.resource-server.jwt.issuer-uri` and `spring.security.oauth2.resource-server.jwt.audiences` must be set.
 
-For more details, see [Spring Security Documentation](https://docs.spring.io/spring-security/reference/index.html);
+For more details, see [Spring Security Documentation](https://docs.spring.io/spring-security/reference/index.html).
 
 ## Certification Authority
 
