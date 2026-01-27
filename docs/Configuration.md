@@ -52,10 +52,19 @@ For time-defining values, the following syntax is supported: 1s 1h 1d 1y.
 | signer-cloud.server.callback.thread-pool-core-size                      | 1                  | Number of core threads in the thread pool.                                                                                                                                                                                      |
 | signer-cloud.server.callback.thread-pool-max-size                       | 2                  | Maximum number of threads in the thread pool.                                                                                                                                                                                   |
 | signer-cloud.server.callback.thread-pool-queue-capacity                 | 1000               | Queue capacity of the thread pool.                                                                                                                                                                                              |
-| signer-cloud.server.security.auth.type                                  | `OAUTH2`           | Authentication type.                                                                                                                                                                                                            |
+| signer-cloud.server.security.auth.type                                  | `OAUTH2`           | Authentication type. Allowed values `OAUTH2` and `BASIC_HTTP`.                                                                                                                                                                  |
 | spring.security.oauth2.resource-server.jwt.issuer-uri                   | _empty_            | URL of the authorization server.                                                                                                                                                                                                |
 | spring.security.oauth2.resource-server.jwt.audiences                    | _empty_            | A comma-separated list of allowed `aud` JWT claim values to be validated.                                                                                                                                                       |
 
+
+### REST API authentication type
+
+In the case of `BASIC_HTTP`, the default username is `user` and the password is a random UUID generated during server startup.
+The username can be set using the `spring.security.user.name` property, and the password using `spring.security.user.password`.
+
+In the case of `OAUTH2`, the properties `spring.security.oauth2.resource-server.jwt.issuer-uri` and `spring.security.oauth2.resource-server.jwt.audiences` must be set.
+
+For more details, see [Spring Security Documentation](https://docs.spring.io/spring-security/reference/index.html);
 
 ## Certification Authority
 
