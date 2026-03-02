@@ -21,7 +21,7 @@
         <powerauth.version>1.10.1</powerauth.version>
         <wultra-core.version>1.12.0</wultra-core.version>
 
-        <bouncycastle.version>1.82</bouncycastle.version>
+        <bouncycastle.version>1.83</bouncycastle.version>
         <dss.version>6.3</dss.version>
         <shedlock.version>6.10.0</shedlock.version>
         <okhttp3.version>5.3.2</okhttp3.version>
