@@ -106,7 +106,7 @@ jobs:
       - name: Copy liquibase files
         run: cp -r ./docs/db ./signer-cloud-server/docker/deploy/db/
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Log in to ACR
