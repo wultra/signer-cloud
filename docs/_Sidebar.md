@@ -9,6 +9,7 @@
 - [Integration](./Integration.md)
 - [Installation](./Installation.md)
 - [Configuration](./Configuration.md)
+- [Artifact Signing](./Artifact-Signing.md)
 
 **REST APIs**
 - [Signer Cloud API](./Signer-Cloud-API.md)
