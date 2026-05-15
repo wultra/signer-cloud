@@ -48,7 +48,7 @@ RUN apt-get -y update  \
 COPY ./docs/db/changelog $LB_HOME/db/changelog
 
 # Deploy and run applications
-COPY ./signer-cloud-server/target/signer-cloud-server.war "${APP_PATH}"
+COPY ./signer-cloud-server/target/signer-cloud-server*.war "${APP_PATH}"
 
 # Docker configuration
 EXPOSE 8080
