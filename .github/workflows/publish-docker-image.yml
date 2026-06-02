@@ -1,5 +1,5 @@
 ---
-name: Build and publish docker image Test Server
+name: Build and publish docker image Signer Cloud Server
 
 on:
   workflow_dispatch:
