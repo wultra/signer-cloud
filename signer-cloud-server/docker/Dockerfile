@@ -1,6 +1,6 @@
-FROM ibm-semeru-runtimes:open-21.0.8_9-jre
+FROM ibm-semeru-runtimes:open-jdk-25.0.3.0-jre-noble
 
-LABEL maintainer="Lubos Racansky <lubos.racansky@wultra.com>"
+LABEL maintainer="Wultra <hello@wultra.com>"
 
 # Prepare environment variables
 ENV JAVA_HOME=/opt/java/openjdk \
