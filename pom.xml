@@ -18,6 +18,8 @@
     <description>Signer Cloud</description>
 
     <properties>
+        <spring-boot.version>4.0.6</spring-boot.version>
+
         <powerauth.version>2.2.0-SNAPSHOT</powerauth.version>
         <wultra-core.version>2.2.0-SNAPSHOT</wultra-core.version>
 
@@ -40,12 +42,14 @@
     <dependencyManagement>
         <dependencies>
 
-            <!-- Pin JUnit to the Spring Boot managed version (6.x). The DSS BOM transitively
-                 downgrades JUnit to 5.x, which is binary-incompatible with Spring Framework 7's SpringExtension. -->
+            <!-- Re-import spring-boot-dependencies BEFORE dss-bom so that Spring Boot's managed
+                 versions (notably JUnit 6.x) win over the older versions declared in dss-bom.
+                 Without this, dss-bom downgrades JUnit to 5.x, which is binary-incompatible with
+                 Spring Framework 7's SpringExtension. -->
             <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>junit-bom</artifactId>
-                <version>${junit-jupiter.version}</version>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
