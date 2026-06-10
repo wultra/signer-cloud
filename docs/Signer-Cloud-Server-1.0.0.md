@@ -14,4 +14,4 @@ No action is required.
 
 ### Spring Boot 4 and Jackson 3
 
-Liveness Check Proxy has been migrated to Spring Boot 4 and Jackson 3.
+Signer Cloud has been migrated to Spring Boot 4 and Jackson 3.
