@@ -17,8 +17,8 @@
  */
 package com.wultra.signercloud.server.document;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import lombok.NonNull;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.core.convert.converter.Converter;
@@ -48,7 +48,7 @@ public final class DocumentVisualSignatureConverter {
         public String convert(final @NonNull DocumentVisualSignature documentVisualSignature) {
             try {
                 return OBJECT_MAPPER.writeValueAsString(documentVisualSignature);
-            } catch (final JsonProcessingException e) {
+            } catch (final JacksonException e) {
                 throw new DocumentVisualSignatureException("Serialization to JSON failed: " + e.getMessage(), e);
             }
         }
@@ -68,7 +68,7 @@ public final class DocumentVisualSignatureConverter {
                 }
 
                 return OBJECT_MAPPER.readValue(source, DocumentVisualSignature.class);
-            } catch (final JsonProcessingException e) {
+            } catch (final JacksonException e) {
                 throw new DocumentVisualSignatureException("Deserialization from JSON failed" + e.getMessage(), e);
             }
         }

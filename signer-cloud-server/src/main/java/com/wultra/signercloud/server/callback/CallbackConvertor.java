@@ -17,12 +17,12 @@
  */
 package com.wultra.signercloud.server.callback;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -53,7 +53,7 @@ class CallbackConvertor {
 
         try {
             return objectMapper.readValue(source, new TypeReference<>() {});
-        } catch (IOException ex) {
+        } catch (JacksonException ex) {
             throw new IllegalStateException("Unable to parse JSON payload", ex);
         }
     }

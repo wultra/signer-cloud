@@ -17,11 +17,11 @@
  */
 package com.wultra.signercloud.server.signer;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 import com.wultra.core.rest.client.base.RestClientException;
 import com.wultra.security.powerauth.client.model.error.PowerAuthClientException;
-import com.wultra.security.powerauth.client.model.request.VerifyECDSASignatureRequest;
+import com.wultra.security.powerauth.client.model.request.v3.VerifyECDSASignatureRequest;
 import com.wultra.signercloud.server.callback.api.CallbackNotificationService;
 import com.wultra.signercloud.server.callback.api.CallbackType;
 import com.wultra.signercloud.server.ejbca.EjbcaService;
@@ -180,7 +180,7 @@ class SignerService {
     private String convert(final CallbackPayload payload) {
         try {
             return objectMapper.writeValueAsString(payload);
-        } catch (JsonProcessingException e) {
+        } catch (JacksonException e) {
             logger.warn("Unable to serialize {} to JSON.", payload, e);
             return "{}";
         }
