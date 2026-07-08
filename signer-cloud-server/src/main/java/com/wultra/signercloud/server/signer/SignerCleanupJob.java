@@ -24,6 +24,8 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * A scheduled job that performs cleanup operations on signers.
  *
@@ -42,9 +44,9 @@ class SignerCleanupJob {
     @SchedulerLock(name = "cleanupSigners")
     public void cleanupSigners() {
         final int limit = configurationProperties.getExpiration().job().limit();
-        logger.info("action: cleanupSigners, state: initiated, limit: {}", limit);
+        logger.info("Cleanup signers initiated", kv("action", "cleanupSigners"), kv("state", "initiated"), kv("limit", limit));
         LockAssert.assertLocked();
         final var result = signerService.cleanupSigners(limit);
-        logger.info("action: cleanupSigners, state: succeeded, count: {}", result);
+        logger.info("Cleanup signers succeeded", kv("action", "cleanupSigners"), kv("state", "succeeded"), kv("count", result));
     }
 }

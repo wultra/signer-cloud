@@ -24,6 +24,8 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * A scheduled job that performs cleanup operations on documents.
  *
@@ -39,9 +41,9 @@ class DocumentCleanupJob {
     @Scheduled(cron = "${signer-cloud.server.document.cleanup.cron}", zone = "UTC")
     @SchedulerLock(name = "cleanupDocuments")
     public void cleanupDocuments() {
-        logger.info("action: cleanupDocuments, state: initiated");
+        logger.info("Cleanup documents initiated", kv("action", "cleanupDocuments"), kv("state", "initiated"));
         LockAssert.assertLocked();
         final var result = documentService.cleanupDocuments();
-        logger.info("action: cleanupDocuments, state: succeeded, {}", result);
+        logger.info("Cleanup documents succeeded", kv("action", "cleanupDocuments"), kv("state", "succeeded"), kv("count", result));
     }
 }

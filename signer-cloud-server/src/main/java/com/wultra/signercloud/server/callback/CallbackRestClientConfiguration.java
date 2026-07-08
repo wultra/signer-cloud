@@ -39,6 +39,8 @@ import java.util.Base64;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Configuration creating {@link CallbackRestClient}.
  *
@@ -59,7 +61,7 @@ class CallbackRestClientConfiguration {
     }
 
     private CallbackRestClient createCallbackRestClient(final CallbackType callbackType, final CallbackConfigurationProperties configuration) throws RestClientException {
-        logger.info("Initiating RestClient for callbackType={}", callbackType);
+        logger.info("Initiating RestClient", kv("callbackType", callbackType));
         return CallbackRestClient.builder()
                 .restClient(initializeRestClient(callbackType, configuration))
                 .timestampCreated(LocalDateTime.now())

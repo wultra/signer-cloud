@@ -28,6 +28,8 @@ import org.springframework.util.Assert;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Handlers of a Callback Event response.
  *
@@ -57,7 +59,7 @@ class CallbackEventResponseHandler {
                 .orElseThrow(() -> new IllegalStateException("Callback Event was not found in database during its success handling: callbackEventId=" + callbackEventData.id()));
 
         final CallbackConfigurationProperties.CallbackConfiguration callbackConfiguration = configuration.callbackConfigurationFor(callbackEvent.getCallbackType());
-        logger.info("Callback succeeded, URL={}, callbackEventId={}", callbackConfiguration.url(), callbackEvent.getId());
+        logger.info("Callback succeeded", kv("url", callbackConfiguration.url()), kv("callbackEventId", callbackEvent.getId()));
 
         final Duration retentionPeriod = callbackConfiguration.retentionPeriod();
 
@@ -84,7 +86,7 @@ class CallbackEventResponseHandler {
                 .orElseThrow(() -> new IllegalStateException("Callback Event was not found in database during its failure handling: callbackEventId=" + callbackEventData.id()));
 
         final CallbackConfigurationProperties.CallbackConfiguration callbackConfiguration = configuration.callbackConfigurationFor(callbackEvent.getCallbackType());
-        logger.info("Callback failed, URL={}, callbackEventId={}, error={}", callbackConfiguration.url(), callbackEvent.getId(), error.getMessage());
+        logger.info("Callback failed", kv("url", callbackConfiguration.url()), kv("callbackEventId", callbackEvent.getId()), kv("errorMessage", error.getMessage()));
 
         final CallbackEvent.CallbackEventBuilder builder = callbackEvent.toBuilder()
                 .attempts(callbackEvent.getAttempts() + 1)
@@ -99,7 +101,7 @@ class CallbackEventResponseHandler {
             builder.timestampNextCall(LocalDateTime.now().plus(backoffPeriod))
                     .status(CallbackEventStatus.PENDING);
         } else {
-            logger.debug("Maximum number of attempts reached for callbackEventId={}", callbackEvent.getId());
+            logger.debug("Maximum number of attempts reached", kv("callbackEventId", callbackEvent.getId()));
             final Duration retentionPeriod = callbackConfiguration.retentionPeriod();
             builder.timestampDeleteAfter(LocalDateTime.now().plus(retentionPeriod))
                     .timestampNextCall(null)

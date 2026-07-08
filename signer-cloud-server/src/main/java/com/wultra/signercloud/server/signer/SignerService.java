@@ -43,6 +43,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Service for {@link Signer} operations.
  *
@@ -94,7 +96,7 @@ class SignerService {
         signerRepository.markAsExpired(ids, Instant.now());
 
         if (callbackNotificationService.isCallbackEnabled(CallbackType.EXPIRED)) {
-            logger.info("Creating {} expiration callbacks.", signers.size());
+            logger.info("Creating expiration callbacks", kv("callbackCount", signers.size()), kv("callbackType", CallbackType.EXPIRED));
             for (final Signer signer : signers) {
                 notifyExpiredCallback(signer);
             }
@@ -153,7 +155,7 @@ class SignerService {
 
             saveIssuedCertificate(signer.getId(), x509Certificate);
         } catch (final CertificateEncodingException e) {
-            logger.warn("Exception when encoding certificate to base64 during renewal, externalSignerId: {}", signer.getExternalSignerId());
+            logger.warn("Exception when encoding certificate to base64 during renewal", kv("externalSignerId", signer.getExternalSignerId()));
             throw new CertificateProcessingException("Certificate could not be encoded during renewal", e);
         }
 
@@ -181,7 +183,7 @@ class SignerService {
         try {
             return objectMapper.writeValueAsString(payload);
         } catch (JacksonException e) {
-            logger.warn("Unable to serialize {} to JSON.", payload, e);
+            logger.warn("Unable to serialize callback payload to JSON", kv("payload", payload), e);
             return "{}";
         }
     }
@@ -367,7 +369,7 @@ class SignerService {
         final var certificatesToRevokeCount = certificatesMetadata.size();
 
         for (var i = 0; i < certificatesToRevokeCount; i++) {
-            logger.info("Revoking certificate {}/{} in EJBCA", i + 1, certificatesToRevokeCount);
+            logger.info("Revoking certificate in EJBCA", kv("certificateIndex", i + 1), kv("certificateCount", certificatesToRevokeCount));
             final var certificateMetadata = certificatesMetadata.get(i);
             certificateRevocationService.revokeCertificate(certificateMetadata, revocationReason);
         }

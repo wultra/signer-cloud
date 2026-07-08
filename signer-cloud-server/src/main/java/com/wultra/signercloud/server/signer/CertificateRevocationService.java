@@ -29,6 +29,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigInteger;
 import java.time.Instant;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Service for revoking issued certificates in EJBCA.
  *
@@ -65,12 +67,12 @@ class CertificateRevocationService {
             ejbcaService.revokeCertificate(request);
 
             setRevokedStatus(certificateMetadata);
-            logger.info("Certificate successfully revoked. Issuer DN: {}, Serial Number: {}", issuerDn, serialNumber);
+            logger.info("Certificate successfully revoked", kv("issuerDn", issuerDn), kv("serialNumber", serialNumber));
         } catch (final RestClientException e) {
             final var response = e.getResponse();
 
             if (e.getStatusCode() == HttpStatus.CONFLICT && response.contains("has previously been revoked")) {
-                logger.info("Certificate was already revoked in EJBCA. Issuer DN: {}, Serial Number: {}", issuerDn, serialNumber);
+                logger.info("Certificate was already revoked in EJBCA", kv("issuerDn", issuerDn), kv("serialNumber", serialNumber));
                 setRevokedStatus(certificateMetadata);
                 return;
             }

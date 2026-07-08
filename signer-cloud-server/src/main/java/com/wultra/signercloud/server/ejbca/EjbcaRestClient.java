@@ -38,6 +38,8 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.util.List;
 import java.util.Map;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Rest client for EJBCA.
  *
@@ -83,7 +85,7 @@ class EjbcaRestClient {
         logger.info("Sending certificate request to EJBCA");
         logger.debug("Sending certificate request to EJBCA: {}", request);
         final ResponseEntity<CertificateResponse> response = restClient.post("/v1/certificate/pkcs10enroll", request, ParameterizedTypeReference.forType(CertificateResponse.class));
-        logger.info("Got certificate response, status code: {}", response.getStatusCode());
+        logger.info("Got certificate response from EJBCA", kv("statusCode", response.getStatusCode()));
         logger.debug("Got certificate response: {}", response.getBody());
         return response.getBody();
     }
@@ -105,7 +107,7 @@ class EjbcaRestClient {
 
         final var params = MultiValueMap.fromSingleValue(Map.of("reason", reason.name()));
 
-        logger.info("Revoking certificate, serialNumberHex: {}, issuerDN: {}, reason: {}", request.serialNumberHex(), request.issuerDN(), reason);
+        logger.info("Revoking certificate in EJBCA", kv("serialNumberHex", request.serialNumberHex()), kv("issuerDn", request.issuerDN()), kv("reason", reason));
         restClient.put(url, null, params, null, ParameterizedTypeReference.forType(Void.class));
         logger.info("Successful EJBCA certificate revoke call");
     }

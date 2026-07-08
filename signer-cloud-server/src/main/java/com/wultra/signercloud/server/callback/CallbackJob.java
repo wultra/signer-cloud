@@ -24,6 +24,8 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * A scheduled job that performs cleanup operations on signers.
  *
@@ -42,27 +44,27 @@ class CallbackJob {
     @SchedulerLock(name = "dispatchPendingCallbackEvents")
     public void dispatchPendingCallbackEvents() {
         final int limit = configurationProperties.getDispatchPendingCallbackEvents().job().limit();
-        logger.info("action: dispatchPendingCallbackEvents, state: initiated, limit: {}", limit);
+        logger.info("Dispatch pending callback events initiated", kv("action", "dispatchPendingCallbackEvents"), kv("state", "initiated"), kv("limit", limit));
         LockAssert.assertLocked();
         final var result = callbackService.dispatchPendingCallbackEvents(limit);
-        logger.info("action: dispatchPendingCallbackEvents, state: succeeded, count: {}", result);
+        logger.info("Dispatch pending callback events succeeded", kv("action", "dispatchPendingCallbackEvents"), kv("state", "succeeded"), kv("count", result));
     }
 
     @Scheduled(cron = "${signer-cloud.server.callback.cleanup-callback-events.job.cron}", zone = "UTC")
     @SchedulerLock(name = "cleanupCallbackEvents")
     public void cleanupCallbackEvents() {
-        logger.info("action: cleanupCallbackEvents, state: initiated");
+        logger.info("Cleanup callback events initiated", kv("action", "cleanupCallbackEvents"), kv("state", "initiated"));
         LockAssert.assertLocked();
         final var result = callbackService.deleteCallbackEventsAfterRetentionPeriod();
-        logger.info("action: cleanupCallbackEvents, state: succeeded, count: {}", result);
+        logger.info("Cleanup callback events succeeded", kv("action", "cleanupCallbackEvents"), kv("state", "succeeded"), kv("count", result));
     }
 
     @Scheduled(cron = "${signer-cloud.server.callback.rerun-stale-callback-events.job.cron}", zone = "UTC")
     @SchedulerLock(name = "rerunStaleCallbackEvents")
     public void rerunStaleCallbackEvents() {
-        logger.info("action: rerunStaleCallbackEvents, state: initiated");
+        logger.info("Rerun stale callback events initiated", kv("action", "rerunStaleCallbackEvents"), kv("state", "initiated"));
         LockAssert.assertLocked();
         final var result = callbackService.resetStaleCallbackEvents();
-        logger.info("action: rerunStaleCallbackEvents, state: succeeded, count: {}", result);
+        logger.info("Rerun stale callback events succeeded", kv("action", "rerunStaleCallbackEvents"), kv("state", "succeeded"), kv("count", result));
     }
 }

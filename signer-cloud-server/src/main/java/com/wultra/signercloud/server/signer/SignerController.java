@@ -28,6 +28,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Controller for {@link Signer} operations.
  *
@@ -70,16 +72,16 @@ class SignerController {
     )
     @PostMapping
     void createUpdate(@Valid @RequestBody final CreateUpdateSignerRequest requestBody) {
-        logger.info("action: createUpdateSigner, state: initiated, userId: {}, externalSignerId: {}", requestBody.userId(), requestBody.externalSignerId());
+        logger.info("Create or update signer initiated", kv("action", "createUpdateSigner"), kv("state", "initiated"), kv("userId", requestBody.userId()), kv("externalSignerId", requestBody.externalSignerId()));
         final var result = Try.execute(
                 () -> signerService.createUpdateSigner(requestBody)
         );
 
         if (result.isSuccess()) {
-            logger.info("action: createUpdateSigner, state: succeeded");
+            logger.info("Create or update signer succeeded", kv("action", "createUpdateSigner"), kv("state", "succeeded"), kv("externalSignerId", requestBody.externalSignerId()));
         } else {
             final var error = result.getError();
-            logger.error("action: createUpdateSigner, state: failed, errorMessage: {}", error.getMessage());
+            logger.error("Create or update signer failed", kv("action", "createUpdateSigner"), kv("state", "failed"), kv("externalSignerId", requestBody.externalSignerId()), kv("errorMessage", error.getMessage()));
             throw error;
         }
     }
@@ -114,16 +116,16 @@ class SignerController {
             )
             @PathVariable final String externalSignerId,
             @Valid @RequestBody final UpdateSignerStatusRequest requestBody) {
-        logger.info("action: updateSignerStatus, state: initiated, externalSignerId: {}, newStatus: {}", externalSignerId, requestBody.signerStatus());
+        logger.info("Update signer status initiated", kv("action", "updateSignerStatus"), kv("state", "initiated"), kv("externalSignerId", externalSignerId), kv("newStatus", requestBody.signerStatus()));
         final var result =  Try.execute(
                 () -> signerService.updateStatus(externalSignerId, requestBody)
         );
 
         if (result.isSuccess()) {
-            logger.info("action: updateSignerStatus, state: succeeded");
+            logger.info("Update signer status succeeded", kv("action", "updateSignerStatus"), kv("state", "succeeded"), kv("externalSignerId", externalSignerId));
         } else {
             final var error = result.getError();
-            logger.error("action: updateSignerStatus, state: failed, errorMessage: {}", error.getMessage());
+            logger.error("Update signer status failed", kv("action", "updateSignerStatus"), kv("state", "failed"), kv("externalSignerId", externalSignerId), kv("errorMessage", error.getMessage()));
             throw error;
         }
     }
@@ -153,17 +155,17 @@ class SignerController {
             )
             @PathVariable final String externalSignerId
     ) {
-        logger.info("action: getSignerDetail, state: initiated, externalSignerId: {}", externalSignerId);
+        logger.info("Get signer detail initiated", kv("action", "getSignerDetail"), kv("state", "initiated"), kv("externalSignerId", externalSignerId));
         final var result = Try.execute(
                 () -> signerService.getDetail(externalSignerId)
         );
 
         if (result.isSuccess()) {
-            logger.info("action: getSignerDetail, state: succeeded");
+            logger.info("Get signer detail succeeded", kv("action", "getSignerDetail"), kv("state", "succeeded"), kv("externalSignerId", externalSignerId));
             return result.getResponse();
         } else {
             final var error = result.getError();
-            logger.info("action: getSignerDetail, state: failed, errorMessage: {}", error.getMessage());
+            logger.info("Get signer detail failed", kv("action", "getSignerDetail"), kv("state", "failed"), kv("externalSignerId", externalSignerId), kv("errorMessage", error.getMessage()));
             throw error;
         }
     }

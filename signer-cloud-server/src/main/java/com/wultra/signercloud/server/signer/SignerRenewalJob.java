@@ -24,6 +24,8 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * A scheduled job that performs renewal operations on signers.
  *
@@ -42,9 +44,9 @@ class SignerRenewalJob {
     @SchedulerLock(name = "renewSigners")
     public void renewSigners() {
         final int limit = configurationProperties.getRenewal().job().limit();
-        logger.info("action: renewSigners, state: initiated, limit: {}", limit);
+        logger.info("Renew signers initiated", kv("action", "renewSigners"), kv("state", "initiated"), kv("limit", limit));
         LockAssert.assertLocked();
         final var result = signerService.renewSigners(limit);
-        logger.info("action: renewSigners, state: succeeded, count: {}", result);
+        logger.info("Renew signers succeeded", kv("action", "renewSigners"), kv("state", "succeeded"), kv("count", result));
     }
 }
