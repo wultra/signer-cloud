@@ -39,6 +39,8 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Callback service.
  *
@@ -136,7 +138,7 @@ class CallbackService {
     @Transactional
     public int resetStaleCallbackEvents() {
         final int numberOfAffectedEvents = callbackEventRepository.updateStaleEventsToPendingState(LocalDateTime.now());
-        logger.info("Number of stale Callback Events moved to PENDING state: {}", numberOfAffectedEvents);
+        logger.info("Stale Callback Events moved to PENDING state", kv("affectedEvents", numberOfAffectedEvents));
         return numberOfAffectedEvents;
     }
 
@@ -157,7 +159,7 @@ class CallbackService {
         final CallbackRestClient callbackRestClient = fetchCallbackRestClient(callbackType);
 
         if (failureThresholdReached(callbackRestClient)) {
-            logger.warn("Callback has reached failure threshold, associated events are not dispatched: callbackType={}", callbackType);
+            logger.warn("Callback has reached failure threshold, associated events are not dispatched", kv("callbackType", callbackType));
             failWithoutDispatching(callbackEvent);
             return;
         }
@@ -200,7 +202,7 @@ class CallbackService {
         final LocalDateTime timestampLastFailure = callbackRestClient.timestampLastFailure().get();
 
         if (failureCount >= failureThreshold && LocalDateTime.now().minus(resetTimeout).isAfter(timestampLastFailure)) {
-            logger.debug("Callback reached failure threshold, but before specified reset timeout period, callbackType={}", callbackRestClient.callbackType());
+            logger.debug("Callback reached failure threshold, but before specified reset timeout period", kv("callbackType", callbackRestClient.callbackType()));
             return false;
         }
 
@@ -248,7 +250,7 @@ class CallbackService {
      */
     private void postCallback(final CallbackEventData callbackEventData) {
         if (callbackEventData.status() != CallbackEventStatus.PROCESSING) {
-            logger.warn("Callback Event to post is not in PROCESSING state: callbackEventId={}", callbackEventData.id());
+            logger.warn("Callback Event to post is not in PROCESSING state", kv("callbackEventId", callbackEventData.id()));
             return;
         }
 
@@ -270,7 +272,7 @@ class CallbackService {
                     onSuccess,
                     onError);
 
-            logger.debug("CallbackEvent {} was dispatched.", callbackEventData.id());
+            logger.debug("CallbackEvent was dispatched", kv("callbackEventId", callbackEventData.id()));
         } catch (final RestClientException e) {
             callbackEventResponseHandler.handleFailure(callbackEventData, e);
         }

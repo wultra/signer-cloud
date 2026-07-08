@@ -26,6 +26,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.concurrent.RejectedExecutionException;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Implementation of {@link CallbackNotificationService}.
  *
@@ -44,7 +46,7 @@ class CallbackNotificationServiceInternal implements CallbackNotificationService
     @Override
     public void notify(final CallbackType callbackType, final String callbackData) {
         if (callbackService.failureThresholdReached(callbackType)) {
-            logger.warn("Callback has reached failure threshold, associated events are not dispatched: callbackType={}", callbackType);
+            logger.warn("Callback has reached failure threshold, associated events are not dispatched", kv("callbackType", callbackType));
             callbackService.createAndSaveFailedEvent(callbackType, callbackData);
             return;
         }
@@ -67,8 +69,8 @@ class CallbackNotificationServiceInternal implements CallbackNotificationService
         try {
             callbackQueueService.submitToExecutor(callbackEventData);
         } catch (RejectedExecutionException e) {
-            logger.info("CallbackEvent was rejected by the executor, saving to database: callbackEventId={}, {}", callbackEventData.id(), e.getMessage());
-            logger.debug("CallbackEvent was rejected by the executor, saving to database: callbackEventId={}", callbackEventData.id(), e);
+            logger.info("CallbackEvent was rejected by the executor, saving to database", kv("callbackEventId", callbackEventData.id()), kv("errorMessage", e.getMessage()));
+            logger.debug("CallbackEvent was rejected by the executor, saving to database", kv("callbackEventId", callbackEventData.id()), e);
             callbackQueueService.enqueueToDatabase(callbackEventData);
         }
     }

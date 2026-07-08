@@ -25,6 +25,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Configuration for TSA source.
  *
@@ -41,7 +43,7 @@ class OnlineTSPSourceConfig {
     @ConditionalOnProperty("signer-cloud.server.pades.tsa-url")
     public OnlineTSPSource tspSource() {
         final var tsaUrl = pAdESConfigurationProperties.getTsaUrl();
-        logger.info("Setting TSA URL: {}", tsaUrl);
+        logger.info("Setting TSA URL", kv("tsaUrl", tsaUrl));
 
         final var onlineTspSource = new OnlineTSPSource(tsaUrl);
         onlineTspSource.setDataLoader(new TimestampDataLoader());

@@ -31,6 +31,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Controller for {@link Document} operations.
  *
@@ -98,17 +100,17 @@ public class DocumentController {
             )
             @RequestPart(value = "visualSignature", required = false) final DocumentVisualSignature visualSignature
     ) {
-        logger.info("action: uploadDocument, state: initiated, externalSignerId: {}, documentExternalId: {}", externalSignerId, externalId);
+        logger.info("Upload document initiated", kv("action", "uploadDocument"), kv("state", "initiated"), kv("externalSignerId", externalSignerId), kv("documentExternalId", externalId));
         final var result = Try.execute(
                 () -> documentService.uploadDocument(externalSignerId, externalId, documentName, file, visualSignature)
         );
 
         if (result.isSuccess()) {
             final var response = result.getResponse();
-            logger.info("action: uploadDocument, state: succeeded, documentId: {}, hash: {}", response.documentId(), response.hash());
+            logger.info("Upload document succeeded", kv("action", "uploadDocument"), kv("state", "succeeded"), kv("documentId", response.documentId()), kv("hash", response.hash()));
             return response;
         } else {
-            logger.error("action: uploadDocument, state: failed, errorMessage: {}", result.getError().getMessage());
+            logger.error("Upload document failed", kv("action", "uploadDocument"), kv("state", "failed"), kv("errorMessage", result.getError().getMessage()));
             throw result.getError();
         }
     }
@@ -148,16 +150,16 @@ public class DocumentController {
             )
             @PathVariable final String documentId,
             @Valid @RequestBody final SignDocumentRequest requestBody) {
-        logger.info("action: signDocument, state: initiated, documentId: {}", documentId);
+        logger.info("Sign document initiated", kv("action", "signDocument"), kv("state", "initiated"), kv("documentId", documentId));
         final var result = Try.execute(
                 () -> documentService.signDocument(documentId, requestBody)
         );
 
         if (result.isSuccess()) {
-            logger.info("action: signDocument, state: succeeded");
+            logger.info("Sign document succeeded", kv("action", "signDocument"), kv("state", "succeeded"), kv("documentId", documentId));
             return result.getResponse();
         } else {
-            logger.info("action: signDocument, state: failed, errorMessage: {}", result.getError().getMessage());
+            logger.info("Sign document failed", kv("action", "signDocument"), kv("state", "failed"), kv("documentId", documentId), kv("errorMessage", result.getError().getMessage()));
             throw result.getError();
         }
     }
@@ -200,17 +202,17 @@ public class DocumentController {
             )
             @RequestHeader(value = "Range", required = false) final String rangeHeader
     ) {
-        logger.info("action: downloadDocument, state: initiated, documentId: {}, ranges: {}", documentId, rangeHeader);
+        logger.info("Download document initiated", kv("action", "downloadDocument"), kv("state", "initiated"), kv("documentId", documentId), kv("ranges", rangeHeader));
         final var result = Try.execute(
                 () -> documentService.downloadDocument(documentId)
         );
 
         if (result.isSuccess()) {
-            logger.info("action: downloadDocument, state: succeeded");
+            logger.info("Download document succeeded", kv("action", "downloadDocument"), kv("state", "succeeded"), kv("documentId", documentId));
             return result.getResponse();
         } else {
             final var error = result.getError();
-            logger.info("action: downloadDocument, state: failed, errorMessage: {}", error.getMessage());
+            logger.info("Download document failed", kv("action", "downloadDocument"), kv("state", "failed"), kv("documentId", documentId), kv("errorMessage", error.getMessage()));
             throw error;
         }
     }
@@ -241,17 +243,17 @@ public class DocumentController {
             @PathVariable final String documentId,
             @Valid @RequestBody final RejectDocumentRequest requestBody
     ) {
-        logger.info("action: rejectDocument, state: initiated, documentId: {}", documentId);
+        logger.info("Reject document initiated", kv("action", "rejectDocument"), kv("state", "initiated"), kv("documentId", documentId));
         final var result = Try.execute(
                 () -> documentService.rejectDocument(documentId, requestBody)
         );
 
         if (result.isSuccess()) {
-            logger.info("action: rejectDocument, state: succeeded");
+            logger.info("Reject document succeeded", kv("action", "rejectDocument"), kv("state", "succeeded"), kv("documentId", documentId));
             return result.getResponse();
         } else {
             final var error = result.getError();
-            logger.info("action: rejectDocument, state: failed, errorMessage: {}", error.getMessage());
+            logger.info("Reject document failed", kv("action", "rejectDocument"), kv("state", "failed"), kv("documentId", documentId), kv("errorMessage", error.getMessage()));
             throw error;
         }
     }
@@ -275,8 +277,8 @@ public class DocumentController {
             )
             @PathVariable final String documentId
     ) {
-        logger.info("action: deleteDocument, state: initiated, documentId: {}", documentId);
+        logger.info("Delete document initiated", kv("action", "deleteDocument"), kv("state", "initiated"), kv("documentId", documentId));
         documentService.deleteDocument(documentId);
-        logger.info("action: deleteDocument, state: succeeded");
+        logger.info("Delete document succeeded", kv("action", "deleteDocument"), kv("state", "succeeded"), kv("documentId", documentId));
     }
 }

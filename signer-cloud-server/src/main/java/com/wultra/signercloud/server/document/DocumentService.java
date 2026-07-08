@@ -36,6 +36,8 @@ import java.time.Instant;
 import java.util.UUID;
 import java.util.function.Consumer;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Document service.
  *
@@ -324,7 +326,7 @@ class DocumentService {
         final var documentOpt = documentRepository.findByDocumentId(documentUuid);
 
         if (documentOpt.isEmpty()) {
-            logger.warn("Document for deletion not found. Document UUID: {}", documentUuid);
+            logger.warn("Document for deletion not found", kv("documentId", documentUuid));
             return;
         }
 

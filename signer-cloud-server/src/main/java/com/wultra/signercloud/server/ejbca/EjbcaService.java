@@ -30,6 +30,8 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * Service for calling EJBCA functionality.
  *
@@ -55,7 +57,7 @@ public class EjbcaService {
      */
     public CertificateResponse enrollCertificate(final CertificateRequest request) throws IOException, CertificateException, RestClientException {
         final EjbcaRestClient.CertificateResponse certificateResponse = ejbcaRestClient.callPkcs10Enroll(convert(request));
-        logger.info("Got certificate with serial number: {}", certificateResponse.serialNumber());
+        logger.info("Got certificate from EJBCA", kv("serialNumber", certificateResponse.serialNumber()));
         if (!"DER".equals(certificateResponse.responseFormat())) {
             throw new IllegalStateException("Unexpected response format: " + certificateResponse.responseFormat());
         }

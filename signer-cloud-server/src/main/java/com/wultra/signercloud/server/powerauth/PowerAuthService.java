@@ -24,6 +24,8 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import static net.logstash.logback.argument.StructuredArguments.kv;
+
 /**
  * PowerAuth service.
  *
@@ -44,10 +46,10 @@ public class PowerAuthService {
      * @throws PowerAuthClientException in case of communication or processing error
      */
     public boolean isSignatureValid(final VerifyECDSASignatureRequest request) throws PowerAuthClientException {
-        logger.info("Verifying ECDSA signature for registrationId: {}", request.getActivationId());
+        logger.info("Verifying ECDSA signature", kv("registrationId", request.getActivationId()));
         final var response = powerAuthClient.verifyECDSASignature(request);
         final var isSignatureValid = response.isSignatureValid();
-        logger.info("Signature is valid: {}", isSignatureValid);
+        logger.info("ECDSA signature verification finished", kv("registrationId", request.getActivationId()), kv("signatureValid", isSignatureValid));
         return isSignatureValid;
     }
 }
