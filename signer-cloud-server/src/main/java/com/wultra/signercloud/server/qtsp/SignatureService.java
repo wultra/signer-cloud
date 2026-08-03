@@ -18,6 +18,7 @@
 package com.wultra.signercloud.server.qtsp;
 
 
+import org.apache.commons.lang3.NotImplementedException;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
 import com.wultra.signercloud.server.document.*;
@@ -56,7 +57,7 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 @Service
 @AllArgsConstructor
 @Slf4j
-public class QTSPService {
+public class SignatureService {
     private static final String SHA_256_OID = "2.16.840.1.101.3.4.2.1";
     private static final String RSA_SHA_256_OID = "1.2.840.113549.1.1.11";
     private static final Duration AUTHORIZATION_VALIDITY = Duration.ofMinutes(10);
@@ -83,12 +84,6 @@ public class QTSPService {
         final var fileContent = getFileBytes(file);
         final var fileName = getFileName(file);
 
-        /*
-         * Dummy implementation for now.
-         *
-         * Later, replace this method with a real QTSP call to:
-         * POST /csc/v2/credentials/info
-         */
         final var credentialInfo = getCredentialInfoFromQtsp(
                 request.qtspSessionId(),
                 request.credentialId()
@@ -207,6 +202,13 @@ public class QTSPService {
             final String qtspSessionId,
             final String credentialId
     ) {
+        /*
+         * Dummy implementation for now.
+         *
+         * Later, replace this method with a real QTSP call to:
+         * POST /csc/v2/credentials/info
+         */
+
         logger.info(
                 "Using dummy QTSP credential information",
                 kv("action", "getCredentialInfo"),
@@ -339,6 +341,32 @@ public class QTSPService {
         return serializeJson(certificateChain);
     }
 
+    private List<X509Certificate> deserializeCertificateChain(
+            final String certificateChainJson
+    ) {
+        if (certificateChainJson == null
+                || certificateChainJson.isBlank()) {
+            return List.of();
+        }
+
+        try {
+            final String[] certificateChainBase64 =
+                    objectMapper.readValue(
+                            certificateChainJson,
+                            String[].class
+                    );
+
+            return java.util.Arrays.stream(certificateChainBase64)
+                    .map(SignatureService::decodeCertificate)
+                    .toList();
+        } catch (final JacksonException exception) {
+            throw new IllegalStateException(
+                    "Could not deserialize certificate chain",
+                    exception
+            );
+        }
+    }
+
     private String serializeJson(final Object value) {
         try {
             return objectMapper.writeValueAsString(value);
@@ -407,6 +435,213 @@ public class QTSPService {
         } catch (final NoSuchAlgorithmException e) {
             throw new IllegalStateException("SHA-256 is not available", e);
         }
+    }
+
+    public String completeSignature(final String authorizationCode, final String state) {
+        if (authorizationCode == null || authorizationCode.isBlank()) {
+            throw new IllegalArgumentException("Authorization code is required");
+        }
+
+        if (state == null || state.isBlank()) {
+            throw new IllegalArgumentException("OAuth state is required");
+        }
+
+        final SigningTransactionEntity transaction = signingTransactionRepository.findByOauthState(state)
+                .orElseThrow(() -> new IllegalArgumentException("Signing transaction was not found"));
+
+        /*
+         * Makes a repeated callback idempotent after the transaction
+         * has already completed.
+         */
+        if (transaction.getStatus() == SigningTransactionStatus.COMPLETED) {
+            return transaction.getId();
+        }
+
+        final var now = Instant.now();
+
+        if (transaction.getAuthorizationExpiresAt().isBefore(now)) {
+            signingTransactionRepository.save(
+                    transaction.toBuilder()
+                            .status(SigningTransactionStatus.EXPIRED)
+                            .updatedAt(now)
+                            .build()
+            );
+
+            throw new IllegalStateException(
+                    "Signing transaction has expired"
+            );
+        }
+
+        if (transaction.getStatus() != SigningTransactionStatus.AWAITING_USER_AUTHORIZATION) {
+            throw new IllegalStateException("Signing transaction cannot be completed from status: " + transaction.getStatus());
+        }
+
+        logger.info(
+                "Completing signing transaction",
+                kv("action", "completeSignature"),
+                kv("state", "initiated"),
+                kv("signingTransactionId", transaction.getId()),
+                kv("credentialId", transaction.getCredentialId())
+        );
+
+        final QtspTokenResponse tokenResponse = exchangeAuthorizationCode(authorizationCode, transaction.getPkceCodeVerifier());
+
+        final QtspSignHashResponse signatureResponse = requestHashSignature(
+                tokenResponse.accessToken(),
+                transaction.getCredentialId(),
+                transaction.getToBeSignedHashBase64(),
+                transaction.getHashAlgorithmOid(),
+                transaction.getSignAlgorithmOid()
+        );
+
+        final DocumentContent originalDocumentContent =
+                documentContentRepository
+                        .findById(
+                                transaction
+                                        .getDocumentContent()
+                                        .getId()
+                        )
+                        .orElseThrow(() -> new IllegalStateException("Original document content was not found"));
+
+        final byte[] rawSignature;
+
+        try {
+            rawSignature = Base64.getDecoder().decode(
+                    signatureResponse.firstSignature()
+            );
+        } catch (final IllegalArgumentException exception) {
+            throw new IllegalStateException(
+                    "QTSP returned an invalid Base64 signature",
+                    exception
+            );
+        }
+
+        final var signedPdf = documentSigningService.sign(
+                decodeCertificate(transaction.getCertificateBase64()),
+                deserializeCertificateChain(
+                        transaction.getCertificateChainJson()
+                ),
+                Base64.getEncoder().encodeToString(rawSignature),
+                originalDocumentContent.getContent(),
+                Instant.now(),
+                null,
+                null
+        );
+
+        final DocumentContent savedSignedDocumentContent =
+                documentContentRepository.save(
+                        DocumentContent.builder()
+                                .content(signedPdf.content())
+                                .build()
+                );
+
+        final SigningTransactionEntity completedTransaction =
+                transaction.toBuilder()
+                        .signedDocumentContent(
+                                AggregateReference.to(
+                                        savedSignedDocumentContent.getId()
+                                )
+                        )
+                        .status(SigningTransactionStatus.COMPLETED)
+                        .completedAt(now)
+                        .updatedAt(now)
+                        /*
+                         * These secrets are no longer needed after completion.
+                         */
+//                        .oauthState(null)
+//                        .pkceCodeVerifier(null)
+                        .build();
+
+        signingTransactionRepository.save(completedTransaction);
+
+        logger.info(
+                "Signing transaction completed",
+                kv("action", "completeSignature"),
+                kv("state", "succeeded"),
+                kv(
+                        "signingTransactionId",
+                        completedTransaction.getId()
+                ),
+                kv("status", completedTransaction.getStatus())
+        );
+
+        return completedTransaction.getId();
+    }
+
+    private QtspTokenResponse exchangeAuthorizationCode(
+            final String authorizationCode,
+            final String pkceCodeVerifier
+    ) {
+        /*
+         * TODO: Replace the static response with:
+         *
+         * POST /oauth2/token
+         *
+         * Parameters:
+         * - grant_type=authorization_code
+         * - code=authorizationCode
+         * - code_verifier=pkceCodeVerifier
+         * - redirect_uri=<configured callback URI>
+         * - client_id=<configured client ID>
+         *
+         * Depending on the QTSP, client authentication may also be required.
+         */
+
+        logger.info(
+                "QTSP authorization code exchanged",
+                kv("action", "exchangeAuthorizationCode"),
+                kv("state", "succeeded")
+        );
+
+        return new QtspTokenResponse(
+                "static-credential-access-token",
+                "Bearer",
+                120
+        );
+    }
+
+    private QtspSignHashResponse requestHashSignature(
+            final String accessToken,
+            final String credentialId,
+            final String hashBase64,
+            final String hashAlgorithmOid,
+            final String signAlgorithmOid
+    ) {
+        /*
+         * TODO: Replace the static response with:
+         *
+         * POST /csc/v2/signatures/signHash
+         *
+         * Authorization: Bearer <accessToken>
+         *
+         * Request body:
+         * {
+         *   "credentialID": credentialId,
+         *   "hashes": [hashBase64],
+         *   "hashAlgorithmOID": hashAlgorithmOid,
+         *   "signAlgo": signAlgorithmOid
+         * }
+         */
+
+        logger.info(
+                "QTSP hash signature requested",
+                kv("action", "requestHashSignature"),
+                kv("state", "succeeded"),
+                kv("credentialId", credentialId),
+                kv("hashAlgorithmOid", hashAlgorithmOid),
+                kv("signAlgorithmOid", signAlgorithmOid)
+        );
+
+        final String signatureBase64 =
+                Base64.getEncoder().encodeToString(
+                        "static-signature".getBytes(
+                                StandardCharsets.UTF_8
+                        )
+                );
+
+        return new QtspSignHashResponse(
+                List.of(signatureBase64)
+        );
     }
 
     private record DummyCredentialInfo(

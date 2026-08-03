@@ -226,6 +226,49 @@ public class DocumentSigningService {
         return new SignedDocument(signedContent, signatureLevel);
     }
 
+    public SignedDocument sign(
+            final X509Certificate cert,
+            final List<X509Certificate> certChain,
+            final String signatureBase64,
+            final byte[] documentBytes,
+            final Instant timestampSigned,
+            final DocumentSignatureLevel requestedSignatureLevel,
+            final DocumentVisualSignature visualSignature) {
+
+        final var certificate = new CertificateToken(cert);
+        final var certificateChain = certChain.stream()
+                .map(CertificateToken::new)
+                .toList();
+
+        final var unsignedDocument = new InMemoryDocument(documentBytes);
+
+        final var signatureLevel = resolveDocumentSignatureLevel(requestedSignatureLevel);
+
+        final var signatureParams = createSignatureParameters(
+                certificate,
+                certificateChain,
+                timestampSigned,
+                signatureLevel,
+                visualSignature,
+                unsignedDocument
+        );
+
+        final var documentHash = padesService.getDataToSign(unsignedDocument, signatureParams);
+
+        final var signatureBytes = Base64.getDecoder().decode(signatureBase64);
+        final var signatureValue = new SignatureValue(pAdESConfigurationProperties.getSignatureAlgorithm(), signatureBytes);
+
+        final var isSignatureValid = padesService.isValidSignatureValue(documentHash, signatureValue, certificate);
+        if (!isSignatureValid) {
+            throw new DocumentInvalidSignatureException("Invalid signature");
+        }
+
+        final var signedDocument = padesService.signDocument(unsignedDocument, signatureParams, signatureValue);
+        final var signedContent = readSignedDocumentBytes(signedDocument);
+
+        return new SignedDocument(signedContent, signatureLevel);
+    }
+
     private DocumentSignatureLevel resolveDocumentSignatureLevel(final DocumentSignatureLevel requestedSignatureLevel) {
         final var signatureLevel = Optional.ofNullable(requestedSignatureLevel)
                 .orElse(pAdESConfigurationProperties.getSignatureLevel());
@@ -294,7 +337,7 @@ public class DocumentSigningService {
         }
     }
 
-    record SignedDocument(
+    public record SignedDocument(
             byte[] content,
             DocumentSignatureLevel signatureLevel
     ) {}

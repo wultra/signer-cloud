@@ -21,6 +21,8 @@ package com.wultra.signercloud.server.qtsp;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Optional;
+
 /**
  * TODO
  *
@@ -28,4 +30,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface SigningTransactionRepository extends CrudRepository<SigningTransactionEntity, String> {
+    Optional<SigningTransactionEntity> findByOauthState(String oauthState);
 }

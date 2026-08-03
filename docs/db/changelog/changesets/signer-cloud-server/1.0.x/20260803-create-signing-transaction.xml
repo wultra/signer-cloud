@@ -37,6 +37,8 @@
                 <constraints nullable="false"/>
             </column>
 
+            <column name="signed_document_content_id" type="BIGINT"/>
+
             <column name="qtsp_session_id" type="VARCHAR(255)">
                 <constraints nullable="false"/>
             </column>
@@ -115,6 +117,8 @@
             <column name="updated_at" type="TIMESTAMP">
                 <constraints nullable="false"/>
             </column>
+
+            <column name="completed_at" type="TIMESTAMP"/>
 
         </createTable>
     </changeSet>

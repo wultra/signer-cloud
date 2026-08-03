@@ -66,6 +66,9 @@ public class SigningTransactionEntity {
     @Column("document_content_id")
     private AggregateReference<DocumentContent, Long> documentContent;
 
+    @Column("signed_document_content_id")
+    private AggregateReference<DocumentContent, Long> signedDocumentContent;
+
     @Column("qtsp_session_id")
     private String qtspSessionId;
 
@@ -123,4 +126,7 @@ public class SigningTransactionEntity {
 
     @Column("updated_at")
     private Instant updatedAt;
+
+    @Column("completed_at")
+    private Instant completedAt;
 }

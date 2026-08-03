@@ -27,5 +27,6 @@ public enum SigningTransactionStatus {
     PREPARING,
     AWAITING_USER_AUTHORIZATION,
     COMPLETED,
-    FAILED
+    FAILED,
+    EXPIRED
 }

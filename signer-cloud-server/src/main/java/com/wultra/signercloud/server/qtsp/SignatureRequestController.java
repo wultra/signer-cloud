@@ -26,6 +26,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -36,6 +37,7 @@ import java.net.URI;
 import static net.logstash.logback.argument.StructuredArguments.kv;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
+import static reactor.netty.http.HttpConnectionLiveness.log;
 
 /**
  * TODO
@@ -55,7 +57,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 )
 public class SignatureRequestController {
 
-    private final QTSPService qtspService;
+    private final SignatureService signatureService;
 
     @Operation(
             summary = "Create a document-signing request",
@@ -101,7 +103,7 @@ public class SignatureRequestController {
         );
 
         try {
-            final var response = qtspService.createSignatureRequest(request, file);
+            final var response = signatureService.createSignatureRequest(request, file);
 
             final URI location = ServletUriComponentsBuilder
                     .fromCurrentRequest()
@@ -127,6 +129,48 @@ public class SignatureRequestController {
                     kv("state", "failed"),
                     e
             );
+            throw e;
+        }
+    }
+
+    @GetMapping("/callback")
+    public ResponseEntity<SignedDocumentResponse> processCallback(
+            @Valid @ParameterObject @ModelAttribute final QTSPCallbackRequest request
+    ) {
+        logger.info("QTSP authorization callback received", kv("action", "processQtspCallback"),
+                kv("state", "initiated"));
+
+        try {
+            final String signingTransactionId =
+                    signatureService.completeSignature(
+                            request.code(),
+                            request.state()
+                    );
+
+            final URI downloadUrl =
+                    ServletUriComponentsBuilder
+                            .fromCurrentContextPath()
+                            .path(
+                                    "/api/v1/signature-requests/{transactionId}/document"
+                            )
+                            .buildAndExpand(signingTransactionId)
+                            .toUri();
+
+            log.info(
+                    "QTSP authorization callback processed",
+                    kv("action", "processQtspCallback"),
+                    kv("state", "succeeded"),
+                    kv(
+                            "signingTransactionId",
+                            signingTransactionId
+                    )
+            );
+            return ResponseEntity.ok(
+                    new SignedDocumentResponse(downloadUrl)
+            );
+
+        } catch (final RuntimeException e) {
+            logger.warn("QTSP authorization callback failed", kv("action", "processQtspCallback"), kv("state", "failed"), e);
             throw e;
         }
     }
