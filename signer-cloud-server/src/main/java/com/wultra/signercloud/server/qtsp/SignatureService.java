@@ -17,19 +17,22 @@
  */
 package com.wultra.signercloud.server.qtsp;
 
-
-import org.apache.commons.lang3.NotImplementedException;
-import tools.jackson.core.JacksonException;
-import tools.jackson.databind.ObjectMapper;
 import com.wultra.signercloud.server.document.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.bouncycastle.crypto.digests.NullDigest;
+import org.bouncycastle.crypto.signers.DSADigestSigner;
+import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.crypto.signers.StandardDSAEncoding;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.util.UriComponentsBuilder;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -58,6 +61,8 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 @AllArgsConstructor
 @Slf4j
 public class SignatureService {
+    private static final String ECDSA_SHA_256_OID ="1.2.840.10045.4.3.2";
+
     private static final String SHA_256_OID = "2.16.840.1.101.3.4.2.1";
     private static final String RSA_SHA_256_OID = "1.2.840.113549.1.1.11";
     private static final Duration AUTHORIZATION_VALIDITY = Duration.ofMinutes(10);
@@ -67,9 +72,13 @@ public class SignatureService {
     private static final URI DUMMY_AUTHORIZATION_ENDPOINT = URI.create("https://qtsp.example/oauth2/authorize");
     private static final String DUMMY_CLIENT_ID = "signature-creation-application";
     private static final String DUMMY_REDIRECT_URI = "https://sca.example/api/v1/oauth2/qtsp/callback";
-    private static final String DUMMY_CERTIFICATE_BASE64 = """
-            MIIDVzCCAj+gAwIBAgIUfWyU3n3GImvltv+nKStYkNjoxhUwDQYJKoZIhvcNAQELBQAwOzEaMBgGA1UEAwwRRHVtbXkgUVRTUCBTaWduZXIxEDAOBgNVBAoMB0V4YW1wbGUxCzAJBgNVBAYTAkNaMB4XDTI2MDgwMzEyNTA1NVoXDTM2MDczMTEyNTA1NVowOzEaMBgGA1UEAwwRRHVtbXkgUVRTUCBTaWduZXIxEDAOBgNVBAoMB0V4YW1wbGUxCzAJBgNVBAYTAkNaMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEArrlJhG+Jmh5p0footlZIwNB9wUQQaq32pt/Qfy1JmjXgDpJsrbCcSvLjdMegF7m2BRi/M612g6TUdhA/noGPSLs+9DXa4ds9Rb4rwESOFwuzr35ngThCgwGogDcpNhWJlVqVwd1pHHuXB2JYzzS5mrroVXrrRospraRgVPAZqN9OJ9vWv6FRKvZdXttbdm/LzCdeYHFdl6jl8Ub/dOOJQP06G1AjQXDSYl8LH/GEEX9sEWa/XToEiyt7GH/mUI6GU9shCDLGa0EFUOPxJhDRSb/XUR7ZtJaTxtKPj6kwhAEzZ02ruGNAJQ7IqjqtuUP9sqRb49+qIyKvtpdkKQd0dQIDAQABo1MwUTAdBgNVHQ4EFgQUzxAZyihbCJl3cqP5BpAE8IMCx0swHwYDVR0jBBgwFoAUzxAZyihbCJl3cqP5BpAE8IMCx0swDwYDVR0TAQH/BAUwAwEB/zANBgkqhkiG9w0BAQsFAAOCAQEAXB5a8O5V+Vmr/WCPMMOrQUU+NRb9DbMJtjeNKM1k6vQdFt4FyqhSwXv65Qeny3m48o4P4yA0bJOvdWUySOeg5fucwzPk0OTotsGjtHILmpPQ2PLPIvOmHecUIKpio3V2WreESgLAmQBiMOvsStWDDcNg19/Dyod2q1q+LifEJTKESmPQQDuKFRXtdwjP2RTay2wy+5PQHCk2Y/c3syU3qCd7NtUjjxYa/bibhlAX3rkuqWtYJFp4YP3sEwlQmf3zaKJWcAFZqW0QBUWIeWW62tCBJhwbB/HHaLggI5f8KwniO9R/yzRohKcg8CKapwqCAoC3d+nTmdK0jdXzS9d0OQ==
-            """;
+    private static final String SIGNING_CERTIFICATE_BASE64 = """
+        MIIB2jCCAX+gAwIBAgIUUa5jIofJUv+hj2LuiV3vfVTcl7YwCgYIKoZIzj0EAwIwQjELMAkGA1UEBhMCQ1oxEDAOBgNVBAoMB0V4YW1wbGUxITAfBgNVBAMMGFN0YXRpYyBRVFNQIEVDRFNBIFNpZ25lcjAeFw0yNjA4MDMxODU4MjZaFw0zNjA3MzExODU4MjZaMEIxCzAJBgNVBAYTAkNaMRAwDgYDVQQKDAdFeGFtcGxlMSEwHwYDVQQDDBhTdGF0aWMgUVRTUCBFQ0RTQSBTaWduZXIwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQb4gd2M7wMo9XyUHaflcFjxDIS6dEF4w/zuHrwrOQiGuH95/2mbLw72tlxv8Tl3wsYWTk3EoZT8Tkjy/qJhCdho1MwUTAdBgNVHQ4EFgQUm/jWrctIfcW+nI+5VOSXqe9DWQ4wHwYDVR0jBBgwFoAUm/jWrctIfcW+nI+5VOSXqe9DWQ4wDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgNJADBGAiEAg7CfXPzyTruLU2ZmLO/jrgCqtzJG7OZZ5OqdJ+bhancCIQDW/VO0Hg4xwo9qylex+rj8hv2+qtWbU7qTGuvDBX0B3Q==
+        """;
+
+    private static final String SIGNING_PRIVATE_KEY_PKCS8_BASE64 = """
+        MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgIu0iwSU6xIE98HtQDOMlT7HfQ3QP4TKxAzSNoDMWlbGhRANCAAQb4gd2M7wMo9XyUHaflcFjxDIS6dEF4w/zuHrwrOQiGuH95/2mbLw72tlxv8Tl3wsYWTk3EoZT8Tkjy/qJhCdh
+        """;
 
     private final DocumentSigningService documentSigningService;
     private final DocumentContentRepository documentContentRepository;
@@ -89,13 +98,17 @@ public class SignatureService {
                 request.credentialId()
         );
 
-        final var toBeSignedHash = documentSigningService.computeToBeSigned(
+        final var toBeSigned = documentSigningService.computeToBeSigned(
                 fileContent,
                 credentialInfo.certificate(),
                 credentialInfo.certificateChain(),
                 now,
                 request.visualSignature()
         );
+
+        final byte[] toBeSignedHash = sha256(toBeSigned);
+
+        final String toBeSignedHashBase64 = Base64.getEncoder().encodeToString(toBeSignedHash);
 
         final var oauthState = randomBase64Url(32);
         final var pkceCodeVerifier = randomBase64Url(64);
@@ -105,7 +118,7 @@ public class SignatureService {
 
         final URI authorizationUrl = createAuthorizationUrl(
                 request,
-                toBeSignedHash,
+                toBeSignedHashBase64,
                 oauthState,
                 pkceCodeChallenge
         );
@@ -136,7 +149,7 @@ public class SignatureService {
                                         credentialInfo.certificateChainBase64()
                                 )
                         )
-                        .toBeSignedHashBase64(toBeSignedHash)
+                        .toBeSignedHashBase64(toBeSignedHashBase64)
                         .hashAlgorithmOid(SHA_256_OID)
                         .signAlgorithmOid(
                                 credentialInfo.signAlgorithmOid()
@@ -198,7 +211,7 @@ public class SignatureService {
      * The arguments are intentionally accepted even though the method
      * currently returns the same static data for every request.
      */
-    private DummyCredentialInfo getCredentialInfoFromQtsp(
+    private QtspCredentialInfo getCredentialInfoFromQtsp(
             final String qtspSessionId,
             final String credentialId
     ) {
@@ -210,21 +223,22 @@ public class SignatureService {
          */
 
         logger.info(
-                "Using dummy QTSP credential information",
+                "QTSP credential information obtained",
                 kv("action", "getCredentialInfo"),
                 kv("qtspSessionId", qtspSessionId),
                 kv("credentialId", credentialId)
         );
 
-        final X509Certificate certificate = decodeCertificate(DUMMY_CERTIFICATE_BASE64);
+        final X509Certificate certificate =
+                decodeCertificate(SIGNING_CERTIFICATE_BASE64);
 
-        return new DummyCredentialInfo(
+        return new QtspCredentialInfo(
                 credentialId,
                 certificate,
                 List.of(),
-                DUMMY_CERTIFICATE_BASE64,
+                SIGNING_CERTIFICATE_BASE64,
                 List.of(),
-                RSA_SHA_256_OID
+                ECDSA_SHA_256_OID
         );
     }
 
@@ -437,6 +451,7 @@ public class SignatureService {
         }
     }
 
+    @Transactional
     public String completeSignature(final String authorizationCode, final String state) {
         if (authorizationCode == null || authorizationCode.isBlank()) {
             throw new IllegalArgumentException("Authorization code is required");
@@ -459,7 +474,7 @@ public class SignatureService {
 
         final var now = Instant.now();
 
-        if (transaction.getAuthorizationExpiresAt().isBefore(now)) {
+        if (!transaction.getAuthorizationExpiresAt().isAfter(now)) {
             signingTransactionRepository.save(
                     transaction.toBuilder()
                             .status(SigningTransactionStatus.EXPIRED)
@@ -503,27 +518,16 @@ public class SignatureService {
                         )
                         .orElseThrow(() -> new IllegalStateException("Original document content was not found"));
 
-        final byte[] rawSignature;
-
-        try {
-            rawSignature = Base64.getDecoder().decode(
-                    signatureResponse.firstSignature()
-            );
-        } catch (final IllegalArgumentException exception) {
-            throw new IllegalStateException(
-                    "QTSP returned an invalid Base64 signature",
-                    exception
-            );
-        }
-
         final var signedPdf = documentSigningService.sign(
-                decodeCertificate(transaction.getCertificateBase64()),
+                decodeCertificate(
+                        transaction.getCertificateBase64()
+                ),
                 deserializeCertificateChain(
                         transaction.getCertificateChainJson()
                 ),
-                Base64.getEncoder().encodeToString(rawSignature),
+                signatureResponse.firstSignature(),
                 originalDocumentContent.getContent(),
-                Instant.now(),
+                transaction.getSignatureDate(),
                 null,
                 null
         );
@@ -623,28 +627,27 @@ public class SignatureService {
          * }
          */
 
+        final byte[] hash = decodeSha256Hash(hashBase64);
+        final byte[] signature = signSha256Hash(hash);
+
         logger.info(
-                "QTSP hash signature requested",
+                "QTSP hash signature created",
                 kv("action", "requestHashSignature"),
                 kv("state", "succeeded"),
                 kv("credentialId", credentialId),
                 kv("hashAlgorithmOid", hashAlgorithmOid),
-                kv("signAlgorithmOid", signAlgorithmOid)
+                kv("signAlgorithmOid", signAlgorithmOid),
+                kv("signatureSize", signature.length)
         );
 
-        final String signatureBase64 =
-                Base64.getEncoder().encodeToString(
-                        "static-signature".getBytes(
-                                StandardCharsets.UTF_8
-                        )
-                );
-
         return new QtspSignHashResponse(
-                List.of(signatureBase64)
+                List.of(
+                        Base64.getEncoder().encodeToString(signature)
+                )
         );
     }
 
-    private record DummyCredentialInfo(
+    private record QtspCredentialInfo(
             String credentialId,
             X509Certificate certificate,
             List<X509Certificate> certificateChain,
@@ -652,4 +655,86 @@ public class SignatureService {
             List<String> certificateChainBase64,
             String signAlgorithmOid
     ) {}
+
+    /*
+     * Mocking
+     */
+
+    private static byte[] signSha256Hash(
+            final byte[] hash
+    ) {
+        try {
+            /*
+             * The hash has already been computed by the caller.
+             * NullDigest prevents hashing it a second time.
+             *
+             * StandardDSAEncoding returns the ASN.1 DER-encoded
+             * ECDSA signature expected by normal ECDSA validators.
+             */
+            final var signer = new DSADigestSigner(
+                    new ECDSASigner(),
+                    new NullDigest(),
+                    StandardDSAEncoding.INSTANCE
+            );
+
+            signer.init(
+                    true,
+                    PrivateKeyFactory.createKey(
+                            decodePrivateKeyBytes()
+                    )
+            );
+
+            signer.update(hash, 0, hash.length);
+
+            return signer.generateSignature();
+        } catch (final IOException exception) {
+            throw new IllegalStateException(
+                    "Could not create ECDSA signature",
+                    exception
+            );
+        }
+    }
+
+    private static byte[] decodePrivateKeyBytes() {
+        try {
+            return Base64.getDecoder().decode(
+                    SIGNING_PRIVATE_KEY_PKCS8_BASE64
+                            .replaceAll("\\s", "")
+            );
+        } catch (final IllegalArgumentException exception) {
+            throw new IllegalStateException(
+                    "Could not decode the static RSA private key",
+                    exception
+            );
+        }
+    }
+
+    private static byte[] decodeSha256Hash(
+            final String hashBase64
+    ) {
+        if (hashBase64 == null || hashBase64.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Hash to be signed is required"
+            );
+        }
+
+        final byte[] hash;
+
+        try {
+            hash = Base64.getDecoder().decode(hashBase64);
+        } catch (final IllegalArgumentException exception) {
+            throw new IllegalArgumentException(
+                    "Hash is not valid Base64",
+                    exception
+            );
+        }
+
+        if (hash.length != 32) {
+            throw new IllegalArgumentException(
+                    "SHA-256 hash must contain exactly 32 bytes"
+            );
+        }
+
+        return hash;
+    }
 }

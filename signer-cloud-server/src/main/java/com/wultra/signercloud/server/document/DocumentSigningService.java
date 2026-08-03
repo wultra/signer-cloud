@@ -99,7 +99,7 @@ public class DocumentSigningService {
         return Base64.getEncoder().encodeToString(toSignBytes.getBytes());
     }
 
-    public String computeToBeSigned(
+    public byte[] computeToBeSigned(
             final byte[] content,
             final X509Certificate certificate,
             final List<X509Certificate> certificateChain,
@@ -132,8 +132,7 @@ public class DocumentSigningService {
         }
 
         final var toSignBytes = padesService.getDataToSign(dssDocument, signatureParams);
-
-        return Base64.getEncoder().encodeToString(toSignBytes.getBytes());
+        return toSignBytes.getBytes();
     }
 
     private void verifyVisualSignature(
