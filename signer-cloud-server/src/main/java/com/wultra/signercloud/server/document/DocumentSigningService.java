@@ -38,6 +38,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.*;
 
@@ -48,7 +49,7 @@ import java.util.*;
  */
 @Service
 @AllArgsConstructor
-class DocumentSigningService {
+public class DocumentSigningService {
 
     private final PAdESService padesService;
     private final PAdESConfigurationProperties pAdESConfigurationProperties;
@@ -78,6 +79,43 @@ class DocumentSigningService {
         final var signatureParams = createSignatureParameters(
                 certificate,
                 certificateChain,
+                timestampSigned,
+                pAdESConfigurationProperties.getSignatureLevel(),
+                visualSignature,
+                dssDocument
+        );
+
+        // A newly created PAdESSignatureParameters instance has its imageParameters field set to null.
+        // However, if the getImageParameters() method is called, a new instance of SignatureImageParameters
+        // with default values is created and assigned to the imageParameters field (it is no longer null after the call).
+        // Therefore, we check whether (visualSignature != null) instead. A check like
+        // (signatureParams.getImageParameters() != null) would always evaluate to true.
+        if (visualSignature != null) {
+            verifyVisualSignature(dssDocument, signatureParams.getImageParameters());
+        }
+
+        final var toSignBytes = padesService.getDataToSign(dssDocument, signatureParams);
+
+        return Base64.getEncoder().encodeToString(toSignBytes.getBytes());
+    }
+
+    public String computeToBeSigned(
+            final byte[] content,
+            final X509Certificate certificate,
+            final List<X509Certificate> certificateChain,
+            final Instant timestampSigned,
+            final DocumentVisualSignature visualSignature
+    ) {
+        final var certToken = new CertificateToken(certificate);
+        final var chainCertToken = certificateChain.stream()
+                .map(CertificateToken::new)
+                .toList();
+
+        final var dssDocument = new InMemoryDocument(content);
+
+        final var signatureParams = createSignatureParameters(
+                certToken,
+                chainCertToken,
                 timestampSigned,
                 pAdESConfigurationProperties.getSignatureLevel(),
                 visualSignature,

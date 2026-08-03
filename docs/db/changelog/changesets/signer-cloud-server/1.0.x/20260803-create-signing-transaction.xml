@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd"
+                   objectQuotingStrategy="QUOTE_ALL_OBJECTS">
+
+    <changeSet id="1" author="Michal Rozehnal">
+        <createTable tableName="signing_transaction">
+            <column name="id" type="VARCHAR(36)">
+                <constraints primaryKey="true" primaryKeyName="pk_signing_transaction" nullable="false"/>
+            </column>
+
+            <column
+                    name="version"
+                    type="BIGINT"
+                    defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="external_id" type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="document_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="file_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="file_size" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="document_content_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="qtsp_session_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="credential_id" type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="to_be_signed_hash_base64"
+                    type="VARCHAR(512)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="hash_algorithm_oid"
+                    type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="sign_algorithm_oid"
+                    type="VARCHAR(128)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="certificate_base64"
+                    type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="certificate_chain_json"
+                    type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="signature_date" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="visual_signature_json"
+                    type="TEXT"/>
+
+            <column name="status" type="VARCHAR(64)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="oauth_state" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="pkce_code_verifier"
+                    type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="authorization_url" type="TEXT">
+                <constraints nullable="false"/>
+            </column>
+
+            <column
+                    name="authorization_expires_at"
+                    type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+
+            <column name="created_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+            <column name="updated_at" type="TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+
+        </createTable>
+    </changeSet>
+
+</databaseChangeLog>
