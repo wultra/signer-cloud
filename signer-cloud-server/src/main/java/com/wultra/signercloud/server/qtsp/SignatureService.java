@@ -25,6 +25,8 @@ import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.StandardDSAEncoding;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -64,7 +66,6 @@ public class SignatureService {
     private static final String ECDSA_SHA_256_OID ="1.2.840.10045.4.3.2";
 
     private static final String SHA_256_OID = "2.16.840.1.101.3.4.2.1";
-    private static final String RSA_SHA_256_OID = "1.2.840.113549.1.1.11";
     private static final Duration AUTHORIZATION_VALIDITY = Duration.ofMinutes(10);
     private static final long MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
 
@@ -736,5 +737,30 @@ public class SignatureService {
         }
 
         return hash;
+    }
+
+    Resource downloadDocument(final String transactionUuid) {
+        final var document = signingTransactionRepository.findById(transactionUuid)
+                .orElseThrow(() -> DocumentNotFoundException.forId(transactionUuid));
+
+        final var documentContent = documentContentRepository.findById(document.getSignedDocumentContent())
+                .orElseThrow(() -> DocumentContentNotFoundException.forId(transactionUuid));
+
+        final var status = document.getStatus();
+        if (status != SigningTransactionStatus.COMPLETED) {
+            final var errorMessage = resolveDownloadErrorMessage(status);
+            throw new DocumentStateException(errorMessage);
+        }
+
+        return new ByteArrayResource(documentContent.getContent());
+    }
+
+    private String resolveDownloadErrorMessage(final SigningTransactionStatus status) {
+        return switch (status) {
+            case AWAITING_USER_AUTHORIZATION -> "Document is not signed yet";
+            case FAILED -> "Document signing failed";
+            case EXPIRED -> "Document signing expired";
+            default -> "Unknown document state";
+        };
     }
 }

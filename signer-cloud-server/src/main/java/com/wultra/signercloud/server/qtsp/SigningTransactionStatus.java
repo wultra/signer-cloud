@@ -24,7 +24,6 @@ package com.wultra.signercloud.server.qtsp;
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
 public enum SigningTransactionStatus {
-    PREPARING,
     AWAITING_USER_AUTHORIZATION,
     COMPLETED,
     FAILED,

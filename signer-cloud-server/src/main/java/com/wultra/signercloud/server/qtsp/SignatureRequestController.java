@@ -18,6 +18,7 @@
 package com.wultra.signercloud.server.qtsp;
 
 
+import com.wultra.signercloud.server.restapi.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -27,6 +28,8 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.core.io.Resource;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -172,6 +175,37 @@ public class SignatureRequestController {
         } catch (final RuntimeException e) {
             logger.warn("QTSP authorization callback failed", kv("action", "processQtspCallback"), kv("state", "failed"), e);
             throw e;
+        }
+    }
+
+    @GetMapping(value = "/{documentId}/file", produces = MediaType.APPLICATION_PDF_VALUE)
+    Resource download(
+            @Schema(
+                    description = "ID of the document",
+                    example = "9d18fb83-ea0f-4ce4-afc1-e4382a8222a5",
+                    format = "uuid"
+            )
+            @PathVariable final String documentId,
+
+            @Schema(
+                    description = "Optional Range header to download a specific byte range of the document (according to RFC 7233). " +
+                            "If not provided, the full document is returned.",
+                    example = "bytes=0-1023"
+            )
+            @RequestHeader(value = "Range", required = false) final String rangeHeader
+    ) {
+        logger.info("Download document initiated", kv("action", "downloadDocument"), kv("state", "initiated"), kv("documentId", documentId), kv("ranges", rangeHeader));
+        final var result = Try.execute(
+                () -> signatureService.downloadDocument(documentId)
+        );
+
+        if (result.isSuccess()) {
+            logger.info("Download document succeeded", kv("action", "downloadDocument"), kv("state", "succeeded"), kv("documentId", documentId));
+            return result.getResponse();
+        } else {
+            final var error = result.getError();
+            logger.info("Download document failed", kv("action", "downloadDocument"), kv("state", "failed"), kv("documentId", documentId), kv("errorMessage", error.getMessage()));
+            throw error;
         }
     }
 }
