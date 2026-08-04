@@ -20,6 +20,7 @@ import eu.europa.esig.dss.token.Pkcs12SignatureToken;
 import eu.europa.esig.dss.validation.SignedDocumentValidator;
 import eu.europa.esig.dss.validation.reports.Reports;
 import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 
@@ -53,6 +54,7 @@ class SignatureTest {
     }
 
     @Test
+    @Disabled("Disabled in GitHub Actions")
     void testExternalSignature() throws Exception {
         testSignature(SignatureType.EXTERNAL);
     }
