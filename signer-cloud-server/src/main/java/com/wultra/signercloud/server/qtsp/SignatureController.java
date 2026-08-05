@@ -58,7 +58,7 @@ import static reactor.netty.http.HttpConnectionLiveness.log;
         name = "Signature requests",
         description = "Creation and management of remote document-signing requests via QTSP"
 )
-public class SignatureRequestController {
+public class SignatureController {
 
     private final SignatureService signatureService;
 

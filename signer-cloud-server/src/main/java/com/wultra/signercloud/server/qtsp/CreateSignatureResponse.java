@@ -18,8 +18,6 @@
 package com.wultra.signercloud.server.qtsp;
 
 
-import io.swagger.v3.oas.annotations.media.Schema;
-
 import java.net.URI;
 import java.time.Instant;
 
@@ -33,5 +31,7 @@ public record CreateSignatureResponse(
         String externalId,
         SigningTransactionStatus status,
         URI authorizationUrl,
-        Instant expiresAt
+        Instant expiresAt,
+        // TODO (michal-rozehnal-w, 2026-08-04) Just for demo, state should be fetched from QTSP
+        String state
 ) {}

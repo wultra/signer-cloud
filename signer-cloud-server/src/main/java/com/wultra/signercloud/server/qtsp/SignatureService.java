@@ -202,7 +202,8 @@ public class SignatureService {
                 savedTransaction.getExternalId(),
                 savedTransaction.getStatus(),
                 URI.create(savedTransaction.getAuthorizationUrl()),
-                savedTransaction.getAuthorizationExpiresAt()
+                savedTransaction.getAuthorizationExpiresAt(),
+                oauthState
         );
     }
 
