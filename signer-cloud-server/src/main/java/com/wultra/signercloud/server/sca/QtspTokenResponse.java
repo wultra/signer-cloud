@@ -15,26 +15,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.qtsp;
+package com.wultra.signercloud.server.sca;
 
-
-import java.util.List;
 
 /**
  * TODO
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record QtspSignHashResponse(
-        List<String> signatures
+public record QtspTokenResponse(
+        String accessToken,
+        String tokenType,
+        long expiresIn
 ) {
-    String firstSignature() {
-        if (signatures == null || signatures.isEmpty()) {
-            throw new IllegalStateException(
-                    "QTSP returned no signatures"
-            );
-        }
-
-        return signatures.get(0);
-    }
 }

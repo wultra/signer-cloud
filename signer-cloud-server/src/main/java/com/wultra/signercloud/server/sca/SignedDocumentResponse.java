@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.qtsp;
+package com.wultra.signercloud.server.sca;
 
 
 import io.swagger.v3.oas.annotations.media.Schema;

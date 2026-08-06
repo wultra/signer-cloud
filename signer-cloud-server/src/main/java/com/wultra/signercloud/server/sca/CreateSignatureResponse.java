@@ -15,17 +15,19 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.qtsp;
+package com.wultra.signercloud.server.sca;
 
+
+import java.time.Instant;
 
 /**
  * TODO
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public enum SigningTransactionStatus {
-    AWAITING_USER_AUTHORIZATION,
-    COMPLETED,
-    FAILED,
-    EXPIRED
-}
+public record CreateSignatureResponse(
+        String signatureRequestId,
+        String externalId,
+        SigningTransactionStatus status,
+        Instant expiresAt
+) {}

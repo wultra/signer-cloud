@@ -15,20 +15,26 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.qtsp;
+package com.wultra.signercloud.server.sca;
 
 
-import org.springframework.data.repository.CrudRepository;
-import org.springframework.stereotype.Repository;
-
-import java.util.Optional;
+import java.util.List;
 
 /**
  * TODO
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-@Repository
-public interface SigningTransactionRepository extends CrudRepository<SigningTransactionEntity, String> {
-    Optional<SigningTransactionEntity> findByOauthState(String oauthState);
+public record QtspSignHashResponse(
+        List<String> signatures
+) {
+    String firstSignature() {
+        if (signatures == null || signatures.isEmpty()) {
+            throw new IllegalStateException(
+                    "QTSP returned no signatures"
+            );
+        }
+
+        return signatures.get(0);
+    }
 }

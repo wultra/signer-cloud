@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.qtsp;
+package com.wultra.signercloud.server.sca;
 
 
 import com.wultra.signercloud.server.document.DocumentVisualSignature;
@@ -46,26 +46,7 @@ public record CreateSignatureRequest(
         @Size(max = 255)
         String name,
 
-        @Schema(
-                description = """
-                        Identifier of the authenticated QTSP session whose service
-                        access token will be used for credentials/info.
-                        """,
-                example = "qtsp-session-8d7f3f3e"
-        )
-        @NotBlank
-        String qtspSessionId,
-
-        @Schema(
-                description = "QTSP credential selected by the signer",
-                example = "credential-12345"
-        )
-        @NotBlank
-        String credentialId,
-
-        @Schema(
-                description = "Optional visible-signature configuration"
-        )
+        @Schema(description = "Optional visible-signature configuration")
         @Valid
         DocumentVisualSignature visualSignature
 ) {

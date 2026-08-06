@@ -15,7 +15,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-package com.wultra.signercloud.server.qtsp;
+package com.wultra.signercloud.server.sca;
 
 import com.wultra.signercloud.server.document.*;
 import lombok.AllArgsConstructor;
@@ -94,35 +94,30 @@ public class SignatureService {
         final var fileContent = getFileBytes(file);
         final var fileName = getFileName(file);
 
-        final var credentialInfo = getCredentialInfoFromQtsp(
-                request.qtspSessionId(),
-                request.credentialId()
-        );
-
-        final var toBeSigned = documentSigningService.computeToBeSigned(
-                fileContent,
-                credentialInfo.certificate(),
-                credentialInfo.certificateChain(),
-                now,
-                request.visualSignature()
-        );
-
-        final byte[] toBeSignedHash = sha256(toBeSigned);
-
-        final String toBeSignedHashBase64 = Base64.getEncoder().encodeToString(toBeSignedHash);
-
-        final var oauthState = randomBase64Url(32);
-        final var pkceCodeVerifier = randomBase64Url(64);
-        final var pkceCodeChallenge = createPkceCodeChallenge(pkceCodeVerifier);
-
+//        final var toBeSigned = documentSigningService.computeToBeSigned(
+//                fileContent,
+//                credentialInfo.certificate(),
+//                credentialInfo.certificateChain(),
+//                now,
+//                request.visualSignature()
+//        );
+//
+//        final byte[] toBeSignedHash = sha256(toBeSigned);
+//
+//        final String toBeSignedHashBase64 = Base64.getEncoder().encodeToString(toBeSignedHash);
+//
+//        final var oauthState = randomBase64Url(32);
+//        final var pkceCodeVerifier = randomBase64Url(64);
+//        final var pkceCodeChallenge = createPkceCodeChallenge(pkceCodeVerifier);
+//
         final var authorizationExpiresAt = now.plus(AUTHORIZATION_VALIDITY);
-
-        final URI authorizationUrl = createAuthorizationUrl(
-                request,
-                toBeSignedHashBase64,
-                oauthState,
-                pkceCodeChallenge
-        );
+//
+//        final URI authorizationUrl = createAuthorizationUrl(
+//                request,
+//                toBeSignedHashBase64,
+//                oauthState,
+//                pkceCodeChallenge
+//        );
 
         final DocumentContent savedContent = documentContentRepository.save(
                 DocumentContent.builder()
@@ -140,43 +135,20 @@ public class SignatureService {
                         .documentContent(
                                 AggregateReference.to(savedContent.getId())
                         )
-                        .qtspSessionId(request.qtspSessionId())
-                        .credentialId(request.credentialId())
-                        .certificateBase64(
-                                credentialInfo.certificateBase64()
-                        )
-                        .certificateChainJson(
-                                serializeCertificateChain(
-                                        credentialInfo.certificateChainBase64()
-                                )
-                        )
-                        .toBeSignedHashBase64(toBeSignedHashBase64)
-                        .hashAlgorithmOid(SHA_256_OID)
-                        .signAlgorithmOid(
-                                credentialInfo.signAlgorithmOid()
-                        )
-                        .signatureDate(now)
                         .visualSignatureJson(
                                 serializeVisualSignature(
                                         request.visualSignature()
                                 )
                         )
-                        .oauthState(oauthState)
-                        .pkceCodeVerifier(pkceCodeVerifier)
-                        .authorizationUrl(authorizationUrl.toString())
                         .authorizationExpiresAt(
                                 authorizationExpiresAt
                         )
-                        .status(
-                                SigningTransactionStatus
-                                        .AWAITING_USER_AUTHORIZATION
-                        )
+                        .status(SigningTransactionStatus.AWAITING_USER_AUTHORIZATION)
                         .createdAt(now)
                         .updatedAt(now)
                         .build();
 
-        final SigningTransactionEntity savedTransaction =
-                signingTransactionRepository.save(transaction);
+        final SigningTransactionEntity savedTransaction = signingTransactionRepository.save(transaction);
 
         logger.info(
                 "Signing transaction created",
@@ -201,9 +173,7 @@ public class SignatureService {
                 savedTransaction.getId(),
                 savedTransaction.getExternalId(),
                 savedTransaction.getStatus(),
-                URI.create(savedTransaction.getAuthorizationUrl()),
-                savedTransaction.getAuthorizationExpiresAt(),
-                oauthState
+                savedTransaction.getAuthorizationExpiresAt()
         );
     }
 
@@ -242,42 +212,6 @@ public class SignatureService {
                 List.of(),
                 ECDSA_SHA_256_OID
         );
-    }
-
-    private URI createAuthorizationUrl(
-            final CreateSignatureRequest request,
-            final String toBeSignedHash,
-            final String oauthState,
-            final String pkceCodeChallenge
-    ) {
-        return UriComponentsBuilder
-                .fromUri(DUMMY_AUTHORIZATION_ENDPOINT)
-                .queryParam("response_type", "code")
-                .queryParam("client_id", DUMMY_CLIENT_ID)
-                .queryParam("redirect_uri", DUMMY_REDIRECT_URI)
-                .queryParam("scope", "credential")
-                .queryParam(
-                        "credentialID",
-                        request.credentialId()
-                )
-                .queryParam("numSignatures", 1)
-                .queryParam("hashes", toBeSignedHash)
-                .queryParam(
-                        "hashAlgorithmOID",
-                        SHA_256_OID
-                )
-                .queryParam(
-                        "code_challenge",
-                        pkceCodeChallenge
-                )
-                .queryParam(
-                        "code_challenge_method",
-                        "S256"
-                )
-                .queryParam("state", oauthState)
-                .build()
-                .encode()
-                .toUri();
     }
 
     private void validateFile(final MultipartFile file) {
