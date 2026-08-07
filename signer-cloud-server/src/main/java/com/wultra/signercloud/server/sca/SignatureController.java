@@ -135,7 +135,7 @@ public class SignatureController {
 
     @GetMapping("/callback")
     public ResponseEntity<SignedDocumentResponse> processCallback(
-            @RequestParam("requestId") final String requestId,
+            @RequestParam("documentRequestId") final String requestId,
             @RequestParam("callbackData") final String callbackData
     ) {
         logger.info("QTSP authorization callback received", kv("action", "processQtspCallback"),

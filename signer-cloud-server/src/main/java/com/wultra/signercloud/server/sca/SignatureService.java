@@ -133,9 +133,9 @@ public class SignatureService {
 
         final String authorizationUrl = UriComponentsBuilder
                 .fromUriString(scaConfigProperties.getQtspBaseUrl())
-                .path("/index.html")
+                .path("/authorize/index.html")
                 .queryParam("redirectUri", "{redirectUri}")
-                .queryParam("requestId", "{requestId}")
+                .queryParam("documentRequestId", "{documentRequestId}")
                 .encode(StandardCharsets.UTF_8)
                 .buildAndExpand(
                         redirectUri,
@@ -287,16 +287,6 @@ public class SignatureService {
                     "Could not decode the dummy QTSP certificate",
                     exception
             );
-        }
-    }
-
-    private static byte[] sha256(final byte[] value) {
-        try {
-            return MessageDigest
-                    .getInstance("SHA-256")
-                    .digest(value);
-        } catch (final NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 is not available", e);
         }
     }
 
