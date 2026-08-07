@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -59,6 +60,7 @@ import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
 public class SignatureController {
 
     private final SignatureService signatureService;
+    private final ScaConfigProperties scaConfigProperties;
 
     @Operation(
             summary = "Create a document-signing request",
@@ -134,7 +136,7 @@ public class SignatureController {
     }
 
     @GetMapping("/callback")
-    public ResponseEntity<SignedDocumentResponse> processCallback(
+    public ResponseEntity<Object> processCallback(
             @RequestParam("documentRequestId") final String requestId,
             @RequestParam("callbackData") final String callbackData
     ) {
@@ -153,6 +155,14 @@ public class SignatureController {
                     kv("action", "processQtspCallback"),
                     kv("state", "succeeded")
             );
+
+            if (StringUtils.hasText(scaConfigProperties.getUiBaseUrl())) {
+                return ResponseEntity
+                        .status(302)
+                        .location(URI.create(scaConfigProperties.getUiBaseUrl()))
+                        .build();
+            }
+
             return ResponseEntity.ok(response);
 
         } catch (final RuntimeException e) {

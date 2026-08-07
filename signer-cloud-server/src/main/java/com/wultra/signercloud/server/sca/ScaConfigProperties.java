@@ -35,4 +35,6 @@ public class ScaConfigProperties {
     private String qtspBaseUrl;
 
     private String scaBaseUrl;
+
+    private String uiBaseUrl;
 }
