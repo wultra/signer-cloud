@@ -18,17 +18,16 @@
 package com.wultra.signercloud.server.sca;
 
 
-import java.time.Instant;
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
 
 /**
- * TODO
+ * Returned credential.
  *
- * @author Michal Rozehnal, michal.rozehnal@wultra.com
+ * Private key is EC P-256.
+ * Certificate contains the corresponding EC public key.
  */
-public record CreateSignatureResponse(
-        String signatureRequestId,
-        String externalId,
-        SigningTransactionStatus status,
-        Instant expiresAt,
-        String authorizationUrl
+public record CertificateAndKey(
+        X509Certificate certificate,
+        PrivateKey privateKey
 ) {}

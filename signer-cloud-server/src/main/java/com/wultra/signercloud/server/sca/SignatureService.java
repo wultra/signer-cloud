@@ -20,11 +20,7 @@ package com.wultra.signercloud.server.sca;
 import com.wultra.signercloud.server.document.*;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bouncycastle.crypto.digests.NullDigest;
-import org.bouncycastle.crypto.signers.DSADigestSigner;
-import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.StandardDSAEncoding;
-import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.data.jdbc.core.mapping.AggregateReference;
@@ -32,17 +28,16 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.web.util.UriComponentsBuilder;
 import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -63,28 +58,16 @@ import static net.logstash.logback.argument.StructuredArguments.kv;
 @AllArgsConstructor
 @Slf4j
 public class SignatureService {
-    private static final String ECDSA_SHA_256_OID ="1.2.840.10045.4.3.2";
-
-    private static final String SHA_256_OID = "2.16.840.1.101.3.4.2.1";
-    private static final Duration AUTHORIZATION_VALIDITY = Duration.ofMinutes(10);
+    private static final Duration AUTHORIZATION_VALIDITY = Duration.ofMinutes(15);
     private static final long MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
-
-    // TODO: put dummy into config?
-    private static final URI DUMMY_AUTHORIZATION_ENDPOINT = URI.create("https://qtsp.example/oauth2/authorize");
-    private static final String DUMMY_CLIENT_ID = "signature-creation-application";
-    private static final String DUMMY_REDIRECT_URI = "https://sca.example/api/v1/oauth2/qtsp/callback";
-    private static final String SIGNING_CERTIFICATE_BASE64 = """
-        MIIB2jCCAX+gAwIBAgIUUa5jIofJUv+hj2LuiV3vfVTcl7YwCgYIKoZIzj0EAwIwQjELMAkGA1UEBhMCQ1oxEDAOBgNVBAoMB0V4YW1wbGUxITAfBgNVBAMMGFN0YXRpYyBRVFNQIEVDRFNBIFNpZ25lcjAeFw0yNjA4MDMxODU4MjZaFw0zNjA3MzExODU4MjZaMEIxCzAJBgNVBAYTAkNaMRAwDgYDVQQKDAdFeGFtcGxlMSEwHwYDVQQDDBhTdGF0aWMgUVRTUCBFQ0RTQSBTaWduZXIwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQb4gd2M7wMo9XyUHaflcFjxDIS6dEF4w/zuHrwrOQiGuH95/2mbLw72tlxv8Tl3wsYWTk3EoZT8Tkjy/qJhCdho1MwUTAdBgNVHQ4EFgQUm/jWrctIfcW+nI+5VOSXqe9DWQ4wHwYDVR0jBBgwFoAUm/jWrctIfcW+nI+5VOSXqe9DWQ4wDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjOPQQDAgNJADBGAiEAg7CfXPzyTruLU2ZmLO/jrgCqtzJG7OZZ5OqdJ+bhancCIQDW/VO0Hg4xwo9qylex+rj8hv2+qtWbU7qTGuvDBX0B3Q==
-        """;
-
-    private static final String SIGNING_PRIVATE_KEY_PKCS8_BASE64 = """
-        MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgIu0iwSU6xIE98HtQDOMlT7HfQ3QP4TKxAzSNoDMWlbGhRANCAAQb4gd2M7wMo9XyUHaflcFjxDIS6dEF4w/zuHrwrOQiGuH95/2mbLw72tlxv8Tl3wsYWTk3EoZT8Tkjy/qJhCdh
-        """;
+    private static final String DOCUMENT_DOWNLOAD_PATH = "/signature/{documentId}/file";
 
     private final DocumentSigningService documentSigningService;
     private final DocumentContentRepository documentContentRepository;
     private final SigningTransactionRepository signingTransactionRepository;
     private final ObjectMapper objectMapper;
+    private final ScaConfigProperties scaConfigProperties;
+    private final CertificateService certificateService;
 
     @Transactional
     public CreateSignatureResponse createSignatureRequest(final CreateSignatureRequest request, final MultipartFile file) {
@@ -94,30 +77,7 @@ public class SignatureService {
         final var fileContent = getFileBytes(file);
         final var fileName = getFileName(file);
 
-//        final var toBeSigned = documentSigningService.computeToBeSigned(
-//                fileContent,
-//                credentialInfo.certificate(),
-//                credentialInfo.certificateChain(),
-//                now,
-//                request.visualSignature()
-//        );
-//
-//        final byte[] toBeSignedHash = sha256(toBeSigned);
-//
-//        final String toBeSignedHashBase64 = Base64.getEncoder().encodeToString(toBeSignedHash);
-//
-//        final var oauthState = randomBase64Url(32);
-//        final var pkceCodeVerifier = randomBase64Url(64);
-//        final var pkceCodeChallenge = createPkceCodeChallenge(pkceCodeVerifier);
-//
         final var authorizationExpiresAt = now.plus(AUTHORIZATION_VALIDITY);
-//
-//        final URI authorizationUrl = createAuthorizationUrl(
-//                request,
-//                toBeSignedHashBase64,
-//                oauthState,
-//                pkceCodeChallenge
-//        );
 
         final DocumentContent savedContent = documentContentRepository.save(
                 DocumentContent.builder()
@@ -162,55 +122,33 @@ public class SignatureService {
                         "documentExternalId",
                         savedTransaction.getExternalId()
                 ),
-                kv(
-                        "credentialId",
-                        savedTransaction.getCredentialId()
-                ),
                 kv("status", savedTransaction.getStatus())
         );
+
+        final String redirectUri = UriComponentsBuilder
+                .fromUriString(scaConfigProperties.getScaBaseUrl())
+                .path("/signature/callback")
+                .build()
+                .toUriString();
+
+        final String authorizationUrl = UriComponentsBuilder
+                .fromUriString(scaConfigProperties.getQtspBaseUrl())
+                .path("/index.html")
+                .queryParam("redirectUri", "{redirectUri}")
+                .queryParam("requestId", "{requestId}")
+                .encode(StandardCharsets.UTF_8)
+                .buildAndExpand(
+                        redirectUri,
+                        savedTransaction.getId()
+                )
+                .toUriString();
 
         return new CreateSignatureResponse(
                 savedTransaction.getId(),
                 savedTransaction.getExternalId(),
                 savedTransaction.getStatus(),
-                savedTransaction.getAuthorizationExpiresAt()
-        );
-    }
-
-    /**
-     * Temporary replacement for a real QTSP credentials/info call.
-     *
-     * The arguments are intentionally accepted even though the method
-     * currently returns the same static data for every request.
-     */
-    private QtspCredentialInfo getCredentialInfoFromQtsp(
-            final String qtspSessionId,
-            final String credentialId
-    ) {
-        /*
-         * Dummy implementation for now.
-         *
-         * Later, replace this method with a real QTSP call to:
-         * POST /csc/v2/credentials/info
-         */
-
-        logger.info(
-                "QTSP credential information obtained",
-                kv("action", "getCredentialInfo"),
-                kv("qtspSessionId", qtspSessionId),
-                kv("credentialId", credentialId)
-        );
-
-        final X509Certificate certificate =
-                decodeCertificate(SIGNING_CERTIFICATE_BASE64);
-
-        return new QtspCredentialInfo(
-                credentialId,
-                certificate,
-                List.of(),
-                SIGNING_CERTIFICATE_BASE64,
-                List.of(),
-                ECDSA_SHA_256_OID
+                savedTransaction.getAuthorizationExpiresAt(),
+                authorizationUrl
         );
     }
 
@@ -352,31 +290,6 @@ public class SignatureService {
         }
     }
 
-    private static String randomBase64Url(
-            final int numberOfBytes
-    ) {
-        final byte[] randomBytes =
-                new byte[numberOfBytes];
-
-        new SecureRandom().nextBytes(randomBytes);
-
-        return Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(randomBytes);
-    }
-
-    private static String createPkceCodeChallenge(
-            final String codeVerifier
-    ) {
-        final byte[] digest = sha256(
-                codeVerifier.getBytes(StandardCharsets.US_ASCII)
-        );
-
-        return Base64.getUrlEncoder()
-                .withoutPadding()
-                .encodeToString(digest);
-    }
-
     private static byte[] sha256(final byte[] value) {
         try {
             return MessageDigest
@@ -388,16 +301,8 @@ public class SignatureService {
     }
 
     @Transactional
-    public String completeSignature(final String authorizationCode, final String state) {
-        if (authorizationCode == null || authorizationCode.isBlank()) {
-            throw new IllegalArgumentException("Authorization code is required");
-        }
-
-        if (state == null || state.isBlank()) {
-            throw new IllegalArgumentException("OAuth state is required");
-        }
-
-        final SigningTransactionEntity transaction = signingTransactionRepository.findByOauthState(state)
+    public SignedDocumentResponse completeSignature(final String requestId, final String callbackData) {
+        final SigningTransactionEntity transaction = signingTransactionRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Signing transaction was not found"));
 
         /*
@@ -410,60 +315,61 @@ public class SignatureService {
 
         final var now = Instant.now();
 
-        if (!transaction.getAuthorizationExpiresAt().isAfter(now)) {
-            signingTransactionRepository.save(
-                    transaction.toBuilder()
-                            .status(SigningTransactionStatus.EXPIRED)
-                            .updatedAt(now)
-                            .build()
-            );
-
-            throw new IllegalStateException(
-                    "Signing transaction has expired"
-            );
-        }
+//        if (!transaction.getAuthorizationExpiresAt().isAfter(now)) {
+//            signingTransactionRepository.save(
+//                    transaction.toBuilder()
+//                            .status(SigningTransactionStatus.EXPIRED)
+//                            .updatedAt(now)
+//                            .build()
+//            );
+//
+//            throw new IllegalStateException(
+//                    "Signing transaction has expired"
+//            );
+//        }
 
         if (transaction.getStatus() != SigningTransactionStatus.AWAITING_USER_AUTHORIZATION) {
             throw new IllegalStateException("Signing transaction cannot be completed from status: " + transaction.getStatus());
         }
 
+        final var originalDocumentId = transaction.getDocumentContent().getId();
+        final var originalDocumentContent = documentContentRepository.findById(originalDocumentId)
+                .orElseThrow(() -> new IllegalStateException("Original document content was not found"));
+
+        final var pid = parsePID(callbackData);
+
+        final var certificateAndKey = certificateService.generateCertificate(requestId, pid);
+
+        final var certificate = certificateAndKey.certificate();
+        final var privateKey = certificateAndKey.privateKey();
+
+        final var toBeSigned = documentSigningService.computeToBeSigned(
+                originalDocumentContent.getContent(),
+                certificate,
+                List.of(),
+                now,
+                null // TODO: parse visual signature
+        );
+
+        final var signature = signToBeSigned(toBeSigned, privateKey);
+
+        final String signatureBase64 =
+                Base64.getEncoder()
+                        .encodeToString(signature);
+
         logger.info(
                 "Completing signing transaction",
                 kv("action", "completeSignature"),
                 kv("state", "initiated"),
-                kv("signingTransactionId", transaction.getId()),
-                kv("credentialId", transaction.getCredentialId())
+                kv("signingTransactionId", transaction.getId())
         );
-
-        final QtspTokenResponse tokenResponse = exchangeAuthorizationCode(authorizationCode, transaction.getPkceCodeVerifier());
-
-        final QtspSignHashResponse signatureResponse = requestHashSignature(
-                tokenResponse.accessToken(),
-                transaction.getCredentialId(),
-                transaction.getToBeSignedHashBase64(),
-                transaction.getHashAlgorithmOid(),
-                transaction.getSignAlgorithmOid()
-        );
-
-        final DocumentContent originalDocumentContent =
-                documentContentRepository
-                        .findById(
-                                transaction
-                                        .getDocumentContent()
-                                        .getId()
-                        )
-                        .orElseThrow(() -> new IllegalStateException("Original document content was not found"));
 
         final var signedPdf = documentSigningService.sign(
-                decodeCertificate(
-                        transaction.getCertificateBase64()
-                ),
-                deserializeCertificateChain(
-                        transaction.getCertificateChainJson()
-                ),
-                signatureResponse.firstSignature(),
+                certificate,
+                List.of(),
+                signatureBase64,
                 originalDocumentContent.getContent(),
-                transaction.getSignatureDate(),
+                now,
                 null,
                 null
         );
@@ -485,11 +391,8 @@ public class SignatureService {
                         .status(SigningTransactionStatus.COMPLETED)
                         .completedAt(now)
                         .updatedAt(now)
-                        /*
-                         * These secrets are no longer needed after completion.
-                         */
-//                        .oauthState(null)
-//                        .pkceCodeVerifier(null)
+                        // todo: serialize cert + chain
+                        // toBeSigned
                         .build();
 
         signingTransactionRepository.save(completedTransaction);
@@ -505,173 +408,58 @@ public class SignatureService {
                 kv("status", completedTransaction.getStatus())
         );
 
-        return completedTransaction.getId();
+        final var downloadUri = buildDocumentDownloadUri(completedTransaction.getId());
+        return new SignedDocumentResponse(downloadUri);
     }
 
-    private QtspTokenResponse exchangeAuthorizationCode(
-            final String authorizationCode,
-            final String pkceCodeVerifier
-    ) {
-        /*
-         * TODO: Replace the static response with:
-         *
-         * POST /oauth2/token
-         *
-         * Parameters:
-         * - grant_type=authorization_code
-         * - code=authorizationCode
-         * - code_verifier=pkceCodeVerifier
-         * - redirect_uri=<configured callback URI>
-         * - client_id=<configured client ID>
-         *
-         * Depending on the QTSP, client authentication may also be required.
-         */
-
-        logger.info(
-                "QTSP authorization code exchanged",
-                kv("action", "exchangeAuthorizationCode"),
-                kv("state", "succeeded")
-        );
-
-        return new QtspTokenResponse(
-                "static-credential-access-token",
-                "Bearer",
-                120
-        );
+    private String buildDocumentDownloadUri(final String documentId) {
+        return ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path(DOCUMENT_DOWNLOAD_PATH)
+                .buildAndExpand(documentId)
+                .toUriString();
     }
 
-    private QtspSignHashResponse requestHashSignature(
-            final String accessToken,
-            final String credentialId,
-            final String hashBase64,
-            final String hashAlgorithmOid,
-            final String signAlgorithmOid
+    private static byte[] signToBeSigned(
+            final byte[] toBeSigned,
+            final PrivateKey privateKey
     ) {
-        /*
-         * TODO: Replace the static response with:
-         *
-         * POST /csc/v2/signatures/signHash
-         *
-         * Authorization: Bearer <accessToken>
-         *
-         * Request body:
-         * {
-         *   "credentialID": credentialId,
-         *   "hashes": [hashBase64],
-         *   "hashAlgorithmOID": hashAlgorithmOid,
-         *   "signAlgo": signAlgorithmOid
-         * }
-         */
+        if (toBeSigned == null || toBeSigned.length == 0) {
+            throw new IllegalArgumentException(
+                    "ToBeSigned must not be empty"
+            );
+        }
 
-        final byte[] hash = decodeSha256Hash(hashBase64);
-        final byte[] signature = signSha256Hash(hash);
+        if (privateKey == null) {
+            throw new IllegalArgumentException(
+                    "Private key is required"
+            );
+        }
 
-        logger.info(
-                "QTSP hash signature created",
-                kv("action", "requestHashSignature"),
-                kv("state", "succeeded"),
-                kv("credentialId", credentialId),
-                kv("hashAlgorithmOid", hashAlgorithmOid),
-                kv("signAlgorithmOid", signAlgorithmOid),
-                kv("signatureSize", signature.length)
-        );
+        if (!"EC".equalsIgnoreCase(privateKey.getAlgorithm())) {
+            throw new IllegalArgumentException(
+                    "Expected EC private key, got: "
+                            + privateKey.getAlgorithm()
+            );
+        }
 
-        return new QtspSignHashResponse(
-                List.of(
-                        Base64.getEncoder().encodeToString(signature)
-                )
-        );
-    }
-
-    private record QtspCredentialInfo(
-            String credentialId,
-            X509Certificate certificate,
-            List<X509Certificate> certificateChain,
-            String certificateBase64,
-            List<String> certificateChainBase64,
-            String signAlgorithmOid
-    ) {}
-
-    /*
-     * Mocking
-     */
-
-    private static byte[] signSha256Hash(
-            final byte[] hash
-    ) {
         try {
-            /*
-             * The hash has already been computed by the caller.
-             * NullDigest prevents hashing it a second time.
-             *
-             * StandardDSAEncoding returns the ASN.1 DER-encoded
-             * ECDSA signature expected by normal ECDSA validators.
-             */
-            final var signer = new DSADigestSigner(
-                    new ECDSASigner(),
-                    new NullDigest(),
-                    StandardDSAEncoding.INSTANCE
-            );
+            final Signature signature =
+                    Signature.getInstance(
+                            "SHA256withECDSA",
+                            BouncyCastleProvider.PROVIDER_NAME
+                    );
 
-            signer.init(
-                    true,
-                    PrivateKeyFactory.createKey(
-                            decodePrivateKeyBytes()
-                    )
-            );
+            signature.initSign(privateKey);
+            signature.update(toBeSigned);
 
-            signer.update(hash, 0, hash.length);
+            return signature.sign();
 
-            return signer.generateSignature();
-        } catch (final IOException exception) {
+        } catch (final GeneralSecurityException exception) {
             throw new IllegalStateException(
-                    "Could not create ECDSA signature",
+                    "Could not create ECDSA/SHA-256 signature",
                     exception
             );
         }
-    }
-
-    private static byte[] decodePrivateKeyBytes() {
-        try {
-            return Base64.getDecoder().decode(
-                    SIGNING_PRIVATE_KEY_PKCS8_BASE64
-                            .replaceAll("\\s", "")
-            );
-        } catch (final IllegalArgumentException exception) {
-            throw new IllegalStateException(
-                    "Could not decode the static RSA private key",
-                    exception
-            );
-        }
-    }
-
-    private static byte[] decodeSha256Hash(
-            final String hashBase64
-    ) {
-        if (hashBase64 == null || hashBase64.isBlank()) {
-            throw new IllegalArgumentException(
-                    "Hash to be signed is required"
-            );
-        }
-
-        final byte[] hash;
-
-        try {
-            hash = Base64.getDecoder().decode(hashBase64);
-        } catch (final IllegalArgumentException exception) {
-            throw new IllegalArgumentException(
-                    "Hash is not valid Base64",
-                    exception
-            );
-        }
-
-        if (hash.length != 32) {
-            throw new IllegalArgumentException(
-                    "SHA-256 hash must contain exactly 32 bytes"
-            );
-        }
-
-        return hash;
     }
 
     Resource downloadDocument(final String transactionUuid) {
@@ -697,5 +485,35 @@ public class SignatureService {
             case EXPIRED -> "Document signing expired";
             default -> "Unknown document state";
         };
+    }
+
+    private PID parsePID(final String callbackData) {
+        final byte[] decoded = Base64.getDecoder().decode(callbackData);
+        final String json = new String(decoded, StandardCharsets.UTF_8);
+
+        final JsonNode root = objectMapper.readTree(json);
+        final JsonNode pid = root
+                .path("translatedPayload")
+                .path("pidTranslated");
+
+        if (pid.isMissingNode() || pid.isNull()) {
+            throw new IllegalArgumentException("Callback data does not contain translatedPayload.pidTranslated");
+        }
+
+        return new PID(
+                requiredText(pid, "given_name"),
+                requiredText(pid, "familyName"),
+                requiredText(pid, "birthdate")
+        );
+    }
+
+    private static String requiredText(final JsonNode node, final String field) {
+        final JsonNode value = node.get(field);
+
+        if (value == null || value.isNull() || !value.isString() || value.asString().isBlank()) {
+            throw new IllegalArgumentException("Missing or invalid PID field: " + field);
+        }
+
+        return value.asString();
     }
 }

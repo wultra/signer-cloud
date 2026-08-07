@@ -27,7 +27,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +39,6 @@ import java.net.URI;
 import static net.logstash.logback.argument.StructuredArguments.kv;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE;
-import static reactor.netty.http.HttpConnectionLiveness.log;
 
 /**
  * TODO
@@ -137,39 +135,25 @@ public class SignatureController {
 
     @GetMapping("/callback")
     public ResponseEntity<SignedDocumentResponse> processCallback(
-            @Valid @ParameterObject @ModelAttribute final QTSPCallbackRequest request
+            @RequestParam("requestId") final String requestId,
+            @RequestParam("callbackData") final String callbackData
     ) {
         logger.info("QTSP authorization callback received", kv("action", "processQtspCallback"),
                 kv("state", "initiated"));
 
         try {
-            final String signingTransactionId =
+            final var response =
                     signatureService.completeSignature(
-                            request.code(),
-                            request.state()
+                            requestId,
+                            callbackData
                     );
 
-            final URI downloadUrl =
-                    ServletUriComponentsBuilder
-                            .fromCurrentContextPath()
-                            .path(
-                                    "/api/v1/signature-requests/{transactionId}/document"
-                            )
-                            .buildAndExpand(signingTransactionId)
-                            .toUri();
-
-            log.info(
+            logger.info(
                     "QTSP authorization callback processed",
                     kv("action", "processQtspCallback"),
-                    kv("state", "succeeded"),
-                    kv(
-                            "signingTransactionId",
-                            signingTransactionId
-                    )
+                    kv("state", "succeeded")
             );
-            return ResponseEntity.ok(
-                    new SignedDocumentResponse(downloadUrl)
-            );
+            return ResponseEntity.ok(response);
 
         } catch (final RuntimeException e) {
             logger.warn("QTSP authorization callback failed", kv("action", "processQtspCallback"), kv("state", "failed"), e);

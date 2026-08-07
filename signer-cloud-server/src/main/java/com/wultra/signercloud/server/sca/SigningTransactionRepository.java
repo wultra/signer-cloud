@@ -30,5 +30,5 @@ import java.util.Optional;
  */
 @Repository
 public interface SigningTransactionRepository extends CrudRepository<SigningTransactionEntity, String> {
-    Optional<SigningTransactionEntity> findByOauthState(String oauthState);
+    Optional<SigningTransactionEntity> findByExternalId(String externalId);
 }

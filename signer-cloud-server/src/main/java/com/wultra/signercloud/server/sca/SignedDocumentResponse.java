@@ -33,6 +33,6 @@ public record SignedDocumentResponse(
                 example = "https://sca.example/api/v1/signature-requests/55ea6402-9edc-42ec-9f77-c48df2f22941/document",
                 format = "uri"
         )
-        URI downloadUrl
+        String downloadUrl
 ) {
 }

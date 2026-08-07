@@ -69,12 +69,6 @@ public class SigningTransactionEntity {
     @Column("signed_document_content_id")
     private AggregateReference<DocumentContent, Long> signedDocumentContent;
 
-    @Column("qtsp_session_id")
-    private String qtspSessionId;
-
-    @Column("credential_id")
-    private String credentialId;
-
     @Column("certificate_base64")
     private String certificateBase64;
 
@@ -91,12 +85,6 @@ public class SigningTransactionEntity {
     @Column("to_be_signed_hash_base64")
     private String toBeSignedHashBase64;
 
-    @Column("hash_algorithm_oid")
-    private String hashAlgorithmOid;
-
-    @Column("sign_algorithm_oid")
-    private String signAlgorithmOid;
-
     /*
      * Reuse this exact value when creating the final signed PDF.
      */
@@ -105,15 +93,6 @@ public class SigningTransactionEntity {
 
     @Column("visual_signature_json")
     private String visualSignatureJson;
-
-    @Column("oauth_state")
-    private String oauthState;
-
-    @Column("pkce_code_verifier")
-    private String pkceCodeVerifier;
-
-    @Column("authorization_url")
-    private String authorizationUrl;
 
     @Column("authorization_expires_at")
     private Instant authorizationExpiresAt;

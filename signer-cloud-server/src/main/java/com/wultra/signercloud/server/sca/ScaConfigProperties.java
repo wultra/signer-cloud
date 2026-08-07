@@ -18,17 +18,21 @@
 package com.wultra.signercloud.server.sca;
 
 
-import java.time.Instant;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * TODO
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record CreateSignatureResponse(
-        String signatureRequestId,
-        String externalId,
-        SigningTransactionStatus status,
-        Instant expiresAt,
-        String authorizationUrl
-) {}
+@ConfigurationProperties(prefix = "signer-cloud.server.sca")
+@Getter
+@Setter
+public class ScaConfigProperties {
+
+    private String qtspBaseUrl;
+
+    private String scaBaseUrl;
+}

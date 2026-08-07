@@ -18,17 +18,13 @@
 package com.wultra.signercloud.server.sca;
 
 
-import java.time.Instant;
-
 /**
  * TODO
  *
  * @author Michal Rozehnal, michal.rozehnal@wultra.com
  */
-public record CreateSignatureResponse(
-        String signatureRequestId,
-        String externalId,
-        SigningTransactionStatus status,
-        Instant expiresAt,
-        String authorizationUrl
+public record PID(
+        String givenName,
+        String familyName,
+        String birthdate
 ) {}
