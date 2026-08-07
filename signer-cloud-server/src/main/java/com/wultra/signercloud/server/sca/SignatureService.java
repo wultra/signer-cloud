@@ -305,12 +305,14 @@ public class SignatureService {
         final SigningTransactionEntity transaction = signingTransactionRepository.findById(requestId)
                 .orElseThrow(() -> new IllegalArgumentException("Signing transaction was not found"));
 
+        final var downloadUri = buildDocumentDownloadUri(requestId);
+
         /*
          * Makes a repeated callback idempotent after the transaction
          * has already completed.
          */
         if (transaction.getStatus() == SigningTransactionStatus.COMPLETED) {
-            return transaction.getId();
+            return new SignedDocumentResponse(downloadUri);
         }
 
         final var now = Instant.now();
@@ -408,7 +410,6 @@ public class SignatureService {
                 kv("status", completedTransaction.getStatus())
         );
 
-        final var downloadUri = buildDocumentDownloadUri(completedTransaction.getId());
         return new SignedDocumentResponse(downloadUri);
     }
 
