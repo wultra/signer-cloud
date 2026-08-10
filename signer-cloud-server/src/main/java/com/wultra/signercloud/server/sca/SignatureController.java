@@ -110,10 +110,7 @@ public class SignatureController {
                     .buildAndExpand(response.signatureRequestId())
                     .toUri();
 
-            logger.info(
-                    "Signature request created",
-                    kv("action", "createSignatureRequest"),
-                    kv("state", "succeeded"),
+            logger.info("Signature request created", kv("action", "createSignatureRequest"), kv("state", "succeeded"),
                     kv("signatureRequestId", response.signatureRequestId())
             );
 
@@ -121,12 +118,7 @@ public class SignatureController {
                     .created(location)
                     .body(response);
         } catch (final RuntimeException e) {
-            logger.warn(
-                    "Signature request failed",
-                    kv("action", "createSignatureRequest"),
-                    kv("state", "failed"),
-                    e
-            );
+            logger.warn("Signature request failed", kv("action", "createSignatureRequest"), kv("state", "failed"), e);
             throw e;
         }
     }
@@ -136,8 +128,7 @@ public class SignatureController {
             @RequestParam("documentRequestId") final String requestId,
             @RequestParam("callbackData") final String callbackData
     ) {
-        logger.info("QTSP authorization callback received", kv("action", "processQtspCallback"),
-                kv("state", "initiated"));
+        logger.info("QTSP authorization callback received", kv("action", "processQtspCallback"), kv("state", "initiated"));
 
         try {
             final var response =
@@ -146,10 +137,8 @@ public class SignatureController {
                             callbackData
                     );
 
-            logger.info(
-                    "QTSP authorization callback processed",
-                    kv("action", "processQtspCallback"),
-                    kv("state", "succeeded")
+            logger.info("QTSP authorization callback processed", kv("action", "processQtspCallback"), kv("state", "succeeded"),
+                    kv("redirectUri", response.redirectUrl())
             );
 
             return ResponseEntity
