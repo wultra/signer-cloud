@@ -1,0 +1,64 @@
+@startuml
+autonumber
+
+' Toggle endpoint notes: keep defined = show, comment out or !undef = hide.
+'!define SHOW_ENDPOINT_NOTES
+
+"Web Page" -> SCA : uploads PDF to be signed
+!ifdef SHOW_ENDPOINT_NOTES
+note right
+POST https://smoke-diw-signer-dev.wultra.app/signature/request
+file
+metadata={"externalId":"doc-001","name":"Test document"}
+end note
+!endif
+
+"Web Page" <-- SCA: returns signatureRequestId, authorizationUrl
+!ifdef SHOW_ENDPOINT_NOTES
+note left
+{
+    "signatureRequestId": "87f7ea2e-a9fb-4b70-b1d3-56591c9f832a",
+    "externalId": "doc-001",
+    "status": "AWAITING_USER_AUTHORIZATION",
+    "expiresAt": "2026-08-07T09:45:49.048261537Z",
+    "authorizationUrl": "https://black-mushroom-000e98903-1.westeurope.7.azurestaticapps.net/authorize/index.html?redirectUri=https%3A%2F%2Fsmoke-diw-signer-dev.wultra.app%2Fsignature%2Fcallback&documentRequestId=87f7ea2e-a9fb-4b70-b1d3-56591c9f832a"
+}
+end note
+!endif
+
+"Web Page" -> QTSP: calls the authorizationUrl
+!ifdef SHOW_ENDPOINT_NOTES
+note right
+GET https://black-mushroom-000e98903-1.westeurope.7.azurestaticapps.net/authorize/index.html?redirectUri=https%3A%2F%2Fsmoke-diw-signer-dev.wultra.app%2Fsignature%2Fcallback&documentRequestId=87f7ea2e-a9fb-4b70-b1d3-56591c9f832a
+end note
+!endif
+
+
+QTSP -> Verifier: creates transaction, dispalys QR code
+QTSP <-- Verifier: fetches PID
+
+QTSP -> SCA: calls redirectUri from the authorizationUrl
+!ifdef SHOW_ENDPOINT_NOTES
+note left
+POST https://smoke-diw-signer-dev.wultra.app/signature/callback?requestId=6a5cf748-7a1d-46b5-b829-cf25b84215e6&callbackData={encoded_PID}
+end note
+!endif
+
+SCA --> QTSP: signed PDF download url
+!ifdef SHOW_ENDPOINT_NOTES
+note right
+{
+    "downloadUrl": "https://smoke-diw-signer-dev.wultra.app/signature/87f7ea2e-a9fb-4b70-b1d3-56591c9f832a/file"
+}
+end note
+!endif
+
+"Web Page" -> SCA: downloads signed PDF
+!ifdef SHOW_ENDPOINT_NOTES
+note right
+https://smoke-diw-signer-dev.wultra.app/signature/87f7ea2e-a9fb-4b70-b1d3-56591c9f832a/file
+end note
+!endif
+
+"Web Page" <-- SCA:
+@enduml
