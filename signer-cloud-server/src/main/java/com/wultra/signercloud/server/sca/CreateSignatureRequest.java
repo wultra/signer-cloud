@@ -34,7 +34,6 @@ public record CreateSignatureRequest(
                 description = "External document identifier assigned by the RP",
                 example = "example-document-id"
         )
-        @NotBlank
         @Size(max = 128)
         String externalId,
 
@@ -42,7 +41,6 @@ public record CreateSignatureRequest(
                 description = "Human-readable document name",
                 example = "Employment contract"
         )
-        @NotBlank
         @Size(max = 255)
         String name,
 

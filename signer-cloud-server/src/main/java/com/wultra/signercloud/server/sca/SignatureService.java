@@ -45,6 +45,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static net.logstash.logback.argument.StructuredArguments.kv;
@@ -85,21 +86,30 @@ public class SignatureService {
                         .build()
         );
 
+        final var externalId = Optional.ofNullable(request)
+                .map(CreateSignatureRequest::externalId)
+                .orElse(null);
+
+        final var documentName = Optional.ofNullable(request)
+                .map(CreateSignatureRequest::name)
+                .orElse(null);
+
+        final var visualSignature = Optional.ofNullable(request)
+                .map(CreateSignatureRequest::visualSignature)
+                .map(this::serializeVisualSignature)
+                .orElse(null);
+
         final SigningTransactionEntity transaction =
                 SigningTransactionEntity.builder()
                         .id(UUID.randomUUID().toString())
-                        .externalId(request.externalId())
-                        .documentName(request.name())
+                        .externalId(externalId)
+                        .documentName(documentName)
                         .fileName(fileName)
                         .fileSize(file.getSize())
                         .documentContent(
                                 AggregateReference.to(savedContent.getId())
                         )
-                        .visualSignatureJson(
-                                serializeVisualSignature(
-                                        request.visualSignature()
-                                )
-                        )
+                        .visualSignatureJson(visualSignature)
                         .authorizationExpiresAt(
                                 authorizationExpiresAt
                         )

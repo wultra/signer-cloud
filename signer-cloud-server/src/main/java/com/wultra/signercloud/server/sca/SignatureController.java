@@ -74,11 +74,10 @@ public class SignatureController {
     @PostMapping(path = "request", consumes = MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<CreateSignatureResponse> createSignatureRequest(
             @Parameter(
-                    description = "Document and credential metadata",
-                    required = true
+                    description = "Document and credential metadata"
             )
             @Valid
-            @RequestPart("metadata")
+            @RequestPart(value = "metadata", required = false)
             final CreateSignatureRequest request,
 
             @Parameter(
@@ -99,7 +98,7 @@ public class SignatureController {
                 "Creating signature request",
                 kv("action", "createSignatureRequest"),
                 kv("state", "initiated"),
-                kv("documentExternalId", request.externalId()),
+                kv("documentExternalId", request != null ? request.externalId() : null),
                 kv("fileName", file.getOriginalFilename()),
                 kv("fileSize", file.getSize())
         );
@@ -117,8 +116,7 @@ public class SignatureController {
                     "Signature request created",
                     kv("action", "createSignatureRequest"),
                     kv("state", "succeeded"),
-                    kv("signatureRequestId", response.signatureRequestId()),
-                    kv("documentExternalId", request.externalId())
+                    kv("signatureRequestId", response.signatureRequestId())
             );
 
             return ResponseEntity
