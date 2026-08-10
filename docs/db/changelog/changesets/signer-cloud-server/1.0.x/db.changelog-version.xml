@@ -19,5 +19,6 @@
     <include file="20260803-create-signing-transaction.xml" relativeToChangelogFile="true" />
     <include file="20260806-drop-signing-transaction-columns.xml" relativeToChangelogFile="true" />
     <include file="20260806-signing-transaction-nullable-columns.xml" relativeToChangelogFile="true" />
+    <include file="20260810-signing-transaction-id-name-nullable.xml" relativeToChangelogFile="true" />
 
 </databaseChangeLog>

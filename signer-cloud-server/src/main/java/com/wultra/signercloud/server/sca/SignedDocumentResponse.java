@@ -20,8 +20,6 @@ package com.wultra.signercloud.server.sca;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
-import java.net.URI;
-
 /**
  * TODO
  *
@@ -33,6 +31,7 @@ public record SignedDocumentResponse(
                 example = "https://sca.example/api/v1/signature-requests/55ea6402-9edc-42ec-9f77-c48df2f22941/document",
                 format = "uri"
         )
-        String downloadUrl
+        String downloadUrl,
+        String redirectUrl
 ) {
 }

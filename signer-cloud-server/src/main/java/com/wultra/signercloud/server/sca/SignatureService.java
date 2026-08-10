@@ -306,13 +306,14 @@ public class SignatureService {
                 .orElseThrow(() -> new IllegalArgumentException("Signing transaction was not found"));
 
         final var downloadUri = buildDocumentDownloadUri(requestId);
+        final var redirectUri = buildRedirectUri(transaction);
 
         /*
          * Makes a repeated callback idempotent after the transaction
          * has already completed.
          */
         if (transaction.getStatus() == SigningTransactionStatus.COMPLETED) {
-            return new SignedDocumentResponse(downloadUri);
+            return new SignedDocumentResponse(downloadUri, redirectUri);
         }
 
         final var now = Instant.now();
@@ -410,13 +411,37 @@ public class SignatureService {
                 kv("status", completedTransaction.getStatus())
         );
 
-        return new SignedDocumentResponse(downloadUri);
+        return new SignedDocumentResponse(downloadUri, redirectUri);
     }
 
     private String buildDocumentDownloadUri(final String documentId) {
         return ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path(DOCUMENT_DOWNLOAD_PATH)
                 .buildAndExpand(documentId)
+                .toUriString();
+    }
+
+    private String buildRedirectUri(final SigningTransactionEntity transaction) {
+        final var baseUrl = scaConfigProperties.getUiBaseUrl();
+
+        final var externalId = transaction.getExternalId();
+        final var name = transaction.getDocumentName();
+        final var signatureRequestId = transaction.getId();
+
+        final UriComponentsBuilder builder = UriComponentsBuilder
+                .fromUriString(baseUrl)
+                .path("/dashboard")
+                .queryParam("signatureRequestId", signatureRequestId);
+
+        if (externalId != null) {
+            builder.queryParam("externalId", externalId);
+        }
+
+        if (name != null) {
+            builder.queryParam("name", name);
+        }
+
+        return builder.build()
                 .toUriString();
     }
 
