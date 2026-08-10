@@ -36,5 +36,5 @@ public class ScaConfigProperties {
 
     private String scaBaseUrl;
 
-    private String uiBaseUrl;
+    private String uiRedirectUrl;
 }

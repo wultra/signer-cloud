@@ -422,15 +422,14 @@ public class SignatureService {
     }
 
     private String buildRedirectUri(final SigningTransactionEntity transaction) {
-        final var baseUrl = scaConfigProperties.getUiBaseUrl();
+        final var redirectUrl = scaConfigProperties.getUiRedirectUrl();
 
         final var externalId = transaction.getExternalId();
         final var name = transaction.getDocumentName();
         final var signatureRequestId = transaction.getId();
 
         final UriComponentsBuilder builder = UriComponentsBuilder
-                .fromUriString(baseUrl)
-                .path("/dashboard")
+                .fromUriString(redirectUrl)
                 .queryParam("signatureRequestId", signatureRequestId);
 
         if (externalId != null) {
@@ -441,7 +440,9 @@ public class SignatureService {
             builder.queryParam("name", name);
         }
 
-        return builder.build()
+        return builder
+                .encode(StandardCharsets.UTF_8)
+                .build()
                 .toUriString();
     }
 
