@@ -20,7 +20,7 @@
     <properties>
 
         <powerauth.version>2.2.0-SNAPSHOT</powerauth.version>
-        <wultra-core.version>2.2.0</wultra-core.version>
+        <wultra-core.version>2.2.1</wultra-core.version>
 
         <bouncycastle.version>1.84</bouncycastle.version>
         <dss.version>6.4</dss.version>
