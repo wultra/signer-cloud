@@ -63,7 +63,7 @@ class SignatureTest {
         final Date signingDate = new Date();
 
         // keytool -genkeypair -alias myAlias -keyalg RSA -keysize 2048 -keystore keystore-rsa.p12 -storetype PKCS12 -validity 365
-        // keytool -genkeypair -alias myAlias -keyalg EC -groupname secp384r1 -keystore keystore-ecdsa.p12 -storetype PKCS12 -validity 365
+        // keytool -genkeypair -alias myAlias -keyalg EC -groupname secp384r1 -keystore keystore-ecdsa.p12 -storetype PKCS12 -validity 36500
         final File pkcs12File = new ClassPathResource(KEYSTORE_ECDSA_P_12).getFile();
 
         try (final Pkcs12SignatureToken signingToken = new Pkcs12SignatureToken(pkcs12File, new KeyStore.PasswordProtection(KEYSTORE_PASSWORD.toCharArray()))) {
