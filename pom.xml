@@ -22,7 +22,7 @@
         <powerauth.version>2.2.0-SNAPSHOT</powerauth.version>
         <wultra-core.version>2.2.0</wultra-core.version>
 
-        <bouncycastle.version>1.84</bouncycastle.version>
+        <bouncycastle.version>1.85</bouncycastle.version>
         <dss.version>6.4</dss.version>
         <shedlock.version>7.7.0</shedlock.version>
         <okhttp3.version>5.3.2</okhttp3.version>
