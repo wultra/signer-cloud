@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd">
+
+    <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20260806-drop-signing-transaction-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="qtsp_session_id"/>
+        </preConditions>
+        <dropColumn tableName="signing_transaction" columnName="qtsp_session_id"/>
+    </changeSet>
+
+    <changeSet id="2" logicalFilePath="signer-cloud-server/1.0.x/20260806-drop-signing-transaction-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="credential_id"/>
+        </preConditions>
+        <dropColumn tableName="signing_transaction" columnName="credential_id"/>
+    </changeSet>
+
+    <changeSet id="3" logicalFilePath="signer-cloud-server/1.0.x/20260806-drop-signing-transaction-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="hash_algorithm_oid"/>
+        </preConditions>
+        <dropColumn tableName="signing_transaction" columnName="hash_algorithm_oid"/>
+    </changeSet>
+
+    <changeSet id="4" logicalFilePath="signer-cloud-server/1.0.x/20260806-drop-signing-transaction-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="sign_algorithm_oid"/>
+        </preConditions>
+        <dropColumn tableName="signing_transaction" columnName="sign_algorithm_oid"/>
+    </changeSet>
+
+    <changeSet id="5" logicalFilePath="signer-cloud-server/1.0.x/20260806-drop-signing-transaction-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="oauth_state"/>
+        </preConditions>
+        <dropColumn tableName="signing_transaction" columnName="oauth_state"/>
+    </changeSet>
+
+    <changeSet id="6" logicalFilePath="signer-cloud-server/1.0.x/20260806-drop-signing-transaction-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="pkce_code_verifier"/>
+        </preConditions>
+        <dropColumn tableName="signing_transaction" columnName="pkce_code_verifier"/>
+    </changeSet>
+
+    <changeSet id="7" logicalFilePath="signer-cloud-server/1.0.x/20260806-drop-signing-transaction-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="authorization_url"/>
+        </preConditions>
+        <dropColumn tableName="signing_transaction" columnName="authorization_url"/>
+    </changeSet>
+
+</databaseChangeLog>
+

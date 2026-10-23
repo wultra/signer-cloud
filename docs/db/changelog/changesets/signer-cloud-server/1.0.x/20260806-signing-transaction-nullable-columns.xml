@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.30.xsd">
+
+    <changeSet id="1" logicalFilePath="signer-cloud-server/1.0.x/20260806-signing-transaction-nullable-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="signature_date"/>
+        </preConditions>
+        <dropNotNullConstraint tableName="signing_transaction" columnName="signature_date" columnDataType="TIMESTAMP"/>
+    </changeSet>
+
+    <changeSet id="2" logicalFilePath="signer-cloud-server/1.0.x/20260806-signing-transaction-nullable-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="certificate_base64"/>
+        </preConditions>
+        <dropNotNullConstraint tableName="signing_transaction" columnName="certificate_base64" columnDataType="TEXT"/>
+    </changeSet>
+
+    <changeSet id="3" logicalFilePath="signer-cloud-server/1.0.x/20260806-signing-transaction-nullable-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="certificate_chain_json"/>
+        </preConditions>
+        <dropNotNullConstraint tableName="signing_transaction" columnName="certificate_chain_json" columnDataType="TEXT"/>
+    </changeSet>
+
+    <changeSet id="4" logicalFilePath="signer-cloud-server/1.0.x/20260806-signing-transaction-nullable-columns.xml" author="Michal Rozehnal">
+        <preConditions onFail="MARK_RAN">
+            <columnExists tableName="signing_transaction" columnName="to_be_signed_hash_base64"/>
+        </preConditions>
+        <dropNotNullConstraint tableName="signing_transaction" columnName="to_be_signed_hash_base64" columnDataType="VARCHAR(512)"/>
+    </changeSet>
+
+</databaseChangeLog>
+
